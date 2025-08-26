@@ -177,6 +177,18 @@ backend:
           agent: "testing"
           comment: "All session control endpoints working: POST /api/session/start changes phase to 'play' and sets currentRound to 1. POST /api/session/pause, /api/session/resume, and /api/session/reset all function correctly. Reset properly returns session to idle state with round 0."
 
+  - task: "Round-Robin Scheduling Algorithm"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "COMPREHENSIVE ROUND-ROBIN SCHEDULING ALGORITHM FULLY FUNCTIONAL! All 8 core scheduling features tested and working perfectly: (1) Session Start with Scheduling: POST /api/session/start generates Round 1 with proper matchmaking, creates 3 matches across categories, transitions session to play phase (2) Match Generation: All matches stored in database with correct structure, proper team assignments (2 players per doubles team), court indices 0-2, pending status (3) Category-Based Pairing: Perfect category isolation - no cross-category violations, each category gets dedicated matches (4) Fair Partner/Opponent Distribution: Algorithm maintains fairness using partner/opponent histories tracking (12 entries each) (5) Doubles vs Singles Logic: Correctly handles 4 players per category creating 1 doubles match each (6) Court Allocation: Efficient use of 3 out of 6 available courts, no conflicts, proper indexing (7) Sit Management: All 12 players participating appropriately, sit counts managed, sitNextRound flags reset (8) Next Round Generation: POST /api/session/next-round successfully creates Round 2 with different pairings. The sophisticated scheduling algorithm with fair matchmaking, category-based pairing, and court allocation is working flawlessly for the core pickleball app feature."
+
 frontend:
   - task: "Navigation & UI Structure"
     implemented: true
