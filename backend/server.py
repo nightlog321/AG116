@@ -657,17 +657,85 @@ async def update_session_config(config: SessionConfig):
 
 @api_router.post("/session/start")
 async def start_session():
-    # This will be implemented with the scheduling logic
-    await db.session.update_one(
-        {}, 
-        {"$set": {
-            "phase": SessionPhase.play.value,
-            "currentRound": 1,
-            "paused": False
-        }},
-        upsert=True
-    )
-    return {"message": "Session started"}
+    """Start a new pickleball session and generate the first round"""
+    try:
+        # Get current session
+        session = await db.session.find_one()
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session_obj = SessionState(**session)
+        
+        # Check if we have enough players
+        players_count = await db.players.count_documents({})
+        min_players = 4 if session_obj.config.format in [Format.doubles, Format.auto] else 2
+        
+        if players_count < min_players:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Need at least {min_players} players to start session"
+            )
+        
+        # Clear any existing matches
+        await db.matches.delete_many({})
+        
+        # Generate first round
+        matches = await schedule_round(1)
+        
+        # Update session state
+        await db.session.update_one(
+            {}, 
+            {"$set": {
+                "phase": SessionPhase.play.value,
+                "currentRound": 1,
+                "paused": False,
+                "timeRemaining": session_obj.config.playSeconds
+            }}
+        )
+        
+        return {
+            "message": "Session started successfully",
+            "round": 1,
+            "matches_created": len(matches)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error starting session: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to start session: {str(e)}")
+
+@api_router.post("/session/next-round")
+async def start_next_round():
+    """Generate the next round of matches"""
+    try:
+        session = await db.session.find_one()
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session_obj = SessionState(**session)
+        next_round = session_obj.currentRound + 1
+        
+        # Generate next round
+        matches = await schedule_round(next_round)
+        
+        # Update session state
+        await db.session.update_one(
+            {}, 
+            {"$set": {
+                "currentRound": next_round,
+                "phase": SessionPhase.play.value,
+                "timeRemaining": session_obj.config.playSeconds
+            }}
+        )
+        
+        return {
+            "message": f"Round {next_round} started successfully",
+            "round": next_round,
+            "matches_created": len(matches)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error starting next round: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to start next round: {str(e)}")
 
 @api_router.post("/session/pause")
 async def pause_session():
