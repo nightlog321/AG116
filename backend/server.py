@@ -114,7 +114,399 @@ class SessionState(BaseModel):
     config: SessionConfig = Field(default_factory=SessionConfig)
     histories: Dict[str, Any] = Field(default_factory=dict)  # partners and opponents histories
 
-# API Routes
+# Scheduling Algorithm Functions
+def shuffle_list(items: List[Any]) -> List[Any]:
+    """Shuffle a list for randomization"""
+    shuffled = items.copy()
+    random.shuffle(shuffled)
+    return shuffled
+
+def calculate_partner_score(player_a: str, player_b: str, histories: Dict[str, Any]) -> int:
+    """Calculate how often two players have been partners"""
+    partners_history = histories.get('partners', {})
+    return partners_history.get(player_a, {}).get(player_b, 0)
+
+def calculate_opponent_score(team_a: List[str], team_b: List[str], histories: Dict[str, Any]) -> int:
+    """Calculate opponent history score between two teams"""
+    opponents_history = histories.get('opponents', {})
+    total_score = 0
+    
+    for player_a in team_a:
+        for player_b in team_b:
+            total_score += opponents_history.get(player_a, {}).get(player_b, 0)
+    
+    return total_score
+
+def update_histories(match: Match, histories: Dict[str, Any]) -> Dict[str, Any]:
+    """Update partner and opponent histories based on a match"""
+    if 'partners' not in histories:
+        histories['partners'] = {}
+    if 'opponents' not in histories:
+        histories['opponents'] = {}
+    
+    # Update partner histories (for doubles)
+    if match.matchType == MatchType.doubles:
+        if len(match.teamA) == 2:
+            a1, a2 = match.teamA[0], match.teamA[1]
+            if a1 not in histories['partners']:
+                histories['partners'][a1] = {}
+            if a2 not in histories['partners']:
+                histories['partners'][a2] = {}
+            histories['partners'][a1][a2] = histories['partners'][a1].get(a2, 0) + 1
+            histories['partners'][a2][a1] = histories['partners'][a2].get(a1, 0) + 1
+        
+        if len(match.teamB) == 2:
+            b1, b2 = match.teamB[0], match.teamB[1]
+            if b1 not in histories['partners']:
+                histories['partners'][b1] = {}
+            if b2 not in histories['partners']:
+                histories['partners'][b2] = {}
+            histories['partners'][b1][b2] = histories['partners'][b1].get(b2, 0) + 1
+            histories['partners'][b2][b1] = histories['partners'][b2].get(b1, 0) + 1
+    
+    # Update opponent histories
+    for player_a in match.teamA:
+        if player_a not in histories['opponents']:
+            histories['opponents'][player_a] = {}
+        for player_b in match.teamB:
+            if player_b not in histories['opponents']:
+                histories['opponents'][player_b] = {}
+            histories['opponents'][player_a][player_b] = histories['opponents'][player_a].get(player_b, 0) + 1
+            histories['opponents'][player_b][player_a] = histories['opponents'][player_b].get(player_a, 0) + 1
+    
+    return histories
+
+async def schedule_round(round_index: int) -> List[Match]:
+    """
+    Core scheduling algorithm for round-robin matchmaking
+    Implements category-based fair pairing with singles/doubles/auto-mix support
+    """
+    # Get current session and configuration
+    session = await db.session.find_one()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    session_obj = SessionState(**session)
+    config = session_obj.config
+    
+    # Get all players and categories
+    players_data = await db.players.find().to_list(1000)
+    categories_data = await db.categories.find().to_list(1000)
+    
+    players = [Player(**p) for p in players_data]
+    categories = [Category(**c) for c in categories_data]
+    
+    # Group players by category
+    players_by_category = defaultdict(list)
+    for player in players:
+        if not player.sitNextRound:  # Exclude players forced to sit
+            players_by_category[player.category].append(player)
+    
+    # Initialize match planning
+    court_plans = {}
+    created_matches = []
+    used_player_ids = set()
+    
+    # Plan matches per category
+    for category in categories:
+        cat_name = category.name
+        eligible_players = players_by_category[cat_name]
+        
+        if len(eligible_players) < 2:
+            # Not enough players for any match
+            continue
+        
+        doubles_matches = 0
+        singles_matches = 0
+        
+        # Determine match allocation based on format
+        if config.format == Format.singles:
+            if len(eligible_players) >= 2:
+                singles_matches = len(eligible_players) // 2
+        else:  # doubles or auto
+            count = len(eligible_players)
+            if count >= 4:
+                # Tentative doubles calculation
+                tentative_doubles = count // 4
+                remainder = count % 4
+                
+                # Handle remainder to avoid 1 or 3 leftovers
+                if remainder in [1, 3]:
+                    # Sit 1 lowest-sit player to make remainder 0 or 2
+                    eligible_players.sort(key=lambda p: (p.sitCount, p.missDueToCourtLimit, p.name))
+                    sit_player = eligible_players.pop(0)
+                    # Mark this player to get missDueToCourtLimit increment later
+                    
+                    # Recalculate after sitting one player
+                    count = len(eligible_players)
+                    doubles_matches = count // 4
+                    remainder = count % 4
+                
+                if remainder == 2 and config.format == Format.auto:
+                    # Use 2 leftovers for singles match
+                    singles_matches = 1
+                    doubles_matches = (count - 2) // 4
+                else:
+                    doubles_matches = count // 4
+            elif len(eligible_players) == 2 and config.format == Format.auto:
+                # Fallback to singles for 2 players
+                singles_matches = 1
+        
+        court_plans[cat_name] = {
+            'doubles': doubles_matches,
+            'singles': singles_matches,
+            'eligible_players': eligible_players
+        }
+    
+    # Calculate total courts needed
+    total_courts_needed = sum(plan['doubles'] + plan['singles'] for plan in court_plans.values())
+    available_courts = min(config.numCourts, total_courts_needed)
+    
+    # Fair court allocation across categories (rotate by round)
+    sorted_categories = sorted([cat.name for cat in categories])
+    rotated_categories = sorted_categories[round_index % len(sorted_categories):] + sorted_categories[:round_index % len(sorted_categories)] if sorted_categories else []
+    
+    allocated_courts = {}
+    courts_used = 0
+    
+    # Allocate courts in rotated order, doubles first
+    for cat_name in rotated_categories:
+        if cat_name not in court_plans:
+            continue
+        
+        allocated_courts[cat_name] = {'doubles': 0, 'singles': 0}
+        plan = court_plans[cat_name]
+        
+        # Allocate doubles courts first
+        doubles_to_allocate = min(plan['doubles'], available_courts - courts_used)
+        allocated_courts[cat_name]['doubles'] = doubles_to_allocate
+        courts_used += doubles_to_allocate
+        
+        if courts_used >= available_courts:
+            break
+    
+    # Allocate remaining courts for singles
+    for cat_name in rotated_categories:
+        if courts_used >= available_courts:
+            break
+        if cat_name not in court_plans:
+            continue
+        
+        plan = court_plans[cat_name]
+        singles_to_allocate = min(plan['singles'], available_courts - courts_used)
+        allocated_courts[cat_name]['singles'] = singles_to_allocate
+        courts_used += singles_to_allocate
+    
+    # Create actual matches
+    court_index = 0
+    
+    for cat_name in rotated_categories:
+        if cat_name not in allocated_courts:
+            continue
+        
+        allocation = allocated_courts[cat_name]
+        eligible_players = court_plans[cat_name]['eligible_players']
+        
+        # Create doubles matches
+        if allocation['doubles'] > 0:
+            doubles_matches = await create_doubles_matches(
+                eligible_players, allocation['doubles'], cat_name, 
+                round_index, court_index, session_obj.histories
+            )
+            created_matches.extend(doubles_matches)
+            court_index += len(doubles_matches)
+            
+            # Track used players
+            for match in doubles_matches:
+                used_player_ids.update(match.teamA + match.teamB)
+        
+        # Create singles matches
+        if allocation['singles'] > 0:
+            # Get remaining players not used in doubles
+            remaining_players = [p for p in eligible_players if p.id not in used_player_ids]
+            
+            singles_matches = await create_singles_matches(
+                remaining_players, allocation['singles'], cat_name,
+                round_index, court_index, session_obj.histories
+            )
+            created_matches.extend(singles_matches)
+            court_index += len(singles_matches)
+            
+            # Track used players
+            for match in singles_matches:
+                used_player_ids.update(match.teamA + match.teamB)
+    
+    # Update sit counts and missDueToCourtLimit
+    for player in players:
+        if player.id not in used_player_ids and not player.sitNextRound:
+            # Player is sitting due to court limitations
+            await db.players.update_one(
+                {"id": player.id},
+                {"$inc": {"missDueToCourtLimit": 1}}
+            )
+        
+        if player.id not in used_player_ids:
+            # Player is sitting (either forced or due to limitations)
+            await db.players.update_one(
+                {"id": player.id},
+                {"$inc": {"sitCount": 1}}
+            )
+        
+        # Reset sitNextRound flag
+        await db.players.update_one(
+            {"id": player.id},
+            {"$set": {"sitNextRound": False}}
+        )
+    
+    # Save matches to database
+    for match in created_matches:
+        await db.matches.insert_one(match.dict())
+        # Update histories
+        session_obj.histories = update_histories(match, session_obj.histories)
+    
+    # Update session histories
+    await db.session.update_one({}, {"$set": {"histories": session_obj.histories}})
+    
+    return created_matches
+
+async def create_doubles_matches(
+    players: List[Player], 
+    num_matches: int, 
+    category: str, 
+    round_index: int, 
+    start_court_index: int,
+    histories: Dict[str, Any]
+) -> List[Match]:
+    """Create doubles matches with fair partner pairing"""
+    matches = []
+    shuffled_players = shuffle_list(players)
+    
+    # Create teams (pairs)
+    teams = []
+    used_indices = set()
+    
+    for i, player_a in enumerate(shuffled_players):
+        if i in used_indices:
+            continue
+        
+        best_partner = None
+        best_score = float('inf')
+        best_index = -1
+        
+        # Find best partner (lowest partner history score)
+        for j, player_b in enumerate(shuffled_players[i+1:], i+1):
+            if j in used_indices:
+                continue
+            
+            partner_score = calculate_partner_score(player_a.id, player_b.id, histories)
+            
+            if partner_score < best_score or (partner_score == best_score and player_b.name < (best_partner.name if best_partner else "zzz")):
+                best_partner = player_b
+                best_score = partner_score
+                best_index = j
+        
+        if best_partner:
+            teams.append([player_a.id, best_partner.id])
+            used_indices.add(i)
+            used_indices.add(best_index)
+            
+            if len(teams) >= num_matches * 2:
+                break
+    
+    # Pair teams into matches
+    used_team_indices = set()
+    
+    for i, team_a in enumerate(teams):
+        if i in used_team_indices or len(matches) >= num_matches:
+            break
+        
+        best_opponent_team = None
+        best_opponent_score = float('inf')
+        best_opponent_index = -1
+        
+        # Find best opponent team (lowest opponent history score)
+        for j, team_b in enumerate(teams[i+1:], i+1):
+            if j in used_team_indices:
+                continue
+            
+            opponent_score = calculate_opponent_score(team_a, team_b, histories)
+            
+            if opponent_score < best_opponent_score:
+                best_opponent_team = team_b
+                best_opponent_score = opponent_score
+                best_opponent_index = j
+        
+        if best_opponent_team:
+            match = Match(
+                roundIndex=round_index,
+                courtIndex=start_court_index + len(matches),
+                category=category,
+                teamA=team_a,
+                teamB=best_opponent_team,
+                matchType=MatchType.doubles,
+                status=MatchStatus.pending
+            )
+            matches.append(match)
+            used_team_indices.add(i)
+            used_team_indices.add(best_opponent_index)
+    
+    return matches
+
+async def create_singles_matches(
+    players: List[Player], 
+    num_matches: int, 
+    category: str, 
+    round_index: int, 
+    start_court_index: int,
+    histories: Dict[str, Any]
+) -> List[Match]:
+    """Create singles matches with fair opponent pairing"""
+    matches = []
+    
+    # Sort players by sit priority (least sits first)
+    sorted_players = sorted(players, key=lambda p: (p.sitCount, p.missDueToCourtLimit, p.name))
+    
+    # Take players for singles matches
+    players_for_singles = sorted_players[:num_matches * 2]
+    shuffled_singles = shuffle_list(players_for_singles)
+    
+    used_indices = set()
+    
+    for i, player_a in enumerate(shuffled_singles):
+        if i in used_indices or len(matches) >= num_matches:
+            break
+        
+        best_opponent = None
+        best_score = float('inf')
+        best_index = -1
+        
+        # Find best opponent (lowest opponent history)
+        for j, player_b in enumerate(shuffled_singles[i+1:], i+1):
+            if j in used_indices:
+                continue
+            
+            opponent_score = calculate_opponent_score([player_a.id], [player_b.id], histories)
+            
+            if opponent_score < best_score or (opponent_score == best_score and player_b.name < (best_opponent.name if best_opponent else "zzz")):
+                best_opponent = player_b
+                best_score = opponent_score
+                best_index = j
+        
+        if best_opponent:
+            match = Match(
+                roundIndex=round_index,
+                courtIndex=start_court_index + len(matches),
+                category=category,
+                teamA=[player_a.id],
+                teamB=[best_opponent.id],
+                matchType=MatchType.singles,
+                status=MatchStatus.pending
+            )
+            matches.append(match)
+            used_indices.add(i)
+            used_indices.add(best_index)
+    
+    return matches
 
 # Categories
 @api_router.get("/categories", response_model=List[Category])
