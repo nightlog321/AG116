@@ -374,22 +374,98 @@ function AdminConsole({
     <View style={styles.adminContainer}>
       {/* Session Controls */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Session Controls</Text>
-        
-        <View style={styles.sessionStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Courts</Text>
-            <Text style={styles.statValue}>{session.config.numCourts}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Rounds Planned</Text>
-            <Text style={styles.statValue}>{Math.floor(7200 / Math.max(1, session.config.playSeconds + session.config.bufferSeconds))}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Format</Text>
-            <Text style={styles.statValue}>{session.config.format.toUpperCase()}</Text>
-          </View>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Session Configuration</Text>
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={() => setEditingConfig(!editingConfig)}
+          >
+            <Ionicons 
+              name={editingConfig ? "checkmark" : "pencil"} 
+              size={20} 
+              color="#4CAF50" 
+            />
+          </TouchableOpacity>
         </View>
+        
+        {editingConfig ? (
+          <View style={styles.configForm}>
+            <View style={styles.configRow}>
+              <Text style={styles.configLabel}>Courts:</Text>
+              <TextInput
+                style={styles.configInput}
+                value={configForm.numCourts}
+                onChangeText={(text) => setConfigForm({...configForm, numCourts: text})}
+                keyboardType="numeric"
+                maxLength={2}
+              />
+            </View>
+            
+            <View style={styles.configRow}>
+              <Text style={styles.configLabel}>Play Time:</Text>
+              <View style={styles.timeInputs}>
+                <TextInput
+                  style={styles.timeInput}
+                  value={configForm.playMinutes}
+                  onChangeText={(text) => setConfigForm({...configForm, playMinutes: text})}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  placeholder="12"
+                />
+                <Text style={styles.timeColon}>:</Text>
+                <TextInput
+                  style={styles.timeInput}
+                  value={configForm.playSeconds}
+                  onChangeText={(text) => setConfigForm({...configForm, playSeconds: text})}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  placeholder="00"
+                />
+              </View>
+            </View>
+            
+            <View style={styles.configRow}>
+              <Text style={styles.configLabel}>Buffer (sec):</Text>
+              <TextInput
+                style={styles.configInput}
+                value={configForm.bufferSeconds}
+                onChangeText={(text) => setConfigForm({...configForm, bufferSeconds: text})}
+                keyboardType="numeric"
+                maxLength={3}
+              />
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.saveButton}
+              onPress={saveConfiguration}
+            >
+              <Text style={styles.saveButtonText}>Save Configuration</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.sessionStats}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Courts</Text>
+              <Text style={styles.statValue}>{session.config.numCourts}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Rounds Planned</Text>
+              <Text style={styles.statValue}>{Math.floor(7200 / Math.max(1, session.config.playSeconds + session.config.bufferSeconds))}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Format</Text>
+              <Text style={styles.statValue}>{session.config.format.toUpperCase()}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Play Time</Text>
+              <Text style={styles.statValue}>{formatTime(session.config.playSeconds)}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Buffer</Text>
+              <Text style={styles.statValue}>{session.config.bufferSeconds}s</Text>
+            </View>
+          </View>
+        )}
 
         <View style={styles.buttonRow}>
           {session.phase === 'idle' ? (
