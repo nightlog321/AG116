@@ -360,23 +360,15 @@ function AdminConsole({
         
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Player Name</Text>
-          <View style={styles.inputContainer}>
-            <Text 
-              style={styles.input}
-              onPress={() => {
-                // This is a placeholder - in a real app we'd use TextInput
-                Alert.prompt(
-                  'Player Name',
-                  'Enter player name:',
-                  (text) => setNewPlayerName(text || ''),
-                  'plain-text',
-                  newPlayerName
-                );
-              }}
-            >
-              {newPlayerName || 'Tap to enter name'}
-            </Text>
-          </View>
+          <TextInput
+            style={styles.textInput}
+            value={newPlayerName}
+            onChangeText={setNewPlayerName}
+            placeholder="Enter player name"
+            placeholderTextColor="#666666"
+            autoCapitalize="words"
+            returnKeyType="done"
+          />
         </View>
 
         <View style={styles.inputGroup}>
