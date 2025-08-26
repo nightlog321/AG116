@@ -242,12 +242,32 @@ function AdminConsole({
 }) {
   const [newPlayerName, setNewPlayerName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [editingConfig, setEditingConfig] = useState(false);
+  const [configForm, setConfigForm] = useState({
+    numCourts: '6',
+    playMinutes: '12',
+    playSeconds: '00',
+    bufferSeconds: '30'
+  });
 
   useEffect(() => {
     if (categories.length > 0 && !selectedCategory) {
       setSelectedCategory(categories[0].name);
     }
   }, [categories]);
+
+  useEffect(() => {
+    if (session?.config) {
+      const playMins = Math.floor(session.config.playSeconds / 60);
+      const playSecs = session.config.playSeconds % 60;
+      setConfigForm({
+        numCourts: session.config.numCourts.toString(),
+        playMinutes: playMins.toString(),
+        playSeconds: playSecs.toString().padStart(2, '0'),
+        bufferSeconds: session.config.bufferSeconds.toString()
+      });
+    }
+  }, [session]);
 
   const addPlayer = async () => {
     if (!newPlayerName.trim() || !selectedCategory) {
