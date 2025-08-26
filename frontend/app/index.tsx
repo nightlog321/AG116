@@ -32,14 +32,17 @@ interface SessionConfig {
   format: 'singles' | 'doubles' | 'auto';
 }
 
-interface SessionState {
+interface Match {
   id: string;
-  currentRound: number;
-  phase: 'idle' | 'play' | 'buffer' | 'ended';
-  timeRemaining: number;
-  paused: boolean;
-  config: SessionConfig;
-  histories: any;
+  roundIndex: number;
+  courtIndex: number;
+  category: string;
+  teamA: string[];
+  teamB: string[];
+  status: 'pending' | 'active' | 'buffer' | 'done';
+  matchType: 'singles' | 'doubles';
+  scoreA?: number;
+  scoreB?: number;
 }
 
 export default function PickleballManager() {
