@@ -250,6 +250,12 @@ function AdminConsole({
     bufferSeconds: '30'
   });
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   useEffect(() => {
     if (categories.length > 0 && !selectedCategory) {
       setSelectedCategory(categories[0].name);
