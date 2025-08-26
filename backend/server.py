@@ -506,7 +506,7 @@ async def create_singles_matches(
             used_indices.add(i)
             used_indices.add(best_index)
     
-    return matches
+# API Routes
 
 # Categories
 @api_router.get("/categories", response_model=List[Category])
