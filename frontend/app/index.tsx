@@ -197,28 +197,33 @@ export default function PickleballManager() {
       </View>
 
       {/* Content */}
-      <ScrollView style={styles.content}>
-        {activeTab === 'admin' && (
-          <AdminConsole 
-            session={session}
-            categories={categories}
-            players={players}
-            onRefresh={() => {
-              fetchSession();
-              fetchPlayers();
-              fetchCategories();
-            }}
-          />
-        )}
-        
-        {activeTab === 'dashboard' && (
-          <CourtsDashboard session={session} />
-        )}
-        
-        {activeTab === 'players' && (
-          <PlayersBoard players={players} />
-        )}
-      </ScrollView>
+      <KeyboardAvoidingView 
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView style={styles.content}>
+          {activeTab === 'admin' && (
+            <AdminConsole 
+              session={session}
+              categories={categories}
+              players={players}
+              onRefresh={() => {
+                fetchSession();
+                fetchPlayers();
+                fetchCategories();
+              }}
+            />
+          )}
+          
+          {activeTab === 'dashboard' && (
+            <CourtsDashboard session={session} />
+          )}
+          
+          {activeTab === 'players' && (
+            <PlayersBoard players={players} />
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
