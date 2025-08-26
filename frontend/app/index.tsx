@@ -292,6 +292,47 @@ function AdminConsole({
     }
   };
 
+  const saveConfiguration = async () => {
+    if (!session) return;
+
+    try {
+      const playSeconds = parseInt(configForm.playMinutes) * 60 + parseInt(configForm.playSeconds);
+      const bufferSeconds = parseInt(configForm.bufferSeconds);
+      const numCourts = parseInt(configForm.numCourts);
+
+      if (numCourts < 1 || numCourts > 20) {
+        Alert.alert('Error', 'Number of courts must be between 1 and 20');
+        return;
+      }
+
+      if (playSeconds < 60 || playSeconds > 3600) {
+        Alert.alert('Error', 'Play time must be between 1 and 60 minutes');
+        return;
+      }
+
+      if (bufferSeconds < 0 || bufferSeconds > 300) {
+        Alert.alert('Error', 'Buffer time must be between 0 and 5 minutes');
+        return;
+      }
+
+      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/config`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          numCourts,
+          playSeconds,
+          bufferSeconds,
+          format: session.config.format
+        })
+      });
+
+      setEditingConfig(false);
+      onRefresh();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save configuration');
+    }
+  };
+
   const startSession = async () => {
     try {
       await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/start`, {
