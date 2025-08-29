@@ -5,6 +5,25 @@ import * as DocumentPicker from 'expo-document-picker';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
+// Modern Color Palette
+const colors = {
+  primary: '#667eea',      // Modern purple-blue
+  primaryDark: '#5a6fd8',
+  secondary: '#764ba2',    // Deep purple
+  success: '#2dd4bf',      // Modern teal
+  successDark: '#0f766e',
+  warning: '#f59e0b',      // Warm amber
+  danger: '#ef4444',       // Modern red
+  background: '#0f172a',   // Deep slate
+  surface: '#1e293b',      // Slate
+  surfaceLight: '#334155', // Light slate
+  text: '#f8fafc',         // Light text
+  textSecondary: '#cbd5e1', // Muted text
+  textMuted: '#64748b',    // Very muted text
+  border: '#475569',       // Border color
+  accent: '#06b6d4',       // Cyan accent
+};
+
 // Types
 interface Player {
   id: string;
@@ -57,8 +76,9 @@ interface SessionState {
   histories: any;
 }
 
-// Audio Context for horns
+// Enhanced Audio Context for horns and alerts
 let audioContext: AudioContext | null = null;
+let oneMinuteWarningPlayed = false;
 
 const initializeAudio = () => {
   if (!audioContext) {
@@ -69,7 +89,7 @@ const initializeAudio = () => {
   }
 };
 
-const playHorn = (type: 'start' | 'end' | 'manual') => {
+const playHorn = (type: 'start' | 'end' | 'manual' | 'warning') => {
   initializeAudio();
   if (!audioContext) return;
 
@@ -98,6 +118,17 @@ const playHorn = (type: 'start' | 'end' | 'manual') => {
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.8);
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 1.8);
+  } else if (type === 'warning') {
+    // One-minute warning siren (urgent oscillating tone)
+    oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.3);
+    oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.6);
+    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.9);
+    oscillator.type = 'triangle';
+    gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.2);
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 1.2);
   } else {
     // Manual horn (double beep)
     oscillator.frequency.value = 440;
@@ -121,6 +152,84 @@ const playHorn = (type: 'start' | 'end' | 'manual') => {
   }
 };
 
+// CSV Processing Functions
+const parseCSVLine = (line: string): string[] => {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  result.push(current.trim());
+  return result;
+};
+
+const parseCSV = (csvText: string) => {
+  const lines = csvText.trim().split('\n');
+  const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+  
+  const players: Array<{name: string, category: string, date?: string}> = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    if (values.length >= 2) {
+      const player: any = {};
+      
+      // Map headers to values
+      headers.forEach((header, index) => {
+        const value = values[index]?.replace(/"/g, '').trim();
+        if (header.includes('name')) {
+          player.name = value;
+        } else if (header.includes('level') || header.includes('category')) {
+          player.category = value;
+        } else if (header.includes('date')) {
+          player.date = value;
+        }
+      });
+      
+      if (player.name && player.category) {
+        players.push(player);
+      }
+    }
+  }
+  
+  return players;
+};
+
+const generateCSV = (matches: Match[], players: Player[]) => {
+  let csv = 'Round,Court,Category,TeamA_Player1,TeamA_Player2,TeamB_Player1,TeamB_Player2,ScoreA,ScoreB,Status\n';
+  
+  // Add matches
+  matches.forEach(match => {
+    const teamA1 = players.find(p => p.id === match.teamA[0])?.name || '';
+    const teamA2 = match.teamA[1] ? players.find(p => p.id === match.teamA[1])?.name || '' : '';
+    const teamB1 = players.find(p => p.id === match.teamB[0])?.name || '';
+    const teamB2 = match.teamB[1] ? players.find(p => p.id === match.teamB[1])?.name || '' : '';
+    
+    csv += `${match.roundIndex},${match.courtIndex + 1},${match.category},"${teamA1}","${teamA2}","${teamB1}","${teamB2}",${match.scoreA || ''},${match.scoreB || ''},${match.status}\n`;
+  });
+  
+  // Add player stats section
+  csv += '\nPLAYER STATS\n';
+  csv += 'Name,Category,Wins,Losses,PointDiff,Sits,MissedDueToCourts\n';
+  
+  players.forEach(player => {
+    csv += `"${player.name}",${player.category},${player.stats.wins},${player.stats.losses},${player.stats.pointDiff},${player.sitCount},${player.missDueToCourtLimit}\n`;
+  });
+  
+  return csv;
+};
+
 export default function PickleballManager() {
   const [activeTab, setActiveTab] = useState('admin');
   const [players, setPlayers] = useState<Player[]>([]);
@@ -135,7 +244,7 @@ export default function PickleballManager() {
     initializeApp();
   }, []);
 
-  // Timer effect
+  // Enhanced Timer effect with one-minute warning
   useEffect(() => {
     if (session && session.phase !== 'idle' && session.phase !== 'ended' && !session.paused && session.timeRemaining > 0) {
       timerRef.current = setInterval(() => {
@@ -144,7 +253,16 @@ export default function PickleballManager() {
           
           const newTimeRemaining = prev.timeRemaining - 1;
           
+          // One-minute warning siren (only during play phase)
+          if (prev.phase === 'play' && newTimeRemaining === 60 && !oneMinuteWarningPlayed) {
+            playHorn('warning');
+            oneMinuteWarningPlayed = true;
+            Alert.alert('⚠️ One Minute Warning', 'One minute remaining in this round!', [{ text: 'OK' }]);
+          }
+          
           if (newTimeRemaining <= 0) {
+            // Reset warning flag when round ends
+            oneMinuteWarningPlayed = false;
             // Time's up - trigger automatic phase transition
             handleTimeUp(prev);
           }
@@ -164,6 +282,13 @@ export default function PickleballManager() {
       }
     };
   }, [session?.phase, session?.paused, session?.timeRemaining]);
+
+  // Reset warning flag when new round starts
+  useEffect(() => {
+    if (session?.phase === 'play') {
+      oneMinuteWarningPlayed = false;
+    }
+  }, [session?.currentRound, session?.phase]);
 
   const handleTimeUp = async (currentSession: SessionState) => {
     try {
@@ -259,10 +384,84 @@ export default function PickleballManager() {
     return Math.floor(7200 / Math.max(1, totalSeconds)); // 2 hours = 7200 seconds
   };
 
+  // CSV Import Function
+  const importCSV = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'text/csv',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.type === 'success') {
+        const response = await fetch(result.uri);
+        const csvText = await response.text();
+        const importedPlayers = parseCSV(csvText);
+        
+        if (importedPlayers.length === 0) {
+          Alert.alert('Error', 'No valid players found in CSV file');
+          return;
+        }
+
+        // Show preview and confirm
+        Alert.alert(
+          'Import Players',
+          `Found ${importedPlayers.length} players. Import them all?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Import',
+              onPress: async () => {
+                try {
+                  for (const player of importedPlayers) {
+                    await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        name: player.name,
+                        category: player.category
+                      })
+                    });
+                  }
+                  await fetchPlayers();
+                  Alert.alert('Success', `${importedPlayers.length} players imported successfully!`);
+                } catch (error) {
+                  Alert.alert('Error', 'Failed to import players');
+                }
+              }
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to read CSV file');
+    }
+  };
+
+  // CSV Export Function
+  const exportCSV = () => {
+    try {
+      const csvContent = generateCSV(matches, players);
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `pickleball-session-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      Alert.alert('Success', 'CSV exported successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to export CSV');
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
+        <StatusBar barStyle="light-content" backgroundColor={colors.background} />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading Pickleball Manager...</Text>
         </View>
@@ -272,7 +471,7 @@ export default function PickleballManager() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
+      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       
       {/* Header */}
       <View style={styles.header}>
@@ -286,7 +485,7 @@ export default function PickleballManager() {
             {session.timeRemaining > 0 && session.phase !== 'idle' && (
               <Text style={[
                 styles.timerText,
-                session.timeRemaining <= 30 && session.phase === 'play' ? styles.timerWarning : null
+                session.timeRemaining <= 60 && session.phase === 'play' ? styles.timerWarning : null
               ]}>
                 {formatTime(session.timeRemaining)}
               </Text>
@@ -303,8 +502,8 @@ export default function PickleballManager() {
         >
           <Ionicons 
             name="settings" 
-            size={20} 
-            color={activeTab === 'admin' ? '#ffffff' : '#666666'} 
+            size={22} 
+            color={activeTab === 'admin' ? colors.text : colors.textMuted} 
           />
           <Text style={[styles.tabText, activeTab === 'admin' && styles.activeTabText]}>
             Admin
@@ -317,8 +516,8 @@ export default function PickleballManager() {
         >
           <Ionicons 
             name="grid" 
-            size={20} 
-            color={activeTab === 'dashboard' ? '#ffffff' : '#666666'} 
+            size={22} 
+            color={activeTab === 'dashboard' ? colors.text : colors.textMuted} 
           />
           <Text style={[styles.tabText, activeTab === 'dashboard' && styles.activeTabText]}>
             Courts
@@ -331,8 +530,8 @@ export default function PickleballManager() {
         >
           <Ionicons 
             name="people" 
-            size={20} 
-            color={activeTab === 'players' ? '#ffffff' : '#666666'} 
+            size={22} 
+            color={activeTab === 'players' ? colors.text : colors.textMuted} 
           />
           <Text style={[styles.tabText, activeTab === 'players' && styles.activeTabText]}>
             Players
@@ -356,6 +555,8 @@ export default function PickleballManager() {
                 fetchPlayers();
                 fetchCategories();
               }}
+              onImportCSV={importCSV}
+              onExportCSV={exportCSV}
             />
           )}
           
@@ -386,12 +587,16 @@ function AdminConsole({
   session, 
   categories, 
   players, 
-  onRefresh 
+  onRefresh,
+  onImportCSV,
+  onExportCSV
 }: { 
   session: SessionState | null;
   categories: Category[];
   players: Player[];
   onRefresh: () => void;
+  onImportCSV: () => void;
+  onExportCSV: () => void;
 }) {
   const [newPlayerName, setNewPlayerName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -490,6 +695,7 @@ function AdminConsole({
 
       setEditingConfig(false);
       onRefresh();
+      Alert.alert('Success', 'Configuration saved successfully!');
     } catch (error) {
       Alert.alert('Error', 'Failed to save configuration');
     }
@@ -510,23 +716,6 @@ function AdminConsole({
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to start session');
-    }
-  };
-
-  const startPlay = async () => {
-    try {
-      initializeAudio();
-      
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/play`, {
-        method: 'POST'
-      });
-      
-      if (response.ok) {
-        playHorn('start');
-        onRefresh();
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to start play');
     }
   };
 
@@ -595,7 +784,6 @@ function AdminConsole({
           <TouchableOpacity 
             style={styles.editButtonLarge}
             onPress={() => {
-              console.log('Edit button pressed, current editingConfig:', editingConfig);
               setEditingConfig(!editingConfig);
             }}
           >
@@ -628,6 +816,7 @@ function AdminConsole({
                   keyboardType="numeric"
                   maxLength={2}
                   placeholder="12"
+                  placeholderTextColor={colors.textMuted}
                 />
                 <Text style={styles.timeColon}>:</Text>
                 <TextInput
@@ -637,6 +826,7 @@ function AdminConsole({
                   keyboardType="numeric"
                   maxLength={2}
                   placeholder="00"
+                  placeholderTextColor={colors.textMuted}
                 />
               </View>
             </View>
@@ -703,24 +893,24 @@ function AdminConsole({
         <View style={styles.buttonRow}>
           {session.phase === 'idle' ? (
             <TouchableOpacity 
-              style={[styles.button, players.length < 4 && styles.buttonDisabled]}
+              style={[styles.primaryButton, players.length < 4 && styles.buttonDisabled]}
               onPress={startSession}
               disabled={players.length < 4}
             >
-              <Ionicons name="play" size={20} color="#ffffff" style={styles.buttonIcon} />
+              <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
               <Text style={styles.buttonText}>Let's Play!</Text>
             </TouchableOpacity>
           ) : (
             <>
               {session.phase === 'play' || session.phase === 'buffer' ? (
                 <TouchableOpacity 
-                  style={[styles.button, styles.pauseButton]}
+                  style={styles.warningButton}
                   onPress={pauseResume}
                 >
                   <Ionicons 
                     name={session.paused ? "play" : "pause"} 
                     size={20} 
-                    color="#ffffff" 
+                    color={colors.text} 
                     style={styles.buttonIcon}
                   />
                   <Text style={styles.buttonText}>
@@ -730,22 +920,45 @@ function AdminConsole({
               ) : null}
               
               <TouchableOpacity 
-                style={[styles.button, styles.hornButton]}
+                style={styles.dangerButton}
                 onPress={manualHorn}
               >
-                <Ionicons name="megaphone" size={20} color="#ffffff" style={styles.buttonIcon} />
+                <Ionicons name="megaphone" size={20} color={colors.text} style={styles.buttonIcon} />
                 <Text style={styles.buttonText}>Horn Now</Text>
               </TouchableOpacity>
             </>
           )}
+        </View>
+      </View>
+
+      {/* CSV Import/Export */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Data Management</Text>
+        <Text style={styles.cardSubtitle}>
+          Import/Export player data in CSV format
+        </Text>
+        
+        <View style={styles.buttonRow}>
+          <TouchableOpacity 
+            style={styles.secondaryButton}
+            onPress={onImportCSV}
+          >
+            <Ionicons name="cloud-upload" size={20} color={colors.primary} style={styles.buttonIcon} />
+            <Text style={styles.secondaryButtonText}>Import CSV</Text>
+          </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.button, styles.secondaryButton]}
-            onPress={resetSession}
+            style={styles.secondaryButton}
+            onPress={onExportCSV}
           >
-            <Text style={[styles.buttonText, styles.secondaryButtonText]}>Reset</Text>
+            <Ionicons name="cloud-download" size={20} color={colors.primary} style={styles.buttonIcon} />
+            <Text style={styles.secondaryButtonText}>Export CSV</Text>
           </TouchableOpacity>
         </View>
+        
+        <Text style={styles.helpText}>
+          CSV Format: Player Name, Player Level, Date (optional)
+        </Text>
       </View>
 
       {/* Add Player */}
@@ -759,7 +972,7 @@ function AdminConsole({
             value={newPlayerName}
             onChangeText={setNewPlayerName}
             placeholder="Enter player name"
-            placeholderTextColor="#666666"
+            placeholderTextColor={colors.textMuted}
             autoCapitalize="words"
             returnKeyType="done"
           />
@@ -789,7 +1002,7 @@ function AdminConsole({
         </View>
 
         <TouchableOpacity 
-          style={[styles.button, !newPlayerName.trim() && styles.buttonDisabled]}
+          style={[styles.primaryButton, !newPlayerName.trim() && styles.buttonDisabled]}
           onPress={addPlayer}
           disabled={!newPlayerName.trim()}
         >
@@ -826,12 +1039,20 @@ function AdminConsole({
             })}
           </View>
         )}
+        
+        <TouchableOpacity 
+          style={styles.resetButton}
+          onPress={resetSession}
+        >
+          <Ionicons name="refresh" size={20} color={colors.textSecondary} style={styles.buttonIcon} />
+          <Text style={styles.resetButtonText}>Reset Session</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-// Courts Dashboard Component  
+// Courts Dashboard Component (same structure, updated styles)
 function CourtsDashboard({ 
   session, 
   matches, 
@@ -912,7 +1133,7 @@ function CourtsDashboard({
     return (
       <View style={styles.dashboardContainer}>
         <View style={styles.card}>
-          <Ionicons name="tennisball" size={48} color="#4CAF50" />
+          <Ionicons name="tennisball" size={48} color={colors.success} />
           <Text style={styles.emptyTitle}>Session Not Started</Text>
           <Text style={styles.emptyText}>
             Start a session from the Admin tab to see court assignments
@@ -947,7 +1168,7 @@ function CourtsDashboard({
                   <Ionicons 
                     name={match.matchType === 'singles' ? 'person' : 'people'} 
                     size={16} 
-                    color="#4CAF50" 
+                    color={colors.success} 
                   />
                   <Text style={styles.matchTypeText}>
                     {match.matchType.charAt(0).toUpperCase() + match.matchType.slice(1)}
@@ -994,7 +1215,7 @@ function CourtsDashboard({
                         onChangeText={(text) => updateScoreInput(match.id, 'A', text)}
                         keyboardType="numeric"
                         placeholder="0"
-                        placeholderTextColor="#666666"
+                        placeholderTextColor={colors.textMuted}
                         maxLength={2}
                       />
                       
@@ -1005,7 +1226,7 @@ function CourtsDashboard({
                         onChangeText={(text) => updateScoreInput(match.id, 'B', text)}
                         keyboardType="numeric"
                         placeholder="0"
-                        placeholderTextColor="#666666"
+                        placeholderTextColor={colors.textMuted}
                         maxLength={2}
                       />
                     </View>
@@ -1027,7 +1248,7 @@ function CourtsDashboard({
               </View>
             ) : (
               <View style={styles.emptyCourt}>
-                <Ionicons name="tennisball-outline" size={32} color="#666666" />
+                <Ionicons name="tennisball-outline" size={32} color={colors.textMuted} />
                 <Text style={styles.emptyCourtText}>No match assigned</Text>
               </View>
             )}
@@ -1038,7 +1259,7 @@ function CourtsDashboard({
   );
 }
 
-// Players Board Component
+// Players Board Component (same structure, updated styles)
 function PlayersBoard({ players, matches }: { players: Player[]; matches: Match[] }) {
   const getCurrentAssignment = (playerId: string) => {
     // Find current round matches that include this player
@@ -1058,7 +1279,7 @@ function PlayersBoard({ players, matches }: { players: Player[]; matches: Match[
     return (
       <View style={styles.dashboardContainer}>
         <View style={styles.card}>
-          <Ionicons name="people" size={48} color="#2196F3" />
+          <Ionicons name="people" size={48} color={colors.primary} />
           <Text style={styles.emptyTitle}>No Players</Text>
           <Text style={styles.emptyText}>
             Add players from the Admin tab to get started
@@ -1100,7 +1321,7 @@ function PlayersBoard({ players, matches }: { players: Player[]; matches: Match[
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -1108,65 +1329,69 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#ffffff',
-    fontSize: 16,
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '600',
     textAlign: 'center',
   },
   header: {
-    backgroundColor: '#2c2c2c',
-    padding: 16,
+    backgroundColor: colors.surface,
+    padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#333333',
+    borderBottomColor: colors.border,
   },
   headerTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: '700',
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   sessionInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 12,
   },
   sessionText: {
-    color: '#cccccc',
-    fontSize: 14,
+    color: colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '500',
   },
   timerText: {
-    color: '#4CAF50',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: colors.success,
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   timerWarning: {
-    color: '#FF5722',
+    color: colors.warning,
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#2c2c2c',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#333333',
+    borderBottomColor: colors.border,
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
   },
   activeTab: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.primary,
   },
   tabText: {
-    color: '#666666',
-    fontSize: 12,
-    marginLeft: 4,
-    fontWeight: '500',
+    color: colors.textMuted,
+    fontSize: 14,
+    marginLeft: 6,
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#ffffff',
+    color: colors.text,
   },
   content: {
     flex: 1,
@@ -1175,48 +1400,53 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   adminContainer: {
-    padding: 16,
+    padding: 20,
   },
   card: {
-    backgroundColor: '#2c2c2c',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   cardTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  cardSubtitle: {
+    color: colors.textSecondary,
+    fontSize: 16,
     marginBottom: 16,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  editButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#333333',
+    marginBottom: 20,
   },
   editButtonLarge: {
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: '#4CAF50',
-    minWidth: 60,
+    backgroundColor: colors.primary,
+    minWidth: 70,
   },
   editButtonText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '600',
     textAlign: 'center',
   },
   configForm: {
-    gap: 16,
+    gap: 20,
   },
   configRow: {
     flexDirection: 'row',
@@ -1224,265 +1454,336 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   configLabel: {
-    color: '#cccccc',
+    color: colors.textSecondary,
     fontSize: 16,
+    fontWeight: '500',
     flex: 1,
   },
   configInput: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 16,
-    padding: 8,
-    backgroundColor: '#333333',
-    borderRadius: 6,
+    padding: 12,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#444444',
+    borderColor: colors.border,
     textAlign: 'center',
-    minWidth: 60,
+    minWidth: 70,
   },
   timeInputs: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
   },
   timeInput: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 16,
-    padding: 8,
-    backgroundColor: '#333333',
-    borderRadius: 6,
+    padding: 12,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#444444',
+    borderColor: colors.border,
     textAlign: 'center',
-    width: 40,
+    width: 50,
   },
   timeColon: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '700',
   },
   toggleButton: {
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 6,
-    backgroundColor: '#333333',
+    borderRadius: 8,
+    backgroundColor: colors.surfaceLight,
     borderWidth: 1,
-    borderColor: '#444444',
+    borderColor: colors.border,
   },
   toggleButtonActive: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+    backgroundColor: colors.success,
+    borderColor: colors.success,
   },
   toggleButtonText: {
-    color: '#cccccc',
+    color: colors.textSecondary,
     fontSize: 14,
+    fontWeight: '500',
     textAlign: 'center',
   },
   toggleButtonTextActive: {
-    color: '#ffffff',
-    fontWeight: 'bold',
+    color: colors.text,
+    fontWeight: '600',
   },
   saveButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: colors.success,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
     marginTop: 8,
   },
   saveButtonText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   sessionStats: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 20,
+    gap: 16,
   },
   statItem: {
     alignItems: 'center',
     minWidth: '30%',
-    marginBottom: 8,
   },
   statLabel: {
-    color: '#cccccc',
+    color: colors.textSecondary,
     fontSize: 12,
-    marginBottom: 4,
+    fontWeight: '500',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   statValue: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '700',
   },
   buttonRow: {
     flexDirection: 'row',
     gap: 12,
     flexWrap: 'wrap',
   },
-  button: {
+  primaryButton: {
     flex: 1,
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    minWidth: 120,
+    minWidth: 140,
+  },
+  warningButton: {
+    flex: 1,
+    backgroundColor: colors.warning,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    minWidth: 140,
+  },
+  dangerButton: {
+    flex: 1,
+    backgroundColor: colors.danger,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    minWidth: 140,
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.primary,
+    minWidth: 140,
+  },
+  resetButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: 16,
   },
   buttonDisabled: {
-    backgroundColor: '#333333',
+    backgroundColor: colors.surfaceLight,
+    opacity: 0.6,
   },
   buttonIcon: {
     marginRight: 8,
   },
   buttonText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  pauseButton: {
-    backgroundColor: '#FF9800',
-  },
-  hornButton: {
-    backgroundColor: '#F44336',
-  },
-  secondaryButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#666666',
+    fontWeight: '600',
   },
   secondaryButtonText: {
-    color: '#cccccc',
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  resetButtonText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  helpText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   inputLabel: {
-    color: '#cccccc',
+    color: colors.textSecondary,
     fontSize: 14,
+    fontWeight: '600',
     marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   textInput: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 16,
-    padding: 12,
-    minHeight: 44,
-    backgroundColor: '#333333',
-    borderRadius: 8,
+    padding: 16,
+    minHeight: 50,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#444444',
+    borderColor: colors.border,
   },
   categoryButtons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   categoryButton: {
     flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: '#333333',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceLight,
     borderWidth: 1,
-    borderColor: '#444444',
+    borderColor: colors.border,
     alignItems: 'center',
   },
   categoryButtonActive: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   categoryButtonText: {
-    color: '#cccccc',
+    color: colors.textSecondary,
     fontSize: 14,
+    fontWeight: '500',
   },
   categoryButtonTextActive: {
-    color: '#ffffff',
-    fontWeight: 'bold',
+    color: colors.text,
+    fontWeight: '600',
   },
   emptyText: {
-    color: '#666666',
-    fontSize: 14,
+    color: colors.textMuted,
+    fontSize: 16,
     textAlign: 'center',
     fontStyle: 'italic',
   },
   playersList: {
-    gap: 12,
+    gap: 16,
   },
   categorySection: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   categoryHeader: {
-    color: '#4CAF50',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    color: colors.success,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   playerItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#333333',
-    borderRadius: 8,
-    marginBottom: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 10,
+    marginBottom: 6,
   },
   playerName: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 16,
+    fontWeight: '600',
     flex: 1,
   },
   playerStats: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 16,
   },
   playerStat: {
-    color: '#cccccc',
+    color: colors.textSecondary,
     fontSize: 12,
+    fontWeight: '500',
   },
   dashboardContainer: {
-    padding: 16,
+    padding: 20,
   },
   emptyTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
+    color: colors.text,
+    fontSize: 22,
+    fontWeight: '700',
     textAlign: 'center',
     marginTop: 16,
     marginBottom: 8,
   },
   courtCard: {
-    backgroundColor: '#2c2c2c',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   courtHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   courtTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: '700',
   },
   matchBadge: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: colors.success,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   matchBadgeText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   matchDetails: {
-    gap: 12,
+    gap: 16,
   },
   matchType: {
     flexDirection: 'row',
@@ -1490,145 +1791,161 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   matchTypeText: {
-    color: '#4CAF50',
+    color: colors.success,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   teamsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: '#333333',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 12,
+    padding: 16,
   },
   team: {
     alignItems: 'center',
     flex: 1,
   },
   teamLabel: {
-    color: '#cccccc',
+    color: colors.textSecondary,
     fontSize: 12,
-    marginBottom: 4,
-    fontWeight: 'bold',
+    marginBottom: 8,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   playerNameInMatch: {
-    color: '#ffffff',
-    fontSize: 14,
-    marginBottom: 2,
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
   },
   vsText: {
-    color: '#4CAF50',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginHorizontal: 16,
+    color: colors.success,
+    fontSize: 18,
+    fontWeight: '700',
+    marginHorizontal: 20,
   },
   scoreInput: {
-    backgroundColor: '#333333',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 12,
+    padding: 16,
   },
   scoreInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   scoreLabel: {
-    color: '#cccccc',
+    color: colors.textSecondary,
     fontSize: 14,
+    fontWeight: '600',
   },
   scoreInputField: {
-    backgroundColor: '#2c2c2c',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#444444',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    color: '#ffffff',
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: colors.text,
     fontSize: 16,
+    fontWeight: '600',
     textAlign: 'center',
-    minWidth: 60,
+    minWidth: 70,
   },
   saveScoreButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 10,
-    borderRadius: 6,
+    backgroundColor: colors.success,
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: 'center',
   },
   saveScoreButtonText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   finalScore: {
-    backgroundColor: '#333333',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
   },
   finalScoreText: {
-    color: '#4CAF50',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: colors.success,
+    fontSize: 18,
+    fontWeight: '700',
   },
   matchStatus: {
     alignItems: 'center',
   },
   matchStatusText: {
-    color: '#cccccc',
+    color: colors.textMuted,
     fontSize: 12,
+    fontWeight: '500',
     fontStyle: 'italic',
   },
   emptyCourt: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 32,
   },
   emptyCourtText: {
-    color: '#666666',
-    fontSize: 14,
-    marginTop: 8,
+    color: colors.textMuted,
+    fontSize: 16,
+    marginTop: 12,
   },
   playersContainer: {
-    padding: 16,
+    padding: 20,
   },
   playerCard: {
-    backgroundColor: '#2c2c2c',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   playerCardName: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 6,
   },
   playerCardCategory: {
-    color: '#4CAF50',
+    color: colors.success,
     fontSize: 14,
-    marginBottom: 12,
+    fontWeight: '600',
+    marginBottom: 16,
   },
   playerCardStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   playerCardStat: {
-    color: '#cccccc',
+    color: colors.textSecondary,
     fontSize: 12,
+    fontWeight: '500',
   },
   playerAssignment: {
-    color: '#666666',
-    fontSize: 14,
+    color: colors.textMuted,
+    fontSize: 16,
+    fontWeight: '500',
     fontStyle: 'italic',
     textAlign: 'center',
     marginTop: 8,
   },
   playerAssigned: {
-    color: '#4CAF50',
-    fontWeight: 'bold',
+    color: colors.success,
+    fontWeight: '600',
+    fontStyle: 'normal',
   },
 });
