@@ -841,11 +841,19 @@ async def reset_session():
         "stats.pointDiff": 0
     }})
     
-    # Reset session state
+    # Get current session to preserve config
+    session = await db.session.find_one()
+    if session:
+        session_obj = SessionState(**session)
+        play_time = session_obj.config.playSeconds
+    else:
+        play_time = 720  # default 12 minutes
+    
+    # Reset session state with timer set to play time
     await db.session.update_one({}, {"$set": {
         "currentRound": 0,
         "phase": SessionPhase.idle.value,
-        "timeRemaining": 0,
+        "timeRemaining": play_time,  # Set to play time instead of 0
         "paused": False,
         "histories": {}
     }})
