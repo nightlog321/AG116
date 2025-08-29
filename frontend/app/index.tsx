@@ -1439,6 +1439,10 @@ const styles = StyleSheet.create({
   timerWarning: {
     color: colors.warning,
   },
+  timerIdle: {
+    color: colors.textSecondary,
+    opacity: 0.8,
+  },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
