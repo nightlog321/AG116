@@ -1201,6 +1201,19 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#333333',
   },
+  editButtonLarge: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#4CAF50',
+    minWidth: 60,
+  },
+  editButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
   configForm: {
     gap: 16,
   },
