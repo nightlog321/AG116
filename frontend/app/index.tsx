@@ -891,20 +891,32 @@ function AdminConsole({
           </View>
         )}
 
-        {/* Session Control Buttons - Outside of Edit Mode */}
+        {/* Session Control Buttons - All in Session Configuration */}
         <View style={styles.sessionControlButtons}>
           {session.phase === 'idle' ? (
-            <TouchableOpacity 
-              style={[styles.primaryButton, players.length < 4 && styles.buttonDisabled]}
-              onPress={startSession}
-              disabled={players.length < 4}
-            >
-              <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
-              <Text style={styles.buttonText}>Let's Play!</Text>
-            </TouchableOpacity>
+            // When session is idle - show Let's Play and Reset
+            <View style={styles.buttonColumn}>
+              <TouchableOpacity 
+                style={[styles.primaryButton, players.length < 4 && styles.buttonDisabled]}
+                onPress={startSession}
+                disabled={players.length < 4}
+              >
+                <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
+                <Text style={styles.buttonText}>Let's Play</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.resetButton}
+                onPress={resetSession}
+              >
+                <Ionicons name="refresh" size={20} color={colors.textSecondary} style={styles.buttonIcon} />
+                <Text style={styles.resetButtonText}>Reset</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
-            <View style={styles.buttonRow}>
-              {session.phase === 'play' || session.phase === 'buffer' ? (
+            // When session is active - show Pause/Resume and Reset
+            <View style={styles.buttonColumn}>
+              <View style={styles.buttonRow}>
                 <TouchableOpacity 
                   style={styles.warningButton}
                   onPress={pauseResume}
@@ -919,25 +931,25 @@ function AdminConsole({
                     {session.paused ? 'Resume' : 'Pause'}
                   </Text>
                 </TouchableOpacity>
-              ) : null}
+                
+                <TouchableOpacity 
+                  style={styles.dangerButton}
+                  onPress={manualHorn}
+                >
+                  <Ionicons name="megaphone" size={20} color={colors.text} style={styles.buttonIcon} />
+                  <Text style={styles.buttonText}>Horn Now</Text>
+                </TouchableOpacity>
+              </View>
               
               <TouchableOpacity 
-                style={styles.dangerButton}
-                onPress={manualHorn}
+                style={styles.resetButton}
+                onPress={resetSession}
               >
-                <Ionicons name="megaphone" size={20} color={colors.text} style={styles.buttonIcon} />
-                <Text style={styles.buttonText}>Horn Now</Text>
+                <Ionicons name="refresh" size={20} color={colors.textSecondary} style={styles.buttonIcon} />
+                <Text style={styles.resetButtonText}>Reset</Text>
               </TouchableOpacity>
             </View>
           )}
-          
-          <TouchableOpacity 
-            style={styles.resetButton}
-            onPress={resetSession}
-          >
-            <Ionicons name="refresh" size={20} color={colors.textSecondary} style={styles.buttonIcon} />
-            <Text style={styles.resetButtonText}>Reset Session</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
