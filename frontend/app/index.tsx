@@ -595,27 +595,7 @@ function AdminConsole({
             style={styles.editButton}
             onPress={() => {
               console.log('Edit button pressed, current editingConfig:', editingConfig);
-              console.log('Current session phase:', session?.phase);
-              
-              if (session && session.phase !== 'idle' && !editingConfig) {
-                Alert.alert(
-                  'Edit Configuration',
-                  'Editing configuration during an active session may affect ongoing matches. Continue?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { 
-                      text: 'Edit Anyway', 
-                      onPress: () => {
-                        console.log('User confirmed edit during active session');
-                        setEditingConfig(true);
-                      }
-                    }
-                  ]
-                );
-              } else {
-                console.log('Toggling edit mode directly');
-                setEditingConfig(!editingConfig);
-              }
+              setEditingConfig(!editingConfig);
             }}
           >
             <Ionicons 
