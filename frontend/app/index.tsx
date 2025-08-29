@@ -593,13 +593,25 @@ function AdminConsole({
           <Text style={styles.cardTitle}>Session Configuration</Text>
           <TouchableOpacity 
             style={styles.editButton}
-            onPress={() => setEditingConfig(!editingConfig)}
-            disabled={session.phase !== 'idle'}
+            onPress={() => {
+              if (session.phase !== 'idle' && !editingConfig) {
+                Alert.alert(
+                  'Edit Configuration',
+                  'Editing configuration during an active session may affect ongoing matches. Continue?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Edit Anyway', onPress: () => setEditingConfig(true) }
+                  ]
+                );
+              } else {
+                setEditingConfig(!editingConfig);
+              }
+            }}
           >
             <Ionicons 
               name={editingConfig ? "checkmark" : "pencil"} 
               size={20} 
-              color={session.phase === 'idle' ? "#4CAF50" : "#666666"} 
+              color="#4CAF50"
             />
           </TouchableOpacity>
         </View>
