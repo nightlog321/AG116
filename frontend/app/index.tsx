@@ -1613,11 +1613,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  resetButtonText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontWeight: '500',
-  },
   helpText: {
     color: colors.textMuted,
     fontSize: 12,
