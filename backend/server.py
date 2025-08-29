@@ -197,11 +197,19 @@ async def schedule_round(round_index: int) -> List[Match]:
     players = [Player(**p) for p in players_data]
     categories = [Category(**c) for c in categories_data]
     
-    # Group players by category
+    # Group players by category or all together based on allowCrossCategory
     players_by_category = defaultdict(list)
-    for player in players:
-        if not player.sitNextRound:  # Exclude players forced to sit
-            players_by_category[player.category].append(player)
+    
+    if config.allowCrossCategory:
+        # Mix all players together in one group
+        all_eligible = [p for p in players if not p.sitNextRound]
+        if all_eligible:
+            players_by_category["Mixed"] = all_eligible
+    else:
+        # Group by individual categories (original behavior)
+        for player in players:
+            if not player.sitNextRound:  # Exclude players forced to sit
+                players_by_category[player.category].append(player)
     
     # Initialize match planning
     court_plans = {}
