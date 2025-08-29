@@ -786,6 +786,8 @@ function AdminConsole({
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('Starting reset process...');
+              
               // Clear any running timers first
               if (timerRef.current) {
                 clearInterval(timerRef.current);
@@ -800,15 +802,17 @@ function AdminConsole({
                 method: 'POST'
               });
               
+              console.log('Reset response:', response.status);
+              
               if (response.ok) {
                 // Force refresh all data after reset
-                await Promise.all([
-                  fetchSession(),
-                  fetchPlayers(),
-                  fetchCategories(),
-                  fetchMatches()
-                ]);
+                console.log('Refreshing all data...');
+                await fetchSession();
+                await fetchPlayers();
+                await fetchCategories();
+                await fetchMatches();
                 
+                console.log('Reset completed successfully');
                 Alert.alert('Success', 'Session reset successfully!');
               } else {
                 throw new Error('Reset failed');
