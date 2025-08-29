@@ -583,6 +583,7 @@ export default function PickleballManager() {
               }}
               onImportCSV={importCSV}
               onExportCSV={exportCSV}
+              onResetSession={resetSession}
             />
           )}
           
