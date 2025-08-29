@@ -949,64 +949,33 @@ function AdminConsole({
           </View>
         )}
 
-        {/* Session Control Buttons - All in Session Configuration */}
+        {/* Session Control Button - Single Button for Let's Play/Resume */}
         <View style={styles.sessionControlButtons}>
           {session.phase === 'idle' ? (
-            // When session is idle - show Let's Play and Reset
-            <View style={styles.buttonColumn}>
-              <TouchableOpacity 
-                style={[styles.primaryButton, players.length < 4 && styles.buttonDisabled]}
-                onPress={startSession}
-                disabled={players.length < 4}
-              >
-                <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
-                <Text style={styles.buttonText}>Let's Play</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.resetButton}
-                onPress={onResetSession}
-              >
-                <Ionicons name="refresh" size={20} color={colors.textSecondary} style={styles.buttonIcon} />
-                <Text style={styles.resetButtonText}>Reset</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={[styles.primaryButton, players.length < 4 && styles.buttonDisabled]}
+              onPress={startSession}
+              disabled={players.length < 4}
+            >
+              <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Let's Play</Text>
+            </TouchableOpacity>
+          ) : session.paused ? (
+            <TouchableOpacity 
+              style={styles.primaryButton}
+              onPress={pauseResume}
+            >
+              <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Resume</Text>
+            </TouchableOpacity>
           ) : (
-            // When session is active - show Pause/Resume and Reset
-            <View style={styles.buttonColumn}>
-              <View style={styles.buttonRow}>
-                <TouchableOpacity 
-                  style={styles.warningButton}
-                  onPress={pauseResume}
-                >
-                  <Ionicons 
-                    name={session.paused ? "play" : "pause"} 
-                    size={20} 
-                    color={colors.text} 
-                    style={styles.buttonIcon}
-                  />
-                  <Text style={styles.buttonText}>
-                    {session.paused ? 'Resume' : 'Pause'}
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.dangerButton}
-                  onPress={manualHorn}
-                >
-                  <Ionicons name="megaphone" size={20} color={colors.text} style={styles.buttonIcon} />
-                  <Text style={styles.buttonText}>Horn Now</Text>
-                </TouchableOpacity>
-              </View>
-              
-              <TouchableOpacity 
-                style={styles.resetButton}
-                onPress={onResetSession}
-              >
-                <Ionicons name="refresh" size={20} color={colors.textSecondary} style={styles.buttonIcon} />
-                <Text style={styles.resetButtonText}>Reset</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={styles.warningButton}
+              onPress={pauseResume}
+            >
+              <Ionicons name="pause" size={20} color={colors.text} style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Pause</Text>
+            </TouchableOpacity>
           )}
         </View>
       </View>
