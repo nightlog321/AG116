@@ -946,7 +946,7 @@ function AdminConsole({
           </View>
         )}
 
-        {/* Session Control Button - Single Button for Let's Play/Resume */}
+        {/* Single Session Control Button - Replace Reset location */}
         <View style={styles.sessionControlButtons}>
           {session.phase === 'idle' ? (
             <TouchableOpacity 
