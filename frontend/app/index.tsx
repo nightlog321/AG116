@@ -999,7 +999,7 @@ function AdminConsole({
               
               <TouchableOpacity 
                 style={styles.resetButton}
-                onPress={resetSession}
+                onPress={onResetSession}
               >
                 <Ionicons name="refresh" size={20} color={colors.textSecondary} style={styles.buttonIcon} />
                 <Text style={styles.resetButtonText}>Reset</Text>
