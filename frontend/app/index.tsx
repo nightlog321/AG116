@@ -712,11 +712,52 @@ function AdminConsole({
       
       if (response.ok) {
         playHorn('start');
-        onRefresh();
+        
+        // Refresh data first
+        await fetchSession();
+        await fetchPlayers();
+        await fetchCategories();
+        await fetchMatches();
+        
+        // Now start the timer manually
+        startTimer();
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to start session');
     }
+  };
+
+  // Manual timer control function
+  const startTimer = () => {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    
+    // Start new timer
+    timerRef.current = setInterval(() => {
+      setSession(prev => {
+        if (!prev || prev.timeRemaining <= 0) return prev;
+        
+        const newTimeRemaining = prev.timeRemaining - 1;
+        
+        // One-minute warning siren (only during play phase)
+        if (prev.phase === 'play' && newTimeRemaining === 60 && !oneMinuteWarningPlayed) {
+          playHorn('warning');
+          oneMinuteWarningPlayed = true;
+          Alert.alert('⚠️ One Minute Warning', 'One minute remaining in this round!', [{ text: 'OK' }]);
+        }
+        
+        if (newTimeRemaining <= 0) {
+          // Reset warning flag when round ends
+          oneMinuteWarningPlayed = false;
+          // Time's up - trigger automatic phase transition
+          handleTimeUp(prev);
+        }
+        
+        return { ...prev, timeRemaining: newTimeRemaining };
+      });
+    }, 1000);
   };
 
   const pauseResume = async () => {
