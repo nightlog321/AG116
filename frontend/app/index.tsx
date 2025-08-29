@@ -594,16 +594,26 @@ function AdminConsole({
           <TouchableOpacity 
             style={styles.editButton}
             onPress={() => {
-              if (session.phase !== 'idle' && !editingConfig) {
+              console.log('Edit button pressed, current editingConfig:', editingConfig);
+              console.log('Current session phase:', session?.phase);
+              
+              if (session && session.phase !== 'idle' && !editingConfig) {
                 Alert.alert(
                   'Edit Configuration',
                   'Editing configuration during an active session may affect ongoing matches. Continue?',
                   [
                     { text: 'Cancel', style: 'cancel' },
-                    { text: 'Edit Anyway', onPress: () => setEditingConfig(true) }
+                    { 
+                      text: 'Edit Anyway', 
+                      onPress: () => {
+                        console.log('User confirmed edit during active session');
+                        setEditingConfig(true);
+                      }
+                    }
                   ]
                 );
               } else {
+                console.log('Toggling edit mode directly');
                 setEditingConfig(!editingConfig);
               }
             }}
