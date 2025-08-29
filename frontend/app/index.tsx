@@ -592,17 +592,15 @@ function AdminConsole({
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Session Configuration</Text>
           <TouchableOpacity 
-            style={styles.editButton}
+            style={styles.editButtonLarge}
             onPress={() => {
               console.log('Edit button pressed, current editingConfig:', editingConfig);
               setEditingConfig(!editingConfig);
             }}
           >
-            <Ionicons 
-              name={editingConfig ? "checkmark" : "pencil"} 
-              size={20} 
-              color="#4CAF50"
-            />
+            <Text style={styles.editButtonText}>
+              {editingConfig ? 'Done' : 'Edit'}
+            </Text>
           </TouchableOpacity>
         </View>
         
