@@ -713,31 +713,35 @@ function AdminConsole({
       if (response.ok) {
         playHorn('start');
         
-        // Refresh data first
+        // Refresh data to get the updated session state
         await fetchSession();
         await fetchPlayers();
         await fetchCategories();
         await fetchMatches();
         
-        // Now start the timer manually
-        startTimer();
+        // Start the timer countdown immediately after session starts
+        setTimeout(() => {
+          startTimerCountdown();
+        }, 500); // Small delay to ensure state is updated
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to start session');
     }
   };
 
-  // Manual timer control function
-  const startTimer = () => {
+  // Timer countdown function that updates the top right timer
+  const startTimerCountdown = () => {
     // Clear any existing timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
     
-    // Start new timer
-    timerRef.current = setInterval(() => {
+    // Start countdown timer
+    timerRef.current = setInterval(async () => {
       setSession(prev => {
-        if (!prev || prev.timeRemaining <= 0) return prev;
+        if (!prev || prev.timeRemaining <= 0 || prev.phase === 'idle') {
+          return prev;
+        }
         
         const newTimeRemaining = prev.timeRemaining - 1;
         
