@@ -616,7 +616,7 @@ function AdminConsole({
           </TouchableOpacity>
         </View>
         
-        {editingConfig && session.phase === 'idle' ? (
+        {editingConfig ? (
           <View style={styles.configForm}>
             <View style={styles.configRow}>
               <Text style={styles.configLabel}>Courts:</Text>
