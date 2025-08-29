@@ -104,6 +104,7 @@ class SessionConfig(BaseModel):
     playSeconds: int = 720  # 12 minutes
     bufferSeconds: int = 30  # 30 seconds
     format: Format = Format.auto
+    allowCrossCategory: bool = False
 
 class SessionState(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
