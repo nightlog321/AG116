@@ -244,9 +244,10 @@ export default function PickleballManager() {
     initializeApp();
   }, []);
 
-  // Enhanced Timer effect with one-minute warning
+  // Enhanced Timer effect with one-minute warning - only when timer is actively running
   useEffect(() => {
-    if (session && session.phase !== 'idle' && session.phase !== 'ended' && !session.paused && session.timeRemaining > 0) {
+    // Don't auto-start timer - only run when session is actively in play and not paused
+    if (session && session.phase === 'play' && !session.paused && session.timeRemaining > 0) {
       timerRef.current = setInterval(() => {
         setSession(prev => {
           if (!prev || prev.timeRemaining <= 0) return prev;
@@ -281,7 +282,7 @@ export default function PickleballManager() {
         timerRef.current = null;
       }
     };
-  }, [session?.phase, session?.paused, session?.timeRemaining]);
+  }, [session?.phase, session?.paused]);
 
   // Reset warning flag when new round starts
   useEffect(() => {
