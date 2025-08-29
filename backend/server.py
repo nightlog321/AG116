@@ -217,8 +217,9 @@ async def schedule_round(round_index: int) -> List[Match]:
     used_player_ids = set()
     
     # Plan matches per category
-    for category in categories:
-        cat_name = category.name
+    categories_to_process = ["Mixed"] if config.allowCrossCategory else [cat.name for cat in categories]
+    
+    for cat_name in categories_to_process:
         eligible_players = players_by_category[cat_name]
         
         if len(eligible_players) < 2:
