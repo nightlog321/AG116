@@ -244,51 +244,24 @@ export default function PickleballManager() {
     initializeApp();
   }, []);
 
-  // Enhanced Timer effect with automatic transitions and one-minute warning
+  // Timer effect - ONLY runs when explicitly started by user
   useEffect(() => {
-    // Only run timer when session is actively in play or buffer, not paused, and has time remaining
-    // CRITICAL: Do not auto-start on app load - only when user clicks "Let's Play"
-    if (session && 
-        (session.phase === 'play' || session.phase === 'buffer') && 
-        !session.paused && 
-        session.timeRemaining > 0 &&
-        session.currentRound > 0) { // Additional check: only if round > 0 (session was started)
-      
-      timerRef.current = setInterval(() => {
-        setSession(prev => {
-          if (!prev || prev.timeRemaining <= 0) return prev;
-          
-          const newTimeRemaining = prev.timeRemaining - 1;
-          
-          // One-minute warning siren (only during play phase)
-          if (prev.phase === 'play' && newTimeRemaining === 60 && !oneMinuteWarningPlayed) {
-            playHorn('warning');
-            oneMinuteWarningPlayed = true;
-            Alert.alert('⚠️ One Minute Warning', 'One minute remaining in this round!', [{ text: 'OK' }]);
-          }
-          
-          if (newTimeRemaining <= 0) {
-            // Reset warning flag when round ends
-            oneMinuteWarningPlayed = false;
-            // Time's up - trigger automatic phase transition
-            handleTimeUp(prev);
-          }
-          
-          return { ...prev, timeRemaining: newTimeRemaining };
-        });
-      }, 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
+    // DO NOT auto-start timer on app load
+    // Timer should only run when:
+    // 1. Session is actively in play or buffer phase
+    // 2. Not paused
+    // 3. Has time remaining
+    // 4. User has explicitly started the session (not on app load)
+    
+    // We'll control timer start/stop through the startSession function instead
+    // This useEffect is now just for cleanup
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
     };
-  }, [session?.phase, session?.paused, session?.currentRound]);
+  }, []);
 
   // Reset warning flag when new round starts
   useEffect(() => {
