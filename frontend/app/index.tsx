@@ -893,34 +893,16 @@ function AdminConsole({
           </View>
         )}
 
-        {/* Single Session Control Button - Replace Reset location */}
+        {/* Single Session Control Button - Always "Let's Play" */}
         <View style={styles.sessionControlButtons}>
-          {session.phase === 'idle' ? (
-            <TouchableOpacity 
-              style={[styles.primaryButton, players.length < 4 && styles.buttonDisabled]}
-              onPress={startSession}
-              disabled={players.length < 4}
-            >
-              <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
-              <Text style={styles.buttonText}>Let's Play</Text>
-            </TouchableOpacity>
-          ) : session.paused ? (
-            <TouchableOpacity 
-              style={styles.primaryButton}
-              onPress={pauseResume}
-            >
-              <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
-              <Text style={styles.buttonText}>Resume</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity 
-              style={styles.warningButton}
-              onPress={pauseResume}
-            >
-              <Ionicons name="pause" size={20} color={colors.text} style={styles.buttonIcon} />
-              <Text style={styles.buttonText}>Pause</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity 
+            style={[styles.primaryButton, players.length < 4 && styles.buttonDisabled]}
+            onPress={startSession}
+            disabled={players.length < 4}
+          >
+            <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
+            <Text style={styles.buttonText}>Let's Play</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
