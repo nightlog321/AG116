@@ -1596,18 +1596,6 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     minWidth: 140,
   },
-  resetButton: {
-    backgroundColor: 'transparent',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginTop: 16,
-  },
   buttonDisabled: {
     backgroundColor: colors.surfaceLight,
     opacity: 0.6,
