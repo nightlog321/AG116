@@ -1572,6 +1572,9 @@ const styles = StyleSheet.create({
     gap: 16,
     marginTop: 8,
   },
+  buttonColumn: {
+    gap: 12,
+  },
   primaryButton: {
     flex: 1,
     backgroundColor: colors.primary,
