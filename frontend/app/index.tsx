@@ -561,10 +561,11 @@ export default function PickleballManager() {
               Round {session.currentRound}/{computeRoundsPlanned()} | {session.phase.toUpperCase()}
               {session.paused && ' (PAUSED)'}
             </Text>
-            {session.timeRemaining > 0 && session.phase !== 'idle' && (
+            {session.timeRemaining > 0 && (
               <Text style={[
                 styles.timerText,
-                session.timeRemaining <= 60 && session.phase === 'play' ? styles.timerWarning : null
+                session.timeRemaining <= 60 && session.phase === 'play' ? styles.timerWarning : null,
+                session.phase === 'idle' ? styles.timerIdle : null
               ]}>
                 {formatTime(session.timeRemaining)}
               </Text>
