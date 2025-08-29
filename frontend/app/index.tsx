@@ -294,16 +294,35 @@ export default function PickleballManager() {
   const handleTimeUp = async (currentSession: SessionState) => {
     try {
       if (currentSession.phase === 'play') {
-        // Play phase ended, transition to buffer
-        await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/horn`, { method: 'POST' });
+        // Play phase ended, transition to buffer automatically
         playHorn('end');
-      } else if (currentSession.phase === 'buffer') {
-        // Buffer phase ended, start next round or end session
+        
+        // Update session to buffer phase
         await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/horn`, { method: 'POST' });
+        
+        // Fetch updated session and matches
+        await fetchSession();
+        await fetchMatches();
+        
+      } else if (currentSession.phase === 'buffer') {
+        // Buffer phase ended, start next round automatically
         playHorn('start');
+        
+        // Check if we should end the session or continue to next round
+        const totalRounds = computeRoundsPlanned();
+        
+        if (currentSession.currentRound >= totalRounds) {
+          // Session should end
+          Alert.alert('🏆 Session Complete!', 'All planned rounds have been completed.', [{ text: 'OK' }]);
+        } else {
+          // Continue to next round
+          await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/horn`, { method: 'POST' });
+        }
+        
+        // Fetch updated session and matches
+        await fetchSession();
+        await fetchMatches();
       }
-      await fetchSession();
-      await fetchMatches();
     } catch (error) {
       console.error('Error handling time up:', error);
     }
