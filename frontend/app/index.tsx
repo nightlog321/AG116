@@ -891,7 +891,8 @@ function AdminConsole({
           </View>
         )}
 
-        <View style={styles.buttonRow}>
+        {/* Session Control Buttons - Outside of Edit Mode */}
+        <View style={styles.sessionControlButtons}>
           {session.phase === 'idle' ? (
             <TouchableOpacity 
               style={[styles.primaryButton, players.length < 4 && styles.buttonDisabled]}
@@ -902,7 +903,7 @@ function AdminConsole({
               <Text style={styles.buttonText}>Let's Play!</Text>
             </TouchableOpacity>
           ) : (
-            <>
+            <View style={styles.buttonRow}>
               {session.phase === 'play' || session.phase === 'buffer' ? (
                 <TouchableOpacity 
                   style={styles.warningButton}
@@ -927,8 +928,16 @@ function AdminConsole({
                 <Ionicons name="megaphone" size={20} color={colors.text} style={styles.buttonIcon} />
                 <Text style={styles.buttonText}>Horn Now</Text>
               </TouchableOpacity>
-            </>
+            </View>
           )}
+          
+          <TouchableOpacity 
+            style={styles.resetButton}
+            onPress={resetSession}
+          >
+            <Ionicons name="refresh" size={20} color={colors.textSecondary} style={styles.buttonIcon} />
+            <Text style={styles.resetButtonText}>Reset Session</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
