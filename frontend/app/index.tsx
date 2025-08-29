@@ -1556,6 +1556,10 @@ const styles = StyleSheet.create({
     gap: 12,
     flexWrap: 'wrap',
   },
+  sessionControlButtons: {
+    gap: 16,
+    marginTop: 8,
+  },
   primaryButton: {
     flex: 1,
     backgroundColor: colors.primary,
