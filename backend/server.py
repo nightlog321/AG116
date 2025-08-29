@@ -746,6 +746,23 @@ async def start_next_round():
         logger.error(f"Error starting next round: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to start next round: {str(e)}")
 
+@api_router.post("/session/play")
+async def start_play():
+    """Start the play phase with timer"""
+    session = await db.session.find_one()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    session_obj = SessionState(**session)
+    
+    await db.session.update_one({}, {"$set": {
+        "phase": SessionPhase.play.value,
+        "timeRemaining": session_obj.config.playSeconds,
+        "paused": False
+    }})
+    
+    return {"message": "Play started", "phase": "play", "timeRemaining": session_obj.config.playSeconds}
+
 @api_router.post("/session/pause")
 async def pause_session():
     await db.session.update_one({}, {"$set": {"paused": True}})
@@ -755,6 +772,55 @@ async def pause_session():
 async def resume_session():
     await db.session.update_one({}, {"$set": {"paused": False}})
     return {"message": "Session resumed"}
+
+@api_router.post("/session/horn")
+async def horn_now():
+    """Manual horn activation and phase transition"""
+    session = await db.session.find_one()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    session_obj = SessionState(**session)
+    
+    if session_obj.phase == SessionPhase.play:
+        # Transition to buffer
+        await db.session.update_one({}, {"$set": {
+            "phase": SessionPhase.buffer.value,
+            "timeRemaining": session_obj.config.bufferSeconds
+        }})
+        return {"message": "Horn activated - Buffer phase", "phase": "buffer", "horn": "end"}
+    
+    elif session_obj.phase == SessionPhase.buffer:
+        # Transition to next round or end session
+        total_rounds = math.floor(7200 / max(1, session_obj.config.playSeconds + session_obj.config.bufferSeconds))
+        
+        if session_obj.currentRound >= total_rounds:
+            # End session
+            await db.session.update_one({}, {"$set": {
+                "phase": SessionPhase.ended.value,
+                "timeRemaining": 0
+            }})
+            return {"message": "Session ended", "phase": "ended", "horn": "end"}
+        else:
+            # Start next round
+            try:
+                matches = await schedule_round(session_obj.currentRound + 1)
+                await db.session.update_one({}, {"$set": {
+                    "currentRound": session_obj.currentRound + 1,
+                    "phase": SessionPhase.play.value,
+                    "timeRemaining": session_obj.config.playSeconds
+                }})
+                return {
+                    "message": f"Round {session_obj.currentRound + 1} started", 
+                    "phase": "play", 
+                    "horn": "start",
+                    "round": session_obj.currentRound + 1,
+                    "matches_created": len(matches)
+                }
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Failed to start next round: {str(e)}")
+    
+    return {"message": "Horn activated", "horn": "manual"}
 
 @api_router.post("/session/reset")
 async def reset_session():
