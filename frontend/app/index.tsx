@@ -484,59 +484,6 @@ export default function PickleballManager() {
     }
   };
 
-  // Reset Session Function
-  const resetSession = async () => {
-    Alert.alert(
-      'Reset Session',
-      'This will clear all matches and reset player stats. Continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('Starting reset process...');
-              
-              // Clear any running timers first
-              if (timerRef.current) {
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-              }
-              
-              // Reset warning flag
-              oneMinuteWarningPlayed = false;
-              
-              // Call backend reset
-              const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/reset`, {
-                method: 'POST'
-              });
-              
-              console.log('Reset response:', response.status);
-              
-              if (response.ok) {
-                // Force refresh all data after reset
-                console.log('Refreshing all data...');
-                await fetchSession();
-                await fetchPlayers();
-                await fetchCategories();
-                await fetchMatches();
-                
-                console.log('Reset completed successfully');
-                Alert.alert('Success', 'Session reset successfully!');
-              } else {
-                throw new Error('Reset failed');
-              }
-            } catch (error) {
-              console.error('Reset error:', error);
-              Alert.alert('Error', 'Failed to reset session');
-            }
-          }
-        }
-      ]
-    );
-  };
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
