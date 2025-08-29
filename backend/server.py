@@ -273,8 +273,11 @@ async def schedule_round(round_index: int) -> List[Match]:
     available_courts = min(config.numCourts, total_courts_needed)
     
     # Fair court allocation across categories (rotate by round)
-    sorted_categories = sorted([cat.name for cat in categories])
-    rotated_categories = sorted_categories[round_index % len(sorted_categories):] + sorted_categories[:round_index % len(sorted_categories)] if sorted_categories else []
+    if config.allowCrossCategory:
+        rotated_categories = ["Mixed"]
+    else:
+        sorted_categories = sorted([cat.name for cat in categories])
+        rotated_categories = sorted_categories[round_index % len(sorted_categories):] + sorted_categories[:round_index % len(sorted_categories)] if sorted_categories else []
     
     allocated_courts = {}
     courts_used = 0
