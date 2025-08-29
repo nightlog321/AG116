@@ -244,10 +244,10 @@ export default function PickleballManager() {
     initializeApp();
   }, []);
 
-  // Enhanced Timer effect with one-minute warning - only when timer is actively running
+  // Enhanced Timer effect with automatic transitions and one-minute warning
   useEffect(() => {
-    // Don't auto-start timer - only run when session is actively in play and not paused
-    if (session && session.phase === 'play' && !session.paused && session.timeRemaining > 0) {
+    // Only run timer when session is actively in play or buffer and not paused
+    if (session && (session.phase === 'play' || session.phase === 'buffer') && !session.paused && session.timeRemaining > 0) {
       timerRef.current = setInterval(() => {
         setSession(prev => {
           if (!prev || prev.timeRemaining <= 0) return prev;
