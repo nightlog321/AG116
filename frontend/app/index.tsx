@@ -786,11 +786,35 @@ function AdminConsole({
           style: 'destructive',
           onPress: async () => {
             try {
-              await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/reset`, {
+              // Clear any running timers first
+              if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+              }
+              
+              // Reset warning flag
+              oneMinuteWarningPlayed = false;
+              
+              // Call backend reset
+              const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/reset`, {
                 method: 'POST'
               });
-              onRefresh();
+              
+              if (response.ok) {
+                // Force refresh all data after reset
+                await Promise.all([
+                  fetchSession(),
+                  fetchPlayers(),
+                  fetchCategories(),
+                  fetchMatches()
+                ]);
+                
+                Alert.alert('Success', 'Session reset successfully!');
+              } else {
+                throw new Error('Reset failed');
+              }
             } catch (error) {
+              console.error('Reset error:', error);
               Alert.alert('Error', 'Failed to reset session');
             }
           }
