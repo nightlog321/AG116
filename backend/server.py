@@ -546,7 +546,11 @@ async def create_doubles_matches(
     # Pair teams into matches
     used_team_indices = set()
     
+    print(f"DEBUG: Starting team pairing loop with {len(teams)} teams")
     for i, team_a in enumerate(teams):
+        print(f"DEBUG: Loop iteration {i}, team_a={team_a}")
+        print(f"DEBUG: used_team_indices={used_team_indices}, matches={len(matches)}, num_matches={num_matches}")
+        
         if i in used_team_indices or len(matches) >= num_matches:
             print(f"DEBUG: Skipping team {i}: used={i in used_team_indices}, matches={len(matches)}, num_matches={num_matches}")
             break
@@ -558,17 +562,21 @@ async def create_doubles_matches(
         best_opponent_index = -1
         
         # Find best opponent team (lowest opponent history score)
+        print(f"DEBUG: Looking for opponent for team {i} in teams {i+1} to {len(teams)-1}")
         for j, team_b in enumerate(teams[i+1:], i+1):
+            print(f"DEBUG: Checking team {j} as potential opponent: {team_b}")
             if j in used_team_indices:
                 print(f"DEBUG: Skipping team {j} as opponent (already used)")
                 continue
             
             opponent_score = calculate_opponent_score(team_a, team_b, histories)
+            print(f"DEBUG: Opponent score for team {i} vs team {j}: {opponent_score}")
             
             if opponent_score < best_opponent_score:
                 best_opponent_team = team_b
                 best_opponent_score = opponent_score
                 best_opponent_index = j
+                print(f"DEBUG: New best opponent: team {j} with score {opponent_score}")
         
         if best_opponent_team:
             print(f"DEBUG: Creating match {len(matches)+1}: team {i} vs team {best_opponent_index}")
@@ -584,6 +592,7 @@ async def create_doubles_matches(
             matches.append(match)
             used_team_indices.add(i)
             used_team_indices.add(best_opponent_index)
+            print(f"DEBUG: Match created. used_team_indices now: {used_team_indices}")
         else:
             print(f"DEBUG: No opponent found for team {i}")
     
