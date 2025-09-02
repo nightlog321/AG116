@@ -268,13 +268,16 @@ backend:
     implemented: true
     working: false
     file: "backend/server.py"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "COURT ALLOCATION OPTIMIZATION TESTING COMPLETED - CRITICAL BUG FOUND! ❌ Configuration API: maximizeCourtUsage field properly implemented and accessible via PUT/GET /api/session/config ✅ Algorithm Implementation: Optimization logic exists in lines 278-311 of server.py ✅ Integration: Session management works with new configuration ✅ ❌ CRITICAL ISSUE: Optimization algorithm is not working. Even with 8 players in one category and 6 courts available, algorithm only creates 1 doubles match instead of 2. Expected: 2 matches (8 players), Actual: 1 match (4 players, 4 sitting). Root cause appears to be in the court allocation logic that limits matches per category per round for fairness, and the optimization logic is not properly overriding this limitation. The maximizeCourtUsage feature needs algorithm fix to actually create additional matches when enabled."
+        - working: false
+          agent: "testing"
+          comment: "🏓 COMPREHENSIVE COURT ALLOCATION OPTIMIZATION TESTING COMPLETED - ALGORITHM STILL NOT WORKING! Conducted extensive testing of the improved optimization algorithm with 57 total tests (84.2% success rate). ❌ CRITICAL FAILURES: (1) High-Impact Test: 8 players, 1 category, 6 courts - FAILED. Still creates only 1 doubles match (4 players, 4 sitting) instead of expected 2 matches (8 players). (2) Multi-Category Test: 12 players, 6 courts - FAILED. Still uses only 3/6 courts (50% utilization) with no improvement. (3) Mixed Utilization Test: 10 players, 5 courts - FAILED. Still at 60% utilization (3/5 courts) with no improvement. ✅ WORKING ASPECTS: Configuration API properly implemented, algorithm structure exists, session integration works, cross-category optimization functional. 🔍 ROOT CAUSE: The optimization logic is implemented but NOT overriding the fairness constraints that limit 1 match per category per round. The maximizeCourtUsage=true setting is not actually creating additional matches when sufficient players and courts are available. The algorithm needs fundamental fixes to break the 1-match-per-category limitation when optimization is enabled."
 
 frontend:
   - task: "Navigation & UI Structure"
