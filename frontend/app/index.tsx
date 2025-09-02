@@ -773,7 +773,8 @@ function AdminConsole({
           bufferSeconds,
           allowSingles: configForm.allowSingles,
           allowDoubles: configForm.allowDoubles,
-          allowCrossCategory: configForm.allowCrossCategory
+          allowCrossCategory: configForm.allowCrossCategory,
+          maximizeCourtUsage: configForm.maximizeCourtUsage
         })
       });
 
