@@ -249,6 +249,18 @@ backend:
           agent: "testing"
           comment: "TIMER FIX FULLY FUNCTIONAL! ✅ Session Initialization: GET /api/session returns session with idle phase and proper timer state (timeRemaining matches playSeconds config). ✅ Session Start: POST /api/session/start successfully changes session phase from idle to play and starts Round 1. ✅ Session State After Start: GET /api/session shows phase='play', currentRound=1, timeRemaining=720 seconds matching playSeconds config. ✅ Timer Countdown Ready: Timer properly initialized for countdown - frontend can access correct timer state. ✅ Configuration Support: Timer correctly uses custom playSeconds values. The backend APIs now provide correct session state transitions for the frontend timer to work properly. All 17 timer-specific tests passed with 100% success rate. Timer fix resolves the issue where frontend timer countdown function couldn't access necessary state management functions."
 
+  - task: "New Editable Format System"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "NEW EDITABLE FORMAT SYSTEM FULLY FUNCTIONAL! ✅ Backend Model Updated: SessionConfig successfully changed from single 'format' field to independent allowSingles and allowDoubles boolean fields. ✅ Configuration API: All format combinations tested - both formats enabled, singles only, doubles only, both disabled correctly rejected with validation error. ✅ Scheduling Algorithm: Priority logic working perfectly - doubles prioritized first, then singles from remaining players. Comprehensive scenarios tested: 8 players (creates 3 doubles matches), 6 players (optimal doubles/singles mix), 5 players (doubles with 1 sitting), 4 players singles-only (2 singles matches), 4 players doubles-only (1 doubles match). ✅ Session State: New allowSingles and allowDoubles fields properly returned in GET /api/session. ✅ Validation: Session start validation correctly enforces at least one format must be selected. All 14 comprehensive tests passed with 100% success rate. The new format system with priority logic is production-ready!"
+
 frontend:
   - task: "Navigation & UI Structure"
     implemented: true
