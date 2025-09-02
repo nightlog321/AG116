@@ -103,7 +103,8 @@ class SessionConfig(BaseModel):
     numCourts: int = 4
     playSeconds: int = 720  # 12 minutes
     bufferSeconds: int = 30  # 30 seconds
-    format: Format = Format.auto
+    allowSingles: bool = True
+    allowDoubles: bool = True
     allowCrossCategory: bool = False
 
 class SessionState(BaseModel):
