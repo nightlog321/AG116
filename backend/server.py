@@ -296,14 +296,16 @@ async def schedule_round(round_index: int) -> List[Match]:
         if config.maximizeCourtUsage:
             print(f"DEBUG: Category {cat_name} - {count} players -> {doubles_matches} doubles, {singles_matches} singles")
     
-    # Calculate total courts needed and implement optimization logic
+    # Calculate total courts needed - FIXED for optimization
     total_courts_needed = sum(plan['doubles'] + plan['singles'] for plan in court_plans.values())
     
-    # When optimization is enabled, use all available courts, not just what was initially planned
+    # CRITICAL FIX: When optimization is enabled, don't limit courts to initially planned amount
     if config.maximizeCourtUsage:
-        available_courts = config.numCourts
+        available_courts = config.numCourts  # Use all available courts
+        print(f"DEBUG: Optimization enabled - using all {available_courts} courts, planned {total_courts_needed} matches")
     else:
         available_courts = min(config.numCourts, total_courts_needed)
+        print(f"DEBUG: Standard mode - limiting to {available_courts} courts for {total_courts_needed} matches")
     
     # Court Allocation Optimization: Maximize court usage if enabled
     if config.maximizeCourtUsage and total_courts_needed < config.numCourts:
