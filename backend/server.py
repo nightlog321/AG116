@@ -396,6 +396,10 @@ async def schedule_round(round_index: int) -> List[Match]:
         allocated_courts[cat_name]['doubles'] = doubles_to_allocate
         courts_used += doubles_to_allocate
         
+        # Debug logging for court allocation
+        if config.maximizeCourtUsage:
+            print(f"DEBUG: Allocating {doubles_to_allocate}/{plan['doubles']} doubles for {cat_name}, courts_used: {courts_used}/{available_courts}")
+        
         if courts_used >= available_courts:
             break
     
