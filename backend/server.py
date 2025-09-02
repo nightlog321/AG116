@@ -267,7 +267,7 @@ async def schedule_round(round_index: int) -> List[Match]:
             # Odd numbered player sits out naturally
         
         # Apply court optimization OVERRIDE if enabled
-        if config.maximizeCourtUsage and (doubles_matches + singles_matches) < count // 2:
+        if config.maximizeCourtUsage:
             # Override fairness constraints - maximize player participation
             # Recalculate to use all available players more efficiently
             if config.allowDoubles and config.allowSingles:
@@ -276,13 +276,9 @@ async def schedule_round(round_index: int) -> List[Match]:
                 remaining_after_doubles = count % 4
                 max_singles = remaining_after_doubles // 2
                 
-                # Only override if we can get more matches
-                potential_matches = max_doubles + max_singles
-                current_matches = doubles_matches + singles_matches
-                
-                if potential_matches > current_matches:
-                    doubles_matches = max_doubles
-                    singles_matches = max_singles
+                # Always override with maximum possible matches when optimization is enabled
+                doubles_matches = max_doubles
+                singles_matches = max_singles
             elif config.allowDoubles:
                 # Doubles only - maximize doubles matches
                 doubles_matches = count // 4
