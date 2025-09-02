@@ -679,7 +679,8 @@ function AdminConsole({
     bufferSeconds: '30',
     allowSingles: true,
     allowDoubles: true,
-    allowCrossCategory: false
+    allowCrossCategory: false,
+    maximizeCourtUsage: false
   });
 
   const formatTime = (seconds: number) => {
