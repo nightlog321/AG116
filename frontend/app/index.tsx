@@ -421,6 +421,35 @@ export default function PickleballManager() {
     }, 1000);
   };
 
+  // Reset timer function - stops timer and resets to play time
+  const resetTimer = async () => {
+    try {
+      // Stop the current timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      // Reset session via backend API
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/reset`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        // Refresh data to get the reset session state
+        await fetchSession();
+        await fetchPlayers();
+        await fetchCategories();
+        await fetchMatches();
+        
+        Alert.alert('Session Reset', 'Timer stopped and reset to play time');
+      }
+    } catch (error) {
+      console.error('Error resetting timer:', error);
+      Alert.alert('Error', 'Failed to reset session');
+    }
+  };
+
   // Start session function
   const startSession = async () => {
     try {
