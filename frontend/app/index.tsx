@@ -656,7 +656,8 @@ function AdminConsole({
   players, 
   onRefresh,
   onImportCSV,
-  onExportCSV
+  onExportCSV,
+  onStartSession
 }: { 
   session: SessionState | null;
   categories: Category[];
@@ -664,6 +665,7 @@ function AdminConsole({
   onRefresh: () => void;
   onImportCSV: () => void;
   onExportCSV: () => void;
+  onStartSession: () => void;
 }) {
   const [newPlayerName, setNewPlayerName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
