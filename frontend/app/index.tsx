@@ -65,6 +65,7 @@ interface SessionConfig {
   allowSingles: boolean;
   allowDoubles: boolean;
   allowCrossCategory: boolean;
+  maximizeCourtUsage: boolean;
 }
 
 interface SessionState {
