@@ -62,7 +62,8 @@ interface SessionConfig {
   numCourts: number;
   playSeconds: number;
   bufferSeconds: number;
-  format: 'singles' | 'doubles' | 'auto';
+  allowSingles: boolean;
+  allowDoubles: boolean;
   allowCrossCategory: boolean;
 }
 
