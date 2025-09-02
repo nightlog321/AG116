@@ -2417,6 +2417,9 @@ class PickleballAPITester:
         # CRITICAL: Test the optimization fix
         self.test_court_allocation_optimization_fix()
         
+        # NEW: Test Reset/Stop Button Functionality
+        self.test_reset_button_functionality()
+        
         # Print summary
         print("=" * 60)
         print("🏓 TEST SUMMARY")
