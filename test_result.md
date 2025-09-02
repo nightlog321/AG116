@@ -252,7 +252,7 @@ backend:
   - task: "New Editable Format System"
     implemented: true
     working: true
-    file: "backend/server.py"
+    file: "frontend/app/index.tsx"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -260,6 +260,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "NEW EDITABLE FORMAT SYSTEM FULLY FUNCTIONAL! ✅ Backend Model Updated: SessionConfig successfully changed from single 'format' field to independent allowSingles and allowDoubles boolean fields. ✅ Configuration API: All format combinations tested - both formats enabled, singles only, doubles only, both disabled correctly rejected with validation error. ✅ Scheduling Algorithm: Priority logic working perfectly - doubles prioritized first, then singles from remaining players. Comprehensive scenarios tested: 8 players (creates 3 doubles matches), 6 players (optimal doubles/singles mix), 5 players (doubles with 1 sitting), 4 players singles-only (2 singles matches), 4 players doubles-only (1 doubles match). ✅ Session State: New allowSingles and allowDoubles fields properly returned in GET /api/session. ✅ Validation: Session start validation correctly enforces at least one format must be selected. All 14 comprehensive tests passed with 100% success rate. The new format system with priority logic is production-ready!"
+        - working: true
+          agent: "testing"
+          comment: "🏓 FRONTEND UI TESTING COMPLETED SUCCESSFULLY! ✅ NEW FORMAT CHECKBOXES: Two independent checkboxes (Singles & Doubles) implemented and fully functional in Admin tab configuration form. Visual feedback working with proper active/inactive states (green for active, gray for inactive). ✅ FORMAT VALIDATION: Tested unchecking both formats - system properly prevents saving invalid configurations. ✅ FORMAT SWITCHING: Successfully tested all combinations - Singles only, Doubles only, and both formats enabled. Configuration saves correctly and persists. ✅ SESSION STATS DISPLAY: Format display updates correctly showing 'Singles', 'Doubles', or combined formats based on configuration. ✅ INTEGRATION TESTING: Let's Play button remains functional with new format system. Edit/Save workflow works perfectly. ✅ MOBILE RESPONSIVENESS: All UI elements properly sized and functional on mobile viewport (390x844). The new editable format system UI is production-ready and working flawlessly!"
 
 frontend:
   - task: "Navigation & UI Structure"
@@ -359,8 +362,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "New Editable Format System"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -382,3 +384,5 @@ agent_communication:
       message: "TIMER FIX IMPLEMENTATION COMPLETED! Successfully fixed the Let's Play button timer issue by moving the startSession function and timer logic from AdminConsole component to the main PickleballManager component. The problem was a scoping issue where timer functions couldn't access state management functions. Changes made: (1) Moved startSession function to main component scope (2) Added startTimerCountdown function at main component level (3) Updated AdminConsole to receive onStartSession as prop (4) Removed duplicate function definitions. Backend testing confirms all APIs work correctly for timer functionality. The timer should now properly start counting down when Let's Play is clicked."
     - agent: "testing"
       message: "🏓 NEW FORMAT SYSTEM TESTING COMPLETED SUCCESSFULLY! All 14 comprehensive tests passed with 100% success rate. EDITABLE FORMAT SYSTEM FULLY FUNCTIONAL: ✅ CONFIGURATION API: All format combinations tested - both formats enabled ✅, singles only ✅, doubles only ✅, both disabled correctly rejected with validation error ✅. ✅ SCHEDULING ALGORITHM: Priority logic working perfectly - doubles prioritized first, then singles from remaining players. Tested scenarios: 8 players (creates 3 doubles matches using all players), 6 players (creates mixed doubles/singles optimally), 5 players (creates doubles with 1 sitting), 4 players singles-only (creates 2 singles matches), 4 players doubles-only (creates 1 doubles match). ✅ SESSION STATE: New allowSingles and allowDoubles fields properly returned in session config. ✅ VALIDATION: Session start validation correctly enforces at least one format must be selected. ✅ BACKEND MODEL: SessionConfig successfully updated from single 'format' field to independent allowSingles/allowDoubles boolean fields. The new editable format system with priority logic (doubles first, singles from remaining) is production-ready and working flawlessly!"
+    - agent: "testing"
+      message: "🎯 COMPREHENSIVE FRONTEND UI TESTING COMPLETED! The new editable format system UI has been thoroughly tested and is working perfectly. KEY FINDINGS: ✅ FORMAT CHECKBOXES: Two independent checkboxes for Singles and Doubles are implemented in the Admin tab configuration form with proper visual feedback (active=green, inactive=gray). ✅ FORMAT VALIDATION: System correctly prevents saving when both formats are unchecked. ✅ FORMAT SWITCHING: All combinations work - Singles only, Doubles only, both enabled. Configuration saves and persists correctly. ✅ SESSION STATS DISPLAY: Format display updates properly showing current configuration (Singles, Doubles, or combined). ✅ INTEGRATION: Let's Play button remains functional, Edit/Save workflow works perfectly. ✅ MOBILE RESPONSIVE: All elements properly sized and functional on mobile (390x844). The complete format system redesign from single dropdown to independent checkboxes is production-ready!"
