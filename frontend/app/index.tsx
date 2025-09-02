@@ -1652,6 +1652,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   sessionControlButtons: {
+    flexDirection: 'row',
     gap: 16,
     marginTop: 8,
   },
