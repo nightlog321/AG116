@@ -660,6 +660,13 @@ async def get_session():
 
 @api_router.put("/session/config", response_model=SessionState)
 async def update_session_config(config: SessionConfig):
+    # Validate that at least one format is selected
+    if not config.allowSingles and not config.allowDoubles:
+        raise HTTPException(
+            status_code=400, 
+            detail="At least one format (Singles or Doubles) must be selected"
+        )
+    
     session = await db.session.find_one()
     if not session:
         session_obj = SessionState(config=config)
