@@ -919,6 +919,18 @@ function AdminConsole({
               </TouchableOpacity>
             </View>
             
+            <View style={styles.configRow}>
+              <Text style={styles.configLabel}>Maximize Courts:</Text>
+              <TouchableOpacity
+                style={[styles.toggleButton, configForm.maximizeCourtUsage && styles.toggleButtonActive]}
+                onPress={() => setConfigForm({...configForm, maximizeCourtUsage: !configForm.maximizeCourtUsage})}
+              >
+                <Text style={[styles.toggleButtonText, configForm.maximizeCourtUsage && styles.toggleButtonTextActive]}>
+                  {configForm.maximizeCourtUsage ? 'Enabled' : 'Disabled'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            
             <TouchableOpacity 
               style={styles.saveButton}
               onPress={saveConfiguration}
