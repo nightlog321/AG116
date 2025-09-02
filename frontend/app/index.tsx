@@ -921,7 +921,7 @@ function AdminConsole({
         <View style={styles.sessionControlButtons}>
           <TouchableOpacity 
             style={[styles.primaryButton, players.length < 4 && styles.buttonDisabled]}
-            onPress={startSession}
+            onPress={onStartSession}
             disabled={players.length < 4}
           >
             <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
