@@ -271,9 +271,44 @@ async def schedule_round(round_index: int) -> List[Match]:
             'eligible_players': eligible_players
         }
     
-    # Calculate total courts needed
+    # Calculate total courts needed and implement optimization logic
     total_courts_needed = sum(plan['doubles'] + plan['singles'] for plan in court_plans.values())
     available_courts = min(config.numCourts, total_courts_needed)
+    
+    # Court Allocation Optimization: Maximize court usage if enabled
+    if config.maximizeCourtUsage and total_courts_needed < config.numCourts:
+        # Try to create additional matches to utilize more courts
+        # This allows multiple matches per category to maximize court usage
+        additional_courts_available = config.numCourts - total_courts_needed
+        
+        # Redistribute players to create more matches
+        for cat_name, plan in court_plans.items():
+            if additional_courts_available <= 0:
+                break
+                
+            eligible = plan['eligible_players']
+            current_matches = plan['doubles'] + plan['singles']
+            
+            # If we have enough players for more matches, create them
+            if len(eligible) >= 4 and additional_courts_available > 0:
+                if config.allowDoubles:
+                    # Can we make another doubles match?
+                    additional_doubles = min((len(eligible) - current_matches * 4) // 4, additional_courts_available)
+                    if additional_doubles > 0:
+                        plan['doubles'] += additional_doubles
+                        additional_courts_available -= additional_doubles
+                        
+            elif len(eligible) >= 2 and additional_courts_available > 0:
+                if config.allowSingles:
+                    # Can we make another singles match?
+                    additional_singles = min((len(eligible) - current_matches * 2) // 2, additional_courts_available)
+                    if additional_singles > 0:
+                        plan['singles'] += additional_singles
+                        additional_courts_available -= additional_singles
+        
+        # Recalculate total courts needed after optimization
+        total_courts_needed = sum(plan['doubles'] + plan['singles'] for plan in court_plans.values())
+        available_courts = min(config.numCourts, total_courts_needed)
     
     # Fair court allocation across categories (rotate by round)
     if config.allowCrossCategory:
