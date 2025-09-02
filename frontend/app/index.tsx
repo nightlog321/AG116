@@ -971,6 +971,10 @@ function AdminConsole({
               <Text style={styles.statLabel}>Cross-Category</Text>
               <Text style={styles.statValue}>{session.config.allowCrossCategory ? 'Yes' : 'No'}</Text>
             </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Maximize Courts</Text>
+              <Text style={styles.statValue}>{session.config.maximizeCourtUsage ? 'Yes' : 'No'}</Text>
+            </View>
           </View>
         )}
 
