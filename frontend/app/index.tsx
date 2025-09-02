@@ -736,6 +736,12 @@ function AdminConsole({
     if (!session) return;
 
     try {
+      // Validate that at least one format is selected
+      if (!configForm.allowSingles && !configForm.allowDoubles) {
+        Alert.alert('Error', 'At least one format (Singles or Doubles) must be selected');
+        return;
+      }
+
       const playSeconds = parseInt(configForm.playMinutes) * 60 + parseInt(configForm.playSeconds);
       const bufferSeconds = parseInt(configForm.bufferSeconds);
       const numCourts = parseInt(configForm.numCourts);
@@ -762,7 +768,8 @@ function AdminConsole({
           numCourts,
           playSeconds,
           bufferSeconds,
-          format: session.config.format,
+          allowSingles: configForm.allowSingles,
+          allowDoubles: configForm.allowDoubles,
           allowCrossCategory: configForm.allowCrossCategory
         })
       });
