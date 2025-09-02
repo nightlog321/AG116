@@ -676,6 +676,8 @@ function AdminConsole({
     playMinutes: '12',
     playSeconds: '00',
     bufferSeconds: '30',
+    allowSingles: true,
+    allowDoubles: true,
     allowCrossCategory: false
   });
 
