@@ -383,6 +383,72 @@ export default function PickleballManager() {
     return Math.floor(7200 / Math.max(1, totalSeconds)); // 2 hours = 7200 seconds
   };
 
+  // Timer countdown function that updates the top right timer
+  const startTimerCountdown = () => {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    // Start countdown timer
+    timerRef.current = setInterval(async () => {
+      setSession(prev => {
+        if (!prev || prev.timeRemaining <= 0 || prev.phase === 'idle') {
+          return prev;
+        }
+        
+        const newTimeRemaining = prev.timeRemaining - 1;
+        
+        // One-minute warning siren (only during play phase)
+        if (prev.phase === 'play' && newTimeRemaining === 60 && !oneMinuteWarningPlayed) {
+          playHorn('warning');
+          oneMinuteWarningPlayed = true;
+          Alert.alert('⚠️ One Minute Warning', 'One minute remaining in this round!', [{ text: 'OK' }]);
+        }
+        
+        if (newTimeRemaining <= 0) {
+          // Reset warning flag when round ends
+          oneMinuteWarningPlayed = false;
+          // Time's up - trigger automatic phase transition
+          handleTimeUp(prev);
+        }
+        
+        return { ...prev, timeRemaining: newTimeRemaining };
+      });
+    }, 1000);
+  };
+
+  // Start session function
+  const startSession = async () => {
+    try {
+      // Initialize audio on user interaction
+      initializeAudio();
+      
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/start`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        playHorn('start');
+        
+        // Refresh data to get the updated session state
+        await fetchSession();
+        await fetchPlayers();
+        await fetchCategories();
+        await fetchMatches();
+        
+        // Start the timer countdown immediately after session starts
+        setTimeout(() => {
+          startTimerCountdown();
+        }, 500); // Small delay to ensure state is updated
+      }
+    } catch (error) {
+      console.error('Error starting session:', error);
+      Alert.alert('Error', 'Failed to start session');
+    }
+  };
+
   // CSV Import Function
   const importCSV = async () => {
     try {
