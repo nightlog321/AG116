@@ -460,7 +460,7 @@ class FormatSystemTester:
             start_response = self.session.post(f"{self.base_url}/session/start")
             if start_response.status_code == 200:
                 # Get matches
-                matches_response = self.session.get(f"{self.base_url}/session/config")
+                matches_response = self.session.get(f"{self.base_url}/matches")
                 if matches_response.status_code == 200:
                     matches = matches_response.json()
                     
