@@ -551,9 +551,15 @@ async def create_doubles_matches(
         print(f"DEBUG: Loop iteration {i}, team_a={team_a}")
         print(f"DEBUG: used_team_indices={used_team_indices}, matches={len(matches)}, num_matches={num_matches}")
         
-        if i in used_team_indices or len(matches) >= num_matches:
-            print(f"DEBUG: Skipping team {i}: used={i in used_team_indices}, matches={len(matches)}, num_matches={num_matches}")
+        # Check if we've created enough matches
+        if len(matches) >= num_matches:
+            print(f"DEBUG: Breaking loop: already created {len(matches)} matches (target: {num_matches})")
             break
+            
+        # Skip if this team is already used
+        if i in used_team_indices:
+            print(f"DEBUG: Skipping team {i}: already used")
+            continue  # Continue to next team instead of breaking
         
         print(f"DEBUG: Processing team {i} for match creation")
         
