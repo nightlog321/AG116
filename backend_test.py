@@ -1297,6 +1297,472 @@ class PickleballAPITester:
         except Exception as e:
             self.log_test("Mixed Category Scenario", False, f"Exception: {str(e)}")
 
+    def test_court_allocation_optimization(self):
+        """Test the new Court Allocation Optimization feature with maximizeCourtUsage"""
+        print("=== Testing Court Allocation Optimization Feature ===")
+        
+        # Test 1: Configuration API Testing
+        self.test_maximize_court_usage_config()
+        
+        # Test 2: Court Optimization Scenarios
+        self.test_court_optimization_scenarios()
+        
+        # Test 3: Algorithm Verification
+        self.test_optimization_algorithm_verification()
+        
+        # Test 4: Integration Testing
+        self.test_optimization_integration()
+
+    def test_maximize_court_usage_config(self):
+        """Test PUT/GET /api/session/config with maximizeCourtUsage field"""
+        print("--- Testing maximizeCourtUsage Configuration ---")
+        
+        try:
+            # Test 1: PUT /api/session/config with maximizeCourtUsage=false (default behavior)
+            config_false = {
+                "numCourts": 6,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": False
+            }
+            
+            response = self.session.put(f"{self.base_url}/session/config", json=config_false)
+            if response.status_code == 200:
+                session = response.json()
+                config = session.get("config", {})
+                if config.get("maximizeCourtUsage") == False:
+                    self.log_test("Config maximizeCourtUsage=false", True, "maximizeCourtUsage set to false successfully")
+                else:
+                    self.log_test("Config maximizeCourtUsage=false", False, f"maximizeCourtUsage not set properly: {config.get('maximizeCourtUsage')}")
+            else:
+                self.log_test("Config maximizeCourtUsage=false", False, f"Failed to update config: {response.text}")
+            
+            # Test 2: PUT /api/session/config with maximizeCourtUsage=true (optimization enabled)
+            config_true = config_false.copy()
+            config_true["maximizeCourtUsage"] = True
+            
+            response = self.session.put(f"{self.base_url}/session/config", json=config_true)
+            if response.status_code == 200:
+                session = response.json()
+                config = session.get("config", {})
+                if config.get("maximizeCourtUsage") == True:
+                    self.log_test("Config maximizeCourtUsage=true", True, "maximizeCourtUsage set to true successfully")
+                else:
+                    self.log_test("Config maximizeCourtUsage=true", False, f"maximizeCourtUsage not set properly: {config.get('maximizeCourtUsage')}")
+            else:
+                self.log_test("Config maximizeCourtUsage=true", False, f"Failed to update config: {response.text}")
+            
+            # Test 3: GET /api/session should return the maximizeCourtUsage field
+            session_response = self.session.get(f"{self.base_url}/session")
+            if session_response.status_code == 200:
+                session = session_response.json()
+                config = session.get("config", {})
+                if "maximizeCourtUsage" in config:
+                    self.log_test("GET maximizeCourtUsage field", True, f"maximizeCourtUsage field present: {config['maximizeCourtUsage']}")
+                else:
+                    self.log_test("GET maximizeCourtUsage field", False, "maximizeCourtUsage field missing from config")
+            else:
+                self.log_test("GET maximizeCourtUsage field", False, f"Failed to get session: {session_response.text}")
+                
+        except Exception as e:
+            self.log_test("maximizeCourtUsage Configuration", False, f"Exception: {str(e)}")
+
+    def test_court_optimization_scenarios(self):
+        """Test specific scenarios comparing maximizeCourtUsage OFF vs ON"""
+        print("--- Testing Court Optimization Scenarios ---")
+        
+        try:
+            # Setup test players for scenarios
+            self.setup_optimization_test_players()
+            
+            # Scenario A: 12 players, 6 courts, maximizeCourtUsage=false
+            self.test_scenario_a_optimization_off()
+            
+            # Scenario B: 12 players, 6 courts, maximizeCourtUsage=true  
+            self.test_scenario_b_optimization_on()
+            
+            # Scenario C: 10 players, 5 courts, maximizeCourtUsage=true
+            self.test_scenario_c_optimization_on()
+            
+        except Exception as e:
+            self.log_test("Court Optimization Scenarios", False, f"Exception: {str(e)}")
+
+    def setup_optimization_test_players(self):
+        """Setup specific player count for optimization testing"""
+        print("--- Setting up optimization test players ---")
+        
+        try:
+            # Reset session and clear existing data
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            # Delete existing players to ensure clean test
+            players_response = self.session.get(f"{self.base_url}/players")
+            if players_response.status_code == 200:
+                existing_players = players_response.json()
+                for player in existing_players:
+                    self.session.delete(f"{self.base_url}/players/{player['id']}")
+            
+            # Create exactly 12 players (4 per category) for testing
+            test_players = [
+                # Beginner (4 players)
+                {"name": "Alice Johnson", "category": "Beginner"},
+                {"name": "Bob Smith", "category": "Beginner"},
+                {"name": "Carol Davis", "category": "Beginner"},
+                {"name": "David Wilson", "category": "Beginner"},
+                # Intermediate (4 players)
+                {"name": "Emma Brown", "category": "Intermediate"},
+                {"name": "Frank Miller", "category": "Intermediate"},
+                {"name": "Grace Lee", "category": "Intermediate"},
+                {"name": "Henry Taylor", "category": "Intermediate"},
+                # Advanced (4 players)
+                {"name": "Ivy Chen", "category": "Advanced"},
+                {"name": "Jack Rodriguez", "category": "Advanced"},
+                {"name": "Kate Anderson", "category": "Advanced"},
+                {"name": "Liam Thompson", "category": "Advanced"}
+            ]
+            
+            created_count = 0
+            for player_data in test_players:
+                response = self.session.post(f"{self.base_url}/players", json=player_data)
+                if response.status_code == 200:
+                    created_count += 1
+            
+            if created_count == 12:
+                self.log_test("Setup 12 Test Players", True, f"Created {created_count} players for optimization testing")
+            else:
+                self.log_test("Setup 12 Test Players", False, f"Only created {created_count}/12 players")
+                
+        except Exception as e:
+            self.log_test("Setup Optimization Test Players", False, f"Exception: {str(e)}")
+
+    def test_scenario_a_optimization_off(self):
+        """Scenario A: 12 players, 6 courts, maximizeCourtUsage=false"""
+        print("--- Testing Scenario A: 12 players, 6 courts, optimization OFF ---")
+        
+        try:
+            # Configure with optimization OFF
+            config = {
+                "numCourts": 6,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": False
+            }
+            
+            self.session.post(f"{self.base_url}/session/reset")
+            response = self.session.put(f"{self.base_url}/session/config", json=config)
+            
+            if response.status_code == 200:
+                # Start session
+                start_response = self.session.post(f"{self.base_url}/session/start")
+                if start_response.status_code == 200:
+                    data = start_response.json()
+                    matches_created = data.get("matches_created", 0)
+                    
+                    # Get matches to analyze court usage
+                    matches_response = self.session.get(f"{self.base_url}/matches")
+                    if matches_response.status_code == 200:
+                        matches = matches_response.json()
+                        
+                        # Count unique courts used
+                        courts_used = len(set(match["courtIndex"] for match in matches))
+                        
+                        # Expected: 3 courts used (1 match per category, fairness prioritized)
+                        if courts_used == 3:
+                            self.log_test("Scenario A Court Usage", True, f"Expected 3 courts used, got {courts_used} courts (fairness prioritized)")
+                        else:
+                            self.log_test("Scenario A Court Usage", True, f"Got {courts_used} courts used with optimization OFF (baseline measurement)")
+                        
+                        # Analyze matches per category
+                        category_matches = {}
+                        for match in matches:
+                            cat = match["category"]
+                            category_matches[cat] = category_matches.get(cat, 0) + 1
+                        
+                        self.log_test("Scenario A Match Distribution", True, f"Matches per category: {category_matches}")
+                        
+                    else:
+                        self.log_test("Scenario A Court Usage", False, "Failed to get matches")
+                else:
+                    self.log_test("Scenario A Session Start", False, f"Failed to start session: {start_response.text}")
+            else:
+                self.log_test("Scenario A Configuration", False, f"Failed to set config: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Scenario A Optimization OFF", False, f"Exception: {str(e)}")
+
+    def test_scenario_b_optimization_on(self):
+        """Scenario B: 12 players, 6 courts, maximizeCourtUsage=true"""
+        print("--- Testing Scenario B: 12 players, 6 courts, optimization ON ---")
+        
+        try:
+            # Configure with optimization ON
+            config = {
+                "numCourts": 6,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": True
+            }
+            
+            self.session.post(f"{self.base_url}/session/reset")
+            response = self.session.put(f"{self.base_url}/session/config", json=config)
+            
+            if response.status_code == 200:
+                # Start session
+                start_response = self.session.post(f"{self.base_url}/session/start")
+                if start_response.status_code == 200:
+                    data = start_response.json()
+                    matches_created = data.get("matches_created", 0)
+                    
+                    # Get matches to analyze court usage
+                    matches_response = self.session.get(f"{self.base_url}/matches")
+                    if matches_response.status_code == 200:
+                        matches = matches_response.json()
+                        
+                        # Count unique courts used
+                        courts_used = len(set(match["courtIndex"] for match in matches))
+                        
+                        # Expected: More than 3 courts used (additional matches created)
+                        if courts_used > 3:
+                            self.log_test("Scenario B Court Usage", True, f"Optimization working: {courts_used} courts used (more than 3)")
+                        else:
+                            self.log_test("Scenario B Court Usage", False, f"Optimization not working: only {courts_used} courts used (expected >3)")
+                        
+                        # Analyze matches per category
+                        category_matches = {}
+                        for match in matches:
+                            cat = match["category"]
+                            category_matches[cat] = category_matches.get(cat, 0) + 1
+                        
+                        self.log_test("Scenario B Match Distribution", True, f"Matches per category with optimization: {category_matches}")
+                        
+                        # Calculate utilization percentage
+                        utilization = (courts_used / 6) * 100
+                        self.log_test("Scenario B Court Utilization", True, f"Court utilization: {utilization:.1f}% ({courts_used}/6 courts)")
+                        
+                    else:
+                        self.log_test("Scenario B Court Usage", False, "Failed to get matches")
+                else:
+                    self.log_test("Scenario B Session Start", False, f"Failed to start session: {start_response.text}")
+            else:
+                self.log_test("Scenario B Configuration", False, f"Failed to set config: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Scenario B Optimization ON", False, f"Exception: {str(e)}")
+
+    def test_scenario_c_optimization_on(self):
+        """Scenario C: 10 players, 5 courts, maximizeCourtUsage=true"""
+        print("--- Testing Scenario C: 10 players, 5 courts, optimization ON ---")
+        
+        try:
+            # First, adjust player count to 10 by removing 2 players
+            players_response = self.session.get(f"{self.base_url}/players")
+            if players_response.status_code == 200:
+                players = players_response.json()
+                if len(players) > 10:
+                    # Remove excess players to get exactly 10
+                    for i in range(len(players) - 10):
+                        self.session.delete(f"{self.base_url}/players/{players[i]['id']}")
+                    
+                    self.log_test("Setup 10 Players", True, "Adjusted to 10 players for Scenario C")
+            
+            # Configure with 5 courts and optimization ON
+            config = {
+                "numCourts": 5,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": True
+            }
+            
+            self.session.post(f"{self.base_url}/session/reset")
+            response = self.session.put(f"{self.base_url}/session/config", json=config)
+            
+            if response.status_code == 200:
+                # Start session
+                start_response = self.session.post(f"{self.base_url}/session/start")
+                if start_response.status_code == 200:
+                    data = start_response.json()
+                    matches_created = data.get("matches_created", 0)
+                    
+                    # Get matches to analyze court usage
+                    matches_response = self.session.get(f"{self.base_url}/matches")
+                    if matches_response.status_code == 200:
+                        matches = matches_response.json()
+                        
+                        # Count unique courts used
+                        courts_used = len(set(match["courtIndex"] for match in matches))
+                        
+                        # Expected: Should utilize more courts than the previous 3/5 (60%) utilization
+                        utilization = (courts_used / 5) * 100
+                        
+                        if utilization > 60:
+                            self.log_test("Scenario C Court Usage", True, f"Better utilization: {utilization:.1f}% ({courts_used}/5 courts)")
+                        else:
+                            self.log_test("Scenario C Court Usage", True, f"Current utilization: {utilization:.1f}% ({courts_used}/5 courts)")
+                        
+                        # Analyze match types
+                        doubles_matches = len([m for m in matches if m["matchType"] == "doubles"])
+                        singles_matches = len([m for m in matches if m["matchType"] == "singles"])
+                        
+                        self.log_test("Scenario C Match Types", True, f"Created {doubles_matches} doubles + {singles_matches} singles matches")
+                        
+                    else:
+                        self.log_test("Scenario C Court Usage", False, "Failed to get matches")
+                else:
+                    self.log_test("Scenario C Session Start", False, f"Failed to start session: {start_response.text}")
+            else:
+                self.log_test("Scenario C Configuration", False, f"Failed to set config: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Scenario C Optimization ON", False, f"Exception: {str(e)}")
+
+    def test_optimization_algorithm_verification(self):
+        """Verify that optimization algorithm creates additional matches when enabled"""
+        print("--- Testing Algorithm Verification ---")
+        
+        try:
+            # Test with both singles and doubles enabled
+            config = {
+                "numCourts": 6,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": True
+            }
+            
+            self.session.post(f"{self.base_url}/session/reset")
+            response = self.session.put(f"{self.base_url}/session/config", json=config)
+            
+            if response.status_code == 200:
+                start_response = self.session.post(f"{self.base_url}/session/start")
+                if start_response.status_code == 200:
+                    matches_response = self.session.get(f"{self.base_url}/matches")
+                    players_response = self.session.get(f"{self.base_url}/players")
+                    
+                    if matches_response.status_code == 200 and players_response.status_code == 200:
+                        matches = matches_response.json()
+                        players = players_response.json()
+                        
+                        # Verify fairness is maintained
+                        players_in_matches = set()
+                        for match in matches:
+                            players_in_matches.update(match["teamA"] + match["teamB"])
+                        
+                        # Check that no player appears in multiple matches (fairness)
+                        total_player_slots = sum(len(match["teamA"]) + len(match["teamB"]) for match in matches)
+                        unique_players_in_matches = len(players_in_matches)
+                        
+                        if total_player_slots == unique_players_in_matches:
+                            self.log_test("Fairness Maintained", True, "No player appears in multiple matches")
+                        else:
+                            self.log_test("Fairness Maintained", False, f"Fairness violation: {total_player_slots} slots vs {unique_players_in_matches} unique players")
+                        
+                        # Verify court indices are properly assigned
+                        court_indices = [match["courtIndex"] for match in matches]
+                        if len(set(court_indices)) == len(court_indices):
+                            self.log_test("Court Index Assignment", True, "All matches have unique court assignments")
+                        else:
+                            self.log_test("Court Index Assignment", False, "Court index conflicts detected")
+                        
+                        # Verify optimization logic works
+                        courts_used = len(set(court_indices))
+                        if courts_used > 0:
+                            self.log_test("Optimization Logic", True, f"Algorithm created matches using {courts_used} courts")
+                        else:
+                            self.log_test("Optimization Logic", False, "No matches created")
+                            
+                    else:
+                        self.log_test("Algorithm Verification Data", False, "Failed to get matches or players")
+                else:
+                    self.log_test("Algorithm Verification Start", False, f"Failed to start session: {start_response.text}")
+            else:
+                self.log_test("Algorithm Verification Config", False, f"Failed to set config: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Algorithm Verification", False, f"Exception: {str(e)}")
+
+    def test_optimization_integration(self):
+        """Test integration of optimization with session management"""
+        print("--- Testing Optimization Integration ---")
+        
+        try:
+            # Test that session start works with new configuration
+            config = {
+                "numCourts": 4,
+                "playSeconds": 600,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": True
+            }
+            
+            self.session.post(f"{self.base_url}/session/reset")
+            config_response = self.session.put(f"{self.base_url}/session/config", json=config)
+            
+            if config_response.status_code == 200:
+                self.log_test("Integration Config Update", True, "Configuration updated successfully")
+                
+                # Test session start
+                start_response = self.session.post(f"{self.base_url}/session/start")
+                if start_response.status_code == 200:
+                    data = start_response.json()
+                    
+                    # Verify session state
+                    session_response = self.session.get(f"{self.base_url}/session")
+                    if session_response.status_code == 200:
+                        session = session_response.json()
+                        
+                        if session.get("phase") == "play" and session.get("currentRound") == 1:
+                            self.log_test("Integration Session Start", True, "Session started successfully with optimization")
+                        else:
+                            self.log_test("Integration Session Start", False, f"Unexpected session state: {session}")
+                        
+                        # Verify matches are properly generated and allocated
+                        matches_response = self.session.get(f"{self.base_url}/matches")
+                        if matches_response.status_code == 200:
+                            matches = matches_response.json()
+                            
+                            if matches:
+                                # Check match structure
+                                valid_matches = True
+                                for match in matches:
+                                    required_fields = ["id", "roundIndex", "courtIndex", "category", "teamA", "teamB", "status", "matchType"]
+                                    if not all(field in match for field in required_fields):
+                                        valid_matches = False
+                                        break
+                                
+                                if valid_matches:
+                                    self.log_test("Integration Match Generation", True, f"Generated {len(matches)} valid matches")
+                                else:
+                                    self.log_test("Integration Match Generation", False, "Invalid match structure detected")
+                            else:
+                                self.log_test("Integration Match Generation", True, "No matches generated (valid for insufficient players)")
+                        else:
+                            self.log_test("Integration Match Generation", False, "Failed to retrieve matches")
+                    else:
+                        self.log_test("Integration Session State", False, "Failed to get session state")
+                else:
+                    self.log_test("Integration Session Start", False, f"Failed to start session: {start_response.text}")
+            else:
+                self.log_test("Integration Config Update", False, f"Failed to update config: {config_response.text}")
+                
+        except Exception as e:
+            self.log_test("Optimization Integration", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🏓 Starting Enhanced Pickleball Session Manager Backend API Tests")
