@@ -298,7 +298,12 @@ async def schedule_round(round_index: int) -> List[Match]:
     
     # Calculate total courts needed and implement optimization logic
     total_courts_needed = sum(plan['doubles'] + plan['singles'] for plan in court_plans.values())
-    available_courts = min(config.numCourts, total_courts_needed)
+    
+    # When optimization is enabled, use all available courts, not just what was initially planned
+    if config.maximizeCourtUsage:
+        available_courts = config.numCourts
+    else:
+        available_courts = min(config.numCourts, total_courts_needed)
     
     # Court Allocation Optimization: Maximize court usage if enabled
     if config.maximizeCourtUsage and total_courts_needed < config.numCourts:
