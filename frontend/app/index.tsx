@@ -702,6 +702,8 @@ function AdminConsole({
         playMinutes: playMins.toString(),
         playSeconds: playSecs.toString().padStart(2, '0'),
         bufferSeconds: session.config.bufferSeconds.toString(),
+        allowSingles: session.config.allowSingles ?? true,
+        allowDoubles: session.config.allowDoubles ?? true,
         allowCrossCategory: session.config.allowCrossCategory || false
       });
     }
