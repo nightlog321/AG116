@@ -264,6 +264,18 @@ backend:
           agent: "testing"
           comment: "🏓 FRONTEND UI TESTING COMPLETED SUCCESSFULLY! ✅ NEW FORMAT CHECKBOXES: Two independent checkboxes (Singles & Doubles) implemented and fully functional in Admin tab configuration form. Visual feedback working with proper active/inactive states (green for active, gray for inactive). ✅ FORMAT VALIDATION: Tested unchecking both formats - system properly prevents saving invalid configurations. ✅ FORMAT SWITCHING: Successfully tested all combinations - Singles only, Doubles only, and both formats enabled. Configuration saves correctly and persists. ✅ SESSION STATS DISPLAY: Format display updates correctly showing 'Singles', 'Doubles', or combined formats based on configuration. ✅ INTEGRATION TESTING: Let's Play button remains functional with new format system. Edit/Save workflow works perfectly. ✅ MOBILE RESPONSIVENESS: All UI elements properly sized and functional on mobile viewport (390x844). The new editable format system UI is production-ready and working flawlessly!"
 
+  - task: "Court Allocation Optimization Feature"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "COURT ALLOCATION OPTIMIZATION TESTING COMPLETED - CRITICAL BUG FOUND! ❌ Configuration API: maximizeCourtUsage field properly implemented and accessible via PUT/GET /api/session/config ✅ Algorithm Implementation: Optimization logic exists in lines 278-311 of server.py ✅ Integration: Session management works with new configuration ✅ ❌ CRITICAL ISSUE: Optimization algorithm is not working. Even with 8 players in one category and 6 courts available, algorithm only creates 1 doubles match instead of 2. Expected: 2 matches (8 players), Actual: 1 match (4 players, 4 sitting). Root cause appears to be in the court allocation logic that limits matches per category per round for fairness, and the optimization logic is not properly overriding this limitation. The maximizeCourtUsage feature needs algorithm fix to actually create additional matches when enabled."
+
 frontend:
   - task: "Navigation & UI Structure"
     implemented: true
