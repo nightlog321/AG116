@@ -688,9 +688,23 @@ async def start_session():
         
         session_obj = SessionState(**session)
         
-        # Check if we have enough players
+        # Check if we have enough players based on enabled formats
         players_count = await db.players.count_documents({})
-        min_players = 4 if session_obj.config.format in [Format.doubles, Format.auto] else 2
+        
+        # Validate format configuration
+        if not session_obj.config.allowSingles and not session_obj.config.allowDoubles:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one format (Singles or Doubles) must be enabled"
+            )
+        
+        # Determine minimum players needed
+        if session_obj.config.allowDoubles:
+            min_players = 4  # Need at least 4 for doubles
+        elif session_obj.config.allowSingles:
+            min_players = 2  # Need at least 2 for singles
+        else:
+            min_players = 2  # Fallback
         
         if players_count < min_players:
             raise HTTPException(
