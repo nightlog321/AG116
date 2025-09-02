@@ -882,6 +882,28 @@ function AdminConsole({
             </View>
             
             <View style={styles.configRow}>
+              <Text style={styles.configLabel}>Formats:</Text>
+              <View style={styles.formatCheckboxes}>
+                <TouchableOpacity
+                  style={[styles.checkboxButton, configForm.allowSingles && styles.checkboxButtonActive]}
+                  onPress={() => setConfigForm({...configForm, allowSingles: !configForm.allowSingles})}
+                >
+                  <Text style={[styles.checkboxButtonText, configForm.allowSingles && styles.checkboxButtonTextActive]}>
+                    Singles
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.checkboxButton, configForm.allowDoubles && styles.checkboxButtonActive]}
+                  onPress={() => setConfigForm({...configForm, allowDoubles: !configForm.allowDoubles})}
+                >
+                  <Text style={[styles.checkboxButtonText, configForm.allowDoubles && styles.checkboxButtonTextActive]}>
+                    Doubles
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            <View style={styles.configRow}>
               <Text style={styles.configLabel}>Cross-Category:</Text>
               <TouchableOpacity
                 style={[styles.toggleButton, configForm.allowCrossCategory && styles.toggleButtonActive]}
