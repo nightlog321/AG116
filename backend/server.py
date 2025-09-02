@@ -289,19 +289,25 @@ async def schedule_round(round_index: int) -> List[Match]:
             eligible = plan['eligible_players']
             current_matches = plan['doubles'] + plan['singles']
             
-            # If we have enough players for more matches, create them
-            if len(eligible) >= 4 and additional_courts_available > 0:
+            # Calculate players already used in current matches
+            players_used = (plan['doubles'] * 4) + (plan['singles'] * 2)
+            remaining_players = len(eligible) - players_used
+            
+            # If we have enough remaining players for more matches, create them
+            if remaining_players >= 4 and additional_courts_available > 0:
                 if config.allowDoubles:
                     # Can we make another doubles match?
-                    additional_doubles = min((len(eligible) - current_matches * 4) // 4, additional_courts_available)
+                    additional_doubles = min(remaining_players // 4, additional_courts_available)
                     if additional_doubles > 0:
                         plan['doubles'] += additional_doubles
                         additional_courts_available -= additional_doubles
+                        remaining_players -= additional_doubles * 4
                         
-            elif len(eligible) >= 2 and additional_courts_available > 0:
+            # Check for singles matches with remaining players
+            if remaining_players >= 2 and additional_courts_available > 0:
                 if config.allowSingles:
                     # Can we make another singles match?
-                    additional_singles = min((len(eligible) - current_matches * 2) // 2, additional_courts_available)
+                    additional_singles = min(remaining_players // 2, additional_courts_available)
                     if additional_singles > 0:
                         plan['singles'] += additional_singles
                         additional_courts_available -= additional_singles
