@@ -106,6 +106,7 @@ class SessionConfig(BaseModel):
     allowSingles: bool = True
     allowDoubles: bool = True
     allowCrossCategory: bool = False
+    maximizeCourtUsage: bool = False  # New option for court optimization
 
 class SessionState(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
