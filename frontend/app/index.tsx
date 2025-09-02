@@ -1708,6 +1708,33 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: '600',
   },
+  formatCheckboxes: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  checkboxButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceLight,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  checkboxButtonActive: {
+    backgroundColor: colors.success,
+    borderColor: colors.success,
+  },
+  checkboxButtonText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  checkboxButtonTextActive: {
+    color: colors.text,
+    fontWeight: '600',
+  },
   emptyText: {
     color: colors.textMuted,
     fontSize: 16,
