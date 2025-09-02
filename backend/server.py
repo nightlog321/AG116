@@ -378,7 +378,8 @@ async def schedule_round(round_index: int) -> List[Match]:
         
         # Recalculate total courts needed after optimization
         total_courts_needed = sum(plan['doubles'] + plan['singles'] for plan in court_plans.values())
-        available_courts = min(config.numCourts, total_courts_needed)
+        # DON'T override available_courts here - keep the optimization setting from above
+        print(f"DEBUG: After optimization - total_courts_needed: {total_courts_needed}, available_courts: {available_courts}")
     
     # Fair court allocation across categories (rotate by round)
     if config.allowCrossCategory:
