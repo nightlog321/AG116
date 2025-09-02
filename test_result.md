@@ -360,10 +360,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Cross-Category Matching Enhancement"
-    - "Enhanced Audio System"
-    - "Session Timer Enhancement"
-    - "API Configuration Updates with allowCrossCategory"
+    - "New Editable Format System"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
