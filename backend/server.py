@@ -239,6 +239,7 @@ async def schedule_round(round_index: int) -> List[Match]:
         
         count = len(eligible_players)
         
+        # Base allocation logic
         if config.allowDoubles and count >= 4:
             # Priority: Create as many doubles matches as possible
             doubles_matches = count // 4
@@ -264,6 +265,30 @@ async def schedule_round(round_index: int) -> List[Match]:
             # Only singles allowed, or not enough players for doubles
             singles_matches = count // 2
             # Odd numbered player sits out naturally
+        
+        # Apply court optimization OVERRIDE if enabled
+        if config.maximizeCourtUsage and (doubles_matches + singles_matches) < count // 2:
+            # Override fairness constraints - maximize player participation
+            # Recalculate to use all available players more efficiently
+            if config.allowDoubles and config.allowSingles:
+                # Mixed approach: maximize doubles, then singles
+                max_doubles = count // 4
+                remaining_after_doubles = count % 4
+                max_singles = remaining_after_doubles // 2
+                
+                # Only override if we can get more matches
+                potential_matches = max_doubles + max_singles
+                current_matches = doubles_matches + singles_matches
+                
+                if potential_matches > current_matches:
+                    doubles_matches = max_doubles
+                    singles_matches = max_singles
+            elif config.allowDoubles:
+                # Doubles only - maximize doubles matches
+                doubles_matches = count // 4
+            elif config.allowSingles:
+                # Singles only - maximize singles matches  
+                singles_matches = count // 2
         
         court_plans[cat_name] = {
             'doubles': doubles_matches,
