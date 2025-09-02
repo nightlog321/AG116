@@ -2241,6 +2241,156 @@ class PickleballAPITester:
         except Exception as e:
             self.log_test("Format Preference Optimization", False, f"Exception: {str(e)}")
 
+    def test_court_allocation_optimization_fix(self):
+        """Test the Court Allocation Optimization fix - Critical 8-player scenario"""
+        print("=== Testing Court Allocation Optimization Fix ===")
+        
+        try:
+            # Reset session first
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            # Clear existing players to ensure clean test
+            players_response = self.session.get(f"{self.base_url}/players")
+            if players_response.status_code == 200:
+                existing_players = players_response.json()
+                for player in existing_players:
+                    self.session.delete(f"{self.base_url}/players/{player['id']}")
+            
+            # Create exactly 8 players, all Beginner category
+            test_players = [
+                {"name": "Player 1", "category": "Beginner"},
+                {"name": "Player 2", "category": "Beginner"},
+                {"name": "Player 3", "category": "Beginner"},
+                {"name": "Player 4", "category": "Beginner"},
+                {"name": "Player 5", "category": "Beginner"},
+                {"name": "Player 6", "category": "Beginner"},
+                {"name": "Player 7", "category": "Beginner"},
+                {"name": "Player 8", "category": "Beginner"}
+            ]
+            
+            created_players = []
+            for player_data in test_players:
+                response = self.session.post(f"{self.base_url}/players", json=player_data)
+                if response.status_code == 200:
+                    created_players.append(response.json())
+            
+            if len(created_players) != 8:
+                self.log_test("Setup 8 Players", False, f"Failed to create 8 players, only created {len(created_players)}")
+                return
+            
+            self.log_test("Setup 8 Players", True, "Created 8 Beginner players for optimization test")
+            
+            # Configure session with maximizeCourtUsage=true
+            config = {
+                "numCourts": 6,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": True  # This is the key setting
+            }
+            
+            response = self.session.put(f"{self.base_url}/session/config", json=config)
+            if response.status_code == 200:
+                session = response.json()
+                if session["config"]["maximizeCourtUsage"] == True:
+                    self.log_test("Set maximizeCourtUsage=True", True, "Court optimization enabled")
+                else:
+                    self.log_test("Set maximizeCourtUsage=True", False, "Failed to enable court optimization")
+                    return
+            else:
+                self.log_test("Set maximizeCourtUsage=True", False, f"Config update failed: {response.text}")
+                return
+            
+            # Start session and test the critical scenario
+            start_response = self.session.post(f"{self.base_url}/session/start")
+            if start_response.status_code == 200:
+                data = start_response.json()
+                matches_created = data.get("matches_created", 0)
+                
+                self.log_test("Start Optimization Session", True, f"Session started with {matches_created} matches")
+                
+                # Get matches and analyze
+                matches_response = self.session.get(f"{self.base_url}/matches")
+                if matches_response.status_code == 200:
+                    matches = matches_response.json()
+                    
+                    # Critical test: Should create 2 doubles matches (8 players total)
+                    doubles_matches = [m for m in matches if m["matchType"] == "doubles"]
+                    singles_matches = [m for m in matches if m["matchType"] == "singles"]
+                    
+                    # Count players used
+                    players_used = set()
+                    for match in matches:
+                        players_used.update(match["teamA"] + match["teamB"])
+                    
+                    players_used_count = len(players_used)
+                    players_sitting = 8 - players_used_count
+                    
+                    # Expected: 2 doubles matches (all 8 players used)
+                    # Previous broken behavior: 1 doubles match (4 players used, 4 sitting)
+                    
+                    if len(doubles_matches) == 2 and players_used_count == 8:
+                        self.log_test("CRITICAL TEST: 8 Players → 2 Doubles Matches", True, 
+                                    f"✅ SUCCESS: Created {len(doubles_matches)} doubles matches using all {players_used_count} players")
+                        
+                        # Verify court allocation
+                        courts_used = len(set(match["courtIndex"] for match in matches))
+                        self.log_test("Court Utilization", True, 
+                                    f"Using {courts_used} courts out of {config['numCourts']} available")
+                        
+                    elif len(doubles_matches) == 1 and players_used_count == 4:
+                        self.log_test("CRITICAL TEST: 8 Players → 2 Doubles Matches", False, 
+                                    f"❌ STILL BROKEN: Only created {len(doubles_matches)} doubles match, {players_sitting} players sitting")
+                        
+                    else:
+                        self.log_test("CRITICAL TEST: 8 Players → 2 Doubles Matches", False, 
+                                    f"❌ UNEXPECTED: Created {len(doubles_matches)} doubles + {len(singles_matches)} singles matches, {players_sitting} players sitting")
+                    
+                    # Detailed analysis
+                    self.log_test("Match Analysis", True, 
+                                f"Doubles: {len(doubles_matches)}, Singles: {len(singles_matches)}, Players Used: {players_used_count}/8, Sitting: {players_sitting}")
+                    
+                    # Test that optimization only applies when maximizeCourtUsage=true
+                    # Reset and test with maximizeCourtUsage=false
+                    self.session.post(f"{self.base_url}/session/reset")
+                    
+                    config_no_optimization = config.copy()
+                    config_no_optimization["maximizeCourtUsage"] = False
+                    
+                    response = self.session.put(f"{self.base_url}/session/config", json=config_no_optimization)
+                    if response.status_code == 200:
+                        start_response = self.session.post(f"{self.base_url}/session/start")
+                        if start_response.status_code == 200:
+                            matches_response = self.session.get(f"{self.base_url}/matches")
+                            if matches_response.status_code == 200:
+                                no_opt_matches = matches_response.json()
+                                no_opt_doubles = [m for m in no_opt_matches if m["matchType"] == "doubles"]
+                                
+                                no_opt_players_used = set()
+                                for match in no_opt_matches:
+                                    no_opt_players_used.update(match["teamA"] + match["teamB"])
+                                
+                                self.log_test("Optimization Toggle Test", True, 
+                                            f"Without optimization: {len(no_opt_doubles)} doubles matches, {len(no_opt_players_used)} players used")
+                                
+                                # The optimization should make a difference
+                                if len(doubles_matches) > len(no_opt_doubles) or players_used_count > len(no_opt_players_used):
+                                    self.log_test("Optimization Impact", True, 
+                                                "Optimization creates more matches/uses more players than base algorithm")
+                                else:
+                                    self.log_test("Optimization Impact", False, 
+                                                "Optimization has no impact - algorithm may still be broken")
+                    
+                else:
+                    self.log_test("Get Matches for Analysis", False, f"Failed to get matches: {matches_response.text}")
+            else:
+                self.log_test("Start Optimization Session", False, f"Failed to start session: {start_response.text}")
+                
+        except Exception as e:
+            self.log_test("Court Allocation Optimization Fix", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🏓 Starting Enhanced Pickleball Session Manager Backend API Tests")
