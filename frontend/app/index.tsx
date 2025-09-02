@@ -1010,7 +1010,7 @@ function AdminConsole({
           </View>
         )}
 
-        {/* Single Session Control Button - Always "Let's Play" */}
+        {/* Session Control Buttons */}
         <View style={styles.sessionControlButtons}>
           <TouchableOpacity 
             style={[styles.primaryButton, players.length < 4 && styles.buttonDisabled]}
@@ -1019,6 +1019,15 @@ function AdminConsole({
           >
             <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
             <Text style={styles.buttonText}>Let's Play</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.secondaryButton, !session || session.phase === 'idle' ? styles.buttonDisabled : {}]}
+            onPress={onResetTimer}
+            disabled={!session || session.phase === 'idle'}
+          >
+            <Ionicons name="stop" size={20} color={colors.text} style={styles.buttonIcon} />
+            <Text style={styles.buttonText}>Reset</Text>
           </TouchableOpacity>
         </View>
       </View>
