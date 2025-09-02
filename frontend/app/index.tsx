@@ -706,7 +706,8 @@ function AdminConsole({
         bufferSeconds: session.config.bufferSeconds.toString(),
         allowSingles: session.config.allowSingles ?? true,
         allowDoubles: session.config.allowDoubles ?? true,
-        allowCrossCategory: session.config.allowCrossCategory || false
+        allowCrossCategory: session.config.allowCrossCategory || false,
+        maximizeCourtUsage: session.config.maximizeCourtUsage || false
       });
     }
   }, [session]);
