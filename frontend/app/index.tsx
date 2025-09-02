@@ -934,7 +934,14 @@ function AdminConsole({
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Format</Text>
-              <Text style={styles.statValue}>{session.config.format.toUpperCase()}</Text>
+              <Text style={styles.statValue}>
+                {(() => {
+                  const formats = [];
+                  if (session.config.allowSingles) formats.push('Singles');
+                  if (session.config.allowDoubles) formats.push('Doubles');
+                  return formats.length > 0 ? formats.join(' + ') : 'None';
+                })()}
+              </Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Play Time</Text>
