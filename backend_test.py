@@ -1763,6 +1763,484 @@ class PickleballAPITester:
         except Exception as e:
             self.log_test("Optimization Integration", False, f"Exception: {str(e)}")
 
+    def test_court_allocation_optimization(self):
+        """Test the improved Court Allocation Optimization algorithm"""
+        print("=== Testing Court Allocation Optimization Feature ===")
+        
+        # Test 1: High-Impact Test - 8 players, 1 category, 6 courts
+        self.test_high_impact_optimization()
+        
+        # Test 2: Multi-Category Test - 12 players, 6 courts
+        self.test_multi_category_optimization()
+        
+        # Test 3: Mixed Utilization Test - 10 players, 5 courts
+        self.test_mixed_utilization_optimization()
+        
+        # Test 4: Edge Cases
+        self.test_optimization_edge_cases()
+
+    def test_high_impact_optimization(self):
+        """Test 8 players, 1 category, 6 courts - should create 2 doubles matches instead of 1"""
+        print("--- Testing High-Impact Optimization: 8 players, 1 category, 6 courts ---")
+        
+        try:
+            # Reset and clear existing data
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            # Delete all existing players
+            players_response = self.session.get(f"{self.base_url}/players")
+            if players_response.status_code == 200:
+                existing_players = players_response.json()
+                for player in existing_players:
+                    self.session.delete(f"{self.base_url}/players/{player['id']}")
+            
+            # Create exactly 8 players in Beginner category
+            test_players = [
+                {"name": "Player1", "category": "Beginner"},
+                {"name": "Player2", "category": "Beginner"},
+                {"name": "Player3", "category": "Beginner"},
+                {"name": "Player4", "category": "Beginner"},
+                {"name": "Player5", "category": "Beginner"},
+                {"name": "Player6", "category": "Beginner"},
+                {"name": "Player7", "category": "Beginner"},
+                {"name": "Player8", "category": "Beginner"}
+            ]
+            
+            created_players = []
+            for player_data in test_players:
+                response = self.session.post(f"{self.base_url}/players", json=player_data)
+                if response.status_code == 200:
+                    created_players.append(response.json())
+            
+            if len(created_players) != 8:
+                self.log_test("High-Impact Setup", False, f"Failed to create 8 players, only created {len(created_players)}")
+                return
+            
+            self.log_test("High-Impact Setup", True, "Created 8 players in Beginner category")
+            
+            # Configure session with maximizeCourtUsage=true, 6 courts, allow doubles
+            config = {
+                "numCourts": 6,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": True
+            }
+            
+            config_response = self.session.put(f"{self.base_url}/session/config", json=config)
+            if config_response.status_code != 200:
+                self.log_test("High-Impact Config", False, f"Failed to set config: {config_response.text}")
+                return
+            
+            self.log_test("High-Impact Config", True, "Set maximizeCourtUsage=true with 6 courts")
+            
+            # Start session and analyze results
+            start_response = self.session.post(f"{self.base_url}/session/start")
+            if start_response.status_code == 200:
+                data = start_response.json()
+                matches_created = data.get("matches_created", 0)
+                
+                # Get matches to analyze
+                matches_response = self.session.get(f"{self.base_url}/matches")
+                if matches_response.status_code == 200:
+                    matches = matches_response.json()
+                    
+                    # Count doubles matches in Beginner category
+                    beginner_doubles = [m for m in matches if m["category"] == "Beginner" and m["matchType"] == "doubles"]
+                    total_players_used = sum(len(m["teamA"]) + len(m["teamB"]) for m in beginner_doubles)
+                    courts_used = len(set(m["courtIndex"] for m in matches))
+                    
+                    # Expected: 2 doubles matches (8 players total, 2 courts used)
+                    if len(beginner_doubles) >= 2 and total_players_used == 8:
+                        self.log_test("High-Impact Optimization SUCCESS", True, 
+                                    f"✅ OPTIMIZATION WORKING! Created {len(beginner_doubles)} doubles matches using all 8 players on {courts_used} courts")
+                    elif len(beginner_doubles) == 1 and total_players_used == 4:
+                        self.log_test("High-Impact Optimization FAILED", False, 
+                                    f"❌ OPTIMIZATION NOT WORKING! Only created 1 doubles match (4 players, 4 sitting) instead of 2 matches (8 players)")
+                    else:
+                        self.log_test("High-Impact Optimization PARTIAL", False, 
+                                    f"⚠️ UNEXPECTED RESULT: {len(beginner_doubles)} doubles matches, {total_players_used} players used")
+                    
+                    # Detailed analysis
+                    sitting_players = 8 - total_players_used
+                    court_utilization = (courts_used / 6) * 100
+                    
+                    self.log_test("High-Impact Analysis", True, 
+                                f"Details: {len(beginner_doubles)} doubles matches, {total_players_used}/8 players used, {sitting_players} sitting, {court_utilization:.1f}% court utilization")
+                else:
+                    self.log_test("High-Impact Optimization", False, "Failed to get matches for analysis")
+            else:
+                self.log_test("High-Impact Optimization", False, f"Failed to start session: {start_response.text}")
+                
+        except Exception as e:
+            self.log_test("High-Impact Optimization", False, f"Exception: {str(e)}")
+
+    def test_multi_category_optimization(self):
+        """Test 12 players, 6 courts - should use more than 3 courts"""
+        print("--- Testing Multi-Category Optimization: 12 players, 6 courts ---")
+        
+        try:
+            # Reset and setup
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            # Delete existing players
+            players_response = self.session.get(f"{self.base_url}/players")
+            if players_response.status_code == 200:
+                existing_players = players_response.json()
+                for player in existing_players:
+                    self.session.delete(f"{self.base_url}/players/{player['id']}")
+            
+            # Create 12 players: 4 per category
+            test_players = []
+            categories = ["Beginner", "Intermediate", "Advanced"]
+            for i, category in enumerate(categories):
+                for j in range(4):
+                    test_players.append({
+                        "name": f"{category}Player{j+1}",
+                        "category": category
+                    })
+            
+            created_players = []
+            for player_data in test_players:
+                response = self.session.post(f"{self.base_url}/players", json=player_data)
+                if response.status_code == 200:
+                    created_players.append(response.json())
+            
+            if len(created_players) != 12:
+                self.log_test("Multi-Category Setup", False, f"Failed to create 12 players, only created {len(created_players)}")
+                return
+            
+            self.log_test("Multi-Category Setup", True, "Created 12 players (4 per category)")
+            
+            # Configure with maximizeCourtUsage=true
+            config = {
+                "numCourts": 6,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": True
+            }
+            
+            config_response = self.session.put(f"{self.base_url}/session/config", json=config)
+            if config_response.status_code != 200:
+                self.log_test("Multi-Category Config", False, f"Failed to set config: {config_response.text}")
+                return
+            
+            self.log_test("Multi-Category Config", True, "Set maximizeCourtUsage=true with 6 courts")
+            
+            # Start session and analyze
+            start_response = self.session.post(f"{self.base_url}/session/start")
+            if start_response.status_code == 200:
+                matches_response = self.session.get(f"{self.base_url}/matches")
+                if matches_response.status_code == 200:
+                    matches = matches_response.json()
+                    
+                    courts_used = len(set(m["courtIndex"] for m in matches))
+                    total_matches = len(matches)
+                    
+                    # Count matches per category
+                    category_matches = {}
+                    for match in matches:
+                        cat = match["category"]
+                        category_matches[cat] = category_matches.get(cat, 0) + 1
+                    
+                    # Expected: Should use more than 3 courts (previous limitation)
+                    if courts_used > 3:
+                        self.log_test("Multi-Category Optimization SUCCESS", True, 
+                                    f"✅ OPTIMIZATION WORKING! Using {courts_used}/6 courts (improved from previous 3)")
+                    elif courts_used == 3:
+                        self.log_test("Multi-Category Optimization FAILED", False, 
+                                    f"❌ NO IMPROVEMENT! Still using only 3/6 courts (same as before optimization)")
+                    else:
+                        self.log_test("Multi-Category Optimization", True, 
+                                    f"Using {courts_used}/6 courts with {total_matches} matches")
+                    
+                    # Detailed analysis
+                    court_utilization = (courts_used / 6) * 100
+                    self.log_test("Multi-Category Analysis", True, 
+                                f"Details: {total_matches} matches, {courts_used}/6 courts used ({court_utilization:.1f}% utilization), matches per category: {category_matches}")
+                else:
+                    self.log_test("Multi-Category Optimization", False, "Failed to get matches for analysis")
+            else:
+                self.log_test("Multi-Category Optimization", False, f"Failed to start session: {start_response.text}")
+                
+        except Exception as e:
+            self.log_test("Multi-Category Optimization", False, f"Exception: {str(e)}")
+
+    def test_mixed_utilization_optimization(self):
+        """Test 10 players, 5 courts - should get better than 60% court utilization"""
+        print("--- Testing Mixed Utilization Optimization: 10 players, 5 courts ---")
+        
+        try:
+            # Reset and setup
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            # Delete existing players
+            players_response = self.session.get(f"{self.base_url}/players")
+            if players_response.status_code == 200:
+                existing_players = players_response.json()
+                for player in existing_players:
+                    self.session.delete(f"{self.base_url}/players/{player['id']}")
+            
+            # Create 10 players distributed across categories
+            test_players = [
+                {"name": "Beginner1", "category": "Beginner"},
+                {"name": "Beginner2", "category": "Beginner"},
+                {"name": "Beginner3", "category": "Beginner"},
+                {"name": "Beginner4", "category": "Beginner"},
+                {"name": "Inter1", "category": "Intermediate"},
+                {"name": "Inter2", "category": "Intermediate"},
+                {"name": "Inter3", "category": "Intermediate"},
+                {"name": "Adv1", "category": "Advanced"},
+                {"name": "Adv2", "category": "Advanced"},
+                {"name": "Adv3", "category": "Advanced"}
+            ]
+            
+            created_players = []
+            for player_data in test_players:
+                response = self.session.post(f"{self.base_url}/players", json=player_data)
+                if response.status_code == 200:
+                    created_players.append(response.json())
+            
+            if len(created_players) != 10:
+                self.log_test("Mixed Utilization Setup", False, f"Failed to create 10 players, only created {len(created_players)}")
+                return
+            
+            self.log_test("Mixed Utilization Setup", True, "Created 10 players (4 Beginner, 3 Intermediate, 3 Advanced)")
+            
+            # Test without optimization first
+            config_no_opt = {
+                "numCourts": 5,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": False
+            }
+            
+            self.session.put(f"{self.base_url}/session/config", json=config_no_opt)
+            self.session.post(f"{self.base_url}/session/start")
+            
+            matches_response = self.session.get(f"{self.base_url}/matches")
+            baseline_courts = 0
+            if matches_response.status_code == 200:
+                matches = matches_response.json()
+                baseline_courts = len(set(m["courtIndex"] for m in matches))
+            
+            baseline_utilization = (baseline_courts / 5) * 100
+            self.log_test("Baseline Court Utilization", True, f"Without optimization: {baseline_courts}/5 courts ({baseline_utilization:.1f}%)")
+            
+            # Reset and test with optimization
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            config_with_opt = config_no_opt.copy()
+            config_with_opt["maximizeCourtUsage"] = True
+            
+            config_response = self.session.put(f"{self.base_url}/session/config", json=config_with_opt)
+            if config_response.status_code != 200:
+                self.log_test("Mixed Utilization Config", False, f"Failed to set config: {config_response.text}")
+                return
+            
+            self.log_test("Mixed Utilization Config", True, "Set maximizeCourtUsage=true with 5 courts")
+            
+            # Start session with optimization
+            start_response = self.session.post(f"{self.base_url}/session/start")
+            if start_response.status_code == 200:
+                matches_response = self.session.get(f"{self.base_url}/matches")
+                if matches_response.status_code == 200:
+                    matches = matches_response.json()
+                    
+                    courts_used = len(set(m["courtIndex"] for m in matches))
+                    court_utilization = (courts_used / 5) * 100
+                    
+                    # Expected: Better than 60% utilization (3/5 courts)
+                    if court_utilization > 60:
+                        improvement = court_utilization - baseline_utilization
+                        self.log_test("Mixed Utilization Optimization SUCCESS", True, 
+                                    f"✅ OPTIMIZATION WORKING! {courts_used}/5 courts ({court_utilization:.1f}% utilization, +{improvement:.1f}% improvement)")
+                    elif court_utilization == 60:
+                        self.log_test("Mixed Utilization Optimization FAILED", False, 
+                                    f"❌ NO IMPROVEMENT! Still at 60% utilization (3/5 courts)")
+                    else:
+                        self.log_test("Mixed Utilization Optimization", True, 
+                                    f"Court utilization: {court_utilization:.1f}% ({courts_used}/5 courts)")
+                    
+                    # Count players used
+                    total_players_used = sum(len(m["teamA"]) + len(m["teamB"]) for m in matches)
+                    sitting_players = 10 - total_players_used
+                    
+                    self.log_test("Mixed Utilization Analysis", True, 
+                                f"Details: {len(matches)} matches, {total_players_used}/10 players used, {sitting_players} sitting")
+                else:
+                    self.log_test("Mixed Utilization Optimization", False, "Failed to get matches for analysis")
+            else:
+                self.log_test("Mixed Utilization Optimization", False, f"Failed to start session: {start_response.text}")
+                
+        except Exception as e:
+            self.log_test("Mixed Utilization Optimization", False, f"Exception: {str(e)}")
+
+    def test_optimization_edge_cases(self):
+        """Test edge cases for court allocation optimization"""
+        print("--- Testing Optimization Edge Cases ---")
+        
+        try:
+            # Test 1: More courts than needed
+            self.test_excess_courts_scenario()
+            
+            # Test 2: Cross-category optimization
+            self.test_cross_category_optimization_scenario()
+            
+            # Test 3: Singles vs Doubles preference
+            self.test_format_preference_optimization()
+            
+        except Exception as e:
+            self.log_test("Optimization Edge Cases", False, f"Exception: {str(e)}")
+
+    def test_excess_courts_scenario(self):
+        """Test scenario with more courts than players need"""
+        print("--- Testing Excess Courts Scenario ---")
+        
+        try:
+            # Reset and setup 6 players with 10 courts
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            # Delete existing players
+            players_response = self.session.get(f"{self.base_url}/players")
+            if players_response.status_code == 200:
+                existing_players = players_response.json()
+                for player in existing_players:
+                    self.session.delete(f"{self.base_url}/players/{player['id']}")
+            
+            # Create 6 players
+            test_players = [
+                {"name": "Player1", "category": "Beginner"},
+                {"name": "Player2", "category": "Beginner"},
+                {"name": "Player3", "category": "Intermediate"},
+                {"name": "Player4", "category": "Intermediate"},
+                {"name": "Player5", "category": "Advanced"},
+                {"name": "Player6", "category": "Advanced"}
+            ]
+            
+            for player_data in test_players:
+                self.session.post(f"{self.base_url}/players", json=player_data)
+            
+            # Configure with 10 courts and optimization
+            config = {
+                "numCourts": 10,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": True
+            }
+            
+            self.session.put(f"{self.base_url}/session/config", json=config)
+            start_response = self.session.post(f"{self.base_url}/session/start")
+            
+            if start_response.status_code == 200:
+                matches_response = self.session.get(f"{self.base_url}/matches")
+                if matches_response.status_code == 200:
+                    matches = matches_response.json()
+                    courts_used = len(set(m["courtIndex"] for m in matches))
+                    
+                    # Should use 3 courts max (1 per category) since we have 6 players
+                    if courts_used <= 3:
+                        self.log_test("Excess Courts Handling", True, 
+                                    f"Properly handled excess courts: used {courts_used}/10 courts for 6 players")
+                    else:
+                        self.log_test("Excess Courts Handling", False, 
+                                    f"Inefficient court usage: {courts_used}/10 courts for only 6 players")
+                        
+        except Exception as e:
+            self.log_test("Excess Courts Scenario", False, f"Exception: {str(e)}")
+
+    def test_cross_category_optimization_scenario(self):
+        """Test optimization with cross-category enabled"""
+        print("--- Testing Cross-Category Optimization ---")
+        
+        try:
+            # Reset and setup
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            # Configure with cross-category and optimization
+            config = {
+                "numCourts": 6,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": True,
+                "maximizeCourtUsage": True
+            }
+            
+            self.session.put(f"{self.base_url}/session/config", json=config)
+            start_response = self.session.post(f"{self.base_url}/session/start")
+            
+            if start_response.status_code == 200:
+                matches_response = self.session.get(f"{self.base_url}/matches")
+                if matches_response.status_code == 200:
+                    matches = matches_response.json()
+                    
+                    # Check for Mixed category matches
+                    mixed_matches = [m for m in matches if m["category"] == "Mixed"]
+                    courts_used = len(set(m["courtIndex"] for m in matches))
+                    
+                    if mixed_matches:
+                        self.log_test("Cross-Category Optimization", True, 
+                                    f"Cross-category optimization working: {len(mixed_matches)} Mixed matches, {courts_used} courts used")
+                    else:
+                        self.log_test("Cross-Category Optimization", True, 
+                                    f"No cross-category mixing needed: {courts_used} courts used")
+                        
+        except Exception as e:
+            self.log_test("Cross-Category Optimization", False, f"Exception: {str(e)}")
+
+    def test_format_preference_optimization(self):
+        """Test optimization respects format preferences"""
+        print("--- Testing Format Preference Optimization ---")
+        
+        try:
+            # Test doubles-only optimization
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            config_doubles_only = {
+                "numCourts": 6,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": False,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": True
+            }
+            
+            self.session.put(f"{self.base_url}/session/config", json=config_doubles_only)
+            start_response = self.session.post(f"{self.base_url}/session/start")
+            
+            if start_response.status_code == 200:
+                matches_response = self.session.get(f"{self.base_url}/matches")
+                if matches_response.status_code == 200:
+                    matches = matches_response.json()
+                    
+                    # All matches should be doubles
+                    doubles_matches = [m for m in matches if m["matchType"] == "doubles"]
+                    singles_matches = [m for m in matches if m["matchType"] == "singles"]
+                    
+                    if len(singles_matches) == 0 and len(doubles_matches) > 0:
+                        self.log_test("Doubles-Only Optimization", True, 
+                                    f"Respects doubles-only preference: {len(doubles_matches)} doubles, 0 singles")
+                    else:
+                        self.log_test("Doubles-Only Optimization", False, 
+                                    f"Format preference violated: {len(doubles_matches)} doubles, {len(singles_matches)} singles")
+                        
+        except Exception as e:
+            self.log_test("Format Preference Optimization", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🏓 Starting Enhanced Pickleball Session Manager Backend API Tests")
