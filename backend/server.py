@@ -291,6 +291,10 @@ async def schedule_round(round_index: int) -> List[Match]:
             'singles': singles_matches,
             'eligible_players': eligible_players
         }
+        
+        # Debug logging for optimization
+        if config.maximizeCourtUsage:
+            print(f"DEBUG: Category {cat_name} - {count} players -> {doubles_matches} doubles, {singles_matches} singles")
     
     # Calculate total courts needed and implement optimization logic
     total_courts_needed = sum(plan['doubles'] + plan['singles'] for plan in court_plans.values())
