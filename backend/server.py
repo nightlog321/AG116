@@ -507,6 +507,8 @@ async def create_doubles_matches(
     matches = []
     shuffled_players = shuffle_list(players)
     
+    print(f"DEBUG: create_doubles_matches called with {len(players)} players, num_matches={num_matches}, category={category}")
+    
     # Create teams (pairs)
     teams = []
     used_indices = set()
@@ -539,12 +541,17 @@ async def create_doubles_matches(
             if len(teams) >= num_matches * 2:
                 break
     
+    print(f"DEBUG: Created {len(teams)} teams for {num_matches} matches (need {num_matches * 2} teams)")
+    
     # Pair teams into matches
     used_team_indices = set()
     
     for i, team_a in enumerate(teams):
         if i in used_team_indices or len(matches) >= num_matches:
+            print(f"DEBUG: Skipping team {i}: used={i in used_team_indices}, matches={len(matches)}, num_matches={num_matches}")
             break
+        
+        print(f"DEBUG: Processing team {i} for match creation")
         
         best_opponent_team = None
         best_opponent_score = float('inf')
@@ -553,6 +560,7 @@ async def create_doubles_matches(
         # Find best opponent team (lowest opponent history score)
         for j, team_b in enumerate(teams[i+1:], i+1):
             if j in used_team_indices:
+                print(f"DEBUG: Skipping team {j} as opponent (already used)")
                 continue
             
             opponent_score = calculate_opponent_score(team_a, team_b, histories)
@@ -563,6 +571,7 @@ async def create_doubles_matches(
                 best_opponent_index = j
         
         if best_opponent_team:
+            print(f"DEBUG: Creating match {len(matches)+1}: team {i} vs team {best_opponent_index}")
             match = Match(
                 roundIndex=round_index,
                 courtIndex=start_court_index + len(matches),
@@ -575,7 +584,10 @@ async def create_doubles_matches(
             matches.append(match)
             used_team_indices.add(i)
             used_team_indices.add(best_opponent_index)
+        else:
+            print(f"DEBUG: No opponent found for team {i}")
     
+    print(f"DEBUG: Created {len(matches)} matches from {len(teams)} teams")
     return matches
 
 async def create_singles_matches(
