@@ -230,38 +230,39 @@ async def schedule_round(round_index: int) -> List[Match]:
         doubles_matches = 0
         singles_matches = 0
         
-        # Determine match allocation based on format
-        if config.format == Format.singles:
-            if len(eligible_players) >= 2:
-                singles_matches = len(eligible_players) // 2
-        else:  # doubles or auto
-            count = len(eligible_players)
-            if count >= 4:
-                # Tentative doubles calculation
-                tentative_doubles = count // 4
-                remainder = count % 4
-                
-                # Handle remainder to avoid 1 or 3 leftovers
-                if remainder in [1, 3]:
-                    # Sit 1 lowest-sit player to make remainder 0 or 2
+        # Determine match allocation based on new format system
+        # Priority: Doubles first, then singles from remaining players
+        if not config.allowSingles and not config.allowDoubles:
+            # This should be caught by validation, but just in case
+            continue
+        
+        count = len(eligible_players)
+        
+        if config.allowDoubles and count >= 4:
+            # Priority: Create as many doubles matches as possible
+            doubles_matches = count // 4
+            remaining_players = count % 4
+            
+            # Handle remaining players with singles if allowed
+            if config.allowSingles and remaining_players >= 2:
+                if remaining_players == 3:
+                    # 3 remaining: sit 1 lowest-sit player, make 1 singles match
                     eligible_players.sort(key=lambda p: (p.sitCount, p.missDueToCourtLimit, p.name))
                     sit_player = eligible_players.pop(0)
-                    # Mark this player to get missDueToCourtLimit increment later
-                    
-                    # Recalculate after sitting one player
-                    count = len(eligible_players)
-                    doubles_matches = count // 4
-                    remainder = count % 4
-                
-                if remainder == 2 and config.format == Format.auto:
-                    # Use 2 leftovers for singles match
                     singles_matches = 1
-                    doubles_matches = (count - 2) // 4
-                else:
-                    doubles_matches = count // 4
-            elif len(eligible_players) == 2 and config.format == Format.auto:
-                # Fallback to singles for 2 players
-                singles_matches = 1
+                    count = len(eligible_players)  # Update count after sitting player
+                    doubles_matches = (count - 2) // 4  # Recalculate doubles
+                elif remaining_players == 2:
+                    # 2 remaining: perfect for 1 singles match
+                    singles_matches = 1
+                # remaining_players == 1: sits out naturally
+                # remaining_players == 0: all in doubles, perfect
+            # If singles not allowed, remaining players sit out
+            
+        elif config.allowSingles and count >= 2:
+            # Only singles allowed, or not enough players for doubles
+            singles_matches = count // 2
+            # Odd numbered player sits out naturally
         
         court_plans[cat_name] = {
             'doubles': doubles_matches,
