@@ -277,40 +277,72 @@ async def schedule_round(round_index: int) -> List[Match]:
     
     # Court Allocation Optimization: Maximize court usage if enabled
     if config.maximizeCourtUsage and total_courts_needed < config.numCourts:
-        # Try to create additional matches to utilize more courts
-        # This allows multiple matches per category to maximize court usage
+        # Advanced optimization: Try to create more matches to utilize available courts
+        # This uses a greedy approach to fill unused courts with additional matches
+        
         additional_courts_available = config.numCourts - total_courts_needed
         
-        # Redistribute players to create more matches
-        for cat_name, plan in court_plans.items():
+        # Instead of limiting to one match per category, allow multiple matches
+        # when we have enough players and courts available
+        for cat_name in list(court_plans.keys()):
             if additional_courts_available <= 0:
                 break
                 
+            plan = court_plans[cat_name]
             eligible = plan['eligible_players']
-            current_matches = plan['doubles'] + plan['singles']
             
-            # Calculate players already used in current matches
-            players_used = (plan['doubles'] * 4) + (plan['singles'] * 2)
-            remaining_players = len(eligible) - players_used
+            # Calculate how many players are currently used
+            current_players_used = (plan['doubles'] * 4) + (plan['singles'] * 2)
+            remaining_players = len(eligible) - current_players_used
             
-            # If we have enough remaining players for more matches, create them
-            if remaining_players >= 4 and additional_courts_available > 0:
-                if config.allowDoubles:
-                    # Can we make another doubles match?
-                    additional_doubles = min(remaining_players // 4, additional_courts_available)
-                    if additional_doubles > 0:
-                        plan['doubles'] += additional_doubles
-                        additional_courts_available -= additional_doubles
-                        remaining_players -= additional_doubles * 4
-                        
-            # Check for singles matches with remaining players
-            if remaining_players >= 2 and additional_courts_available > 0:
-                if config.allowSingles:
-                    # Can we make another singles match?
-                    additional_singles = min(remaining_players // 2, additional_courts_available)
-                    if additional_singles > 0:
-                        plan['singles'] += additional_singles
-                        additional_courts_available -= additional_singles
+            # Create additional doubles matches if possible
+            if config.allowDoubles and remaining_players >= 4:
+                additional_doubles_possible = min(remaining_players // 4, additional_courts_available)
+                if additional_doubles_possible > 0:
+                    plan['doubles'] += additional_doubles_possible
+                    additional_courts_available -= additional_doubles_possible
+                    remaining_players -= additional_doubles_possible * 4
+            
+            # Create additional singles matches with remaining players
+            if config.allowSingles and remaining_players >= 2 and additional_courts_available > 0:
+                additional_singles_possible = min(remaining_players // 2, additional_courts_available)
+                if additional_singles_possible > 0:
+                    plan['singles'] += additional_singles_possible
+                    additional_courts_available -= additional_singles_possible
+        
+        # If we still have unused courts and players sitting out, try cross-category optimization
+        if additional_courts_available > 0 and not config.allowCrossCategory:
+            # Collect all unused players across categories
+            all_unused_players = []
+            for cat_name, plan in court_plans.items():
+                current_players_used = (plan['doubles'] * 4) + (plan['singles'] * 2)
+                unused_players = plan['eligible_players'][current_players_used:]
+                all_unused_players.extend(unused_players)
+            
+            # Try to create mixed matches with unused players to fill courts
+            if len(all_unused_players) >= 4 and config.allowDoubles and additional_courts_available > 0:
+                mixed_doubles = min(len(all_unused_players) // 4, additional_courts_available)
+                if mixed_doubles > 0 and "Mixed" not in court_plans:
+                    court_plans["Mixed"] = {
+                        'doubles': mixed_doubles,
+                        'singles': 0,
+                        'eligible_players': all_unused_players[:mixed_doubles * 4]
+                    }
+                    additional_courts_available -= mixed_doubles
+            
+            # Remaining players for singles matches
+            remaining_mixed = len(all_unused_players) % 4
+            if remaining_mixed >= 2 and config.allowSingles and additional_courts_available > 0:
+                mixed_singles = min(remaining_mixed // 2, additional_courts_available)
+                if mixed_singles > 0:
+                    if "Mixed" in court_plans:
+                        court_plans["Mixed"]['singles'] += mixed_singles
+                    else:
+                        court_plans["Mixed"] = {
+                            'doubles': 0,
+                            'singles': mixed_singles,
+                            'eligible_players': all_unused_players[-mixed_singles * 2:]
+                        }
         
         # Recalculate total courts needed after optimization
         total_courts_needed = sum(plan['doubles'] + plan['singles'] for plan in court_plans.values())
