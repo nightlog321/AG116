@@ -1783,6 +1783,9 @@ class PickleballAPITester:
         # Run specific scenario test
         self.test_mixed_category_scenario()
         
+        # Run Court Allocation Optimization tests
+        self.test_court_allocation_optimization()
+        
         # Print summary
         print("=" * 60)
         print("🏓 TEST SUMMARY")
