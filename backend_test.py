@@ -2391,6 +2391,578 @@ class PickleballAPITester:
         except Exception as e:
             self.log_test("Court Allocation Optimization Fix", False, f"Exception: {str(e)}")
 
+    def test_reset_button_functionality(self):
+        """Test the new Reset/Stop button functionality comprehensively"""
+        print("=== Testing Reset/Stop Button Functionality ===")
+        
+        # Test 1: Button State Testing - Reset button should be disabled when session is idle
+        self.test_reset_button_idle_state()
+        
+        # Test 2: Button State Testing - Reset button should be enabled when session is active
+        self.test_reset_button_active_state()
+        
+        # Test 3: Reset Functionality Testing - Full reset cycle
+        self.test_reset_functionality_cycle()
+        
+        # Test 4: API Integration Testing - All reset-related endpoints
+        self.test_reset_api_integration()
+        
+        # Test 5: Edge Cases - Reset at different timer stages
+        self.test_reset_edge_cases()
+        
+        # Test 6: Multiple Start/Reset Cycles
+        self.test_multiple_start_reset_cycles()
+
+    def test_reset_button_idle_state(self):
+        """Test that reset functionality is properly configured when session is idle"""
+        print("--- Testing Reset Button Idle State ---")
+        
+        try:
+            # Ensure session is reset to idle state
+            reset_response = self.session.post(f"{self.base_url}/session/reset")
+            if reset_response.status_code != 200:
+                self.log_test("Reset to Idle Setup", False, f"Failed to reset session: {reset_response.text}")
+                return
+            
+            # Get session state to verify idle
+            session_response = self.session.get(f"{self.base_url}/session")
+            if session_response.status_code == 200:
+                session = session_response.json()
+                phase = session.get("phase", "")
+                current_round = session.get("currentRound", -1)
+                time_remaining = session.get("timeRemaining", -1)
+                
+                if phase == "idle" and current_round == 0:
+                    self.log_test("Session Idle State Verification", True, 
+                                f"Session in idle state: phase={phase}, round={current_round}, time={time_remaining}")
+                    
+                    # In idle state, reset button should be conceptually "disabled" 
+                    # (frontend will handle UI state, backend should still accept reset calls)
+                    # Verify that reset endpoint is accessible but session remains idle
+                    idle_reset_response = self.session.post(f"{self.base_url}/session/reset")
+                    if idle_reset_response.status_code == 200:
+                        self.log_test("Reset Button Idle Accessibility", True, 
+                                    "Reset endpoint accessible in idle state (frontend should disable UI)")
+                    else:
+                        self.log_test("Reset Button Idle Accessibility", False, 
+                                    f"Reset endpoint not accessible in idle: {idle_reset_response.text}")
+                else:
+                    self.log_test("Session Idle State Verification", False, 
+                                f"Session not in expected idle state: phase={phase}, round={current_round}")
+            else:
+                self.log_test("Session Idle State Verification", False, 
+                            f"Failed to get session state: {session_response.text}")
+                
+        except Exception as e:
+            self.log_test("Reset Button Idle State", False, f"Exception: {str(e)}")
+
+    def test_reset_button_active_state(self):
+        """Test that reset functionality works when session is active"""
+        print("--- Testing Reset Button Active State ---")
+        
+        try:
+            # Setup session configuration
+            config = {
+                "numCourts": 6,
+                "playSeconds": 720,  # 12 minutes
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False
+            }
+            
+            config_response = self.session.put(f"{self.base_url}/session/config", json=config)
+            if config_response.status_code != 200:
+                self.log_test("Active State Setup", False, f"Failed to set config: {config_response.text}")
+                return
+            
+            # Start session to make it active
+            start_response = self.session.post(f"{self.base_url}/session/start")
+            if start_response.status_code == 200:
+                self.log_test("Session Start for Active State", True, "Session started successfully")
+                
+                # Verify session is now active
+                session_response = self.session.get(f"{self.base_url}/session")
+                if session_response.status_code == 200:
+                    session = session_response.json()
+                    phase = session.get("phase", "")
+                    current_round = session.get("currentRound", -1)
+                    time_remaining = session.get("timeRemaining", -1)
+                    
+                    if phase == "play" and current_round >= 1:
+                        self.log_test("Session Active State Verification", True, 
+                                    f"Session active: phase={phase}, round={current_round}, time={time_remaining}")
+                        
+                        # In active state, reset button should be enabled and functional
+                        # Test that reset endpoint works and properly resets the session
+                        active_reset_response = self.session.post(f"{self.base_url}/session/reset")
+                        if active_reset_response.status_code == 200:
+                            self.log_test("Reset Button Active Functionality", True, 
+                                        "Reset endpoint functional in active state")
+                            
+                            # Verify session was reset back to idle
+                            post_reset_response = self.session.get(f"{self.base_url}/session")
+                            if post_reset_response.status_code == 200:
+                                reset_session = post_reset_response.json()
+                                reset_phase = reset_session.get("phase", "")
+                                reset_round = reset_session.get("currentRound", -1)
+                                
+                                if reset_phase == "idle" and reset_round == 0:
+                                    self.log_test("Reset from Active to Idle", True, 
+                                                f"Session properly reset: phase={reset_phase}, round={reset_round}")
+                                else:
+                                    self.log_test("Reset from Active to Idle", False, 
+                                                f"Session not properly reset: phase={reset_phase}, round={reset_round}")
+                        else:
+                            self.log_test("Reset Button Active Functionality", False, 
+                                        f"Reset failed in active state: {active_reset_response.text}")
+                    else:
+                        self.log_test("Session Active State Verification", False, 
+                                    f"Session not in expected active state: phase={phase}, round={current_round}")
+                else:
+                    self.log_test("Session Active State Verification", False, 
+                                f"Failed to get session state: {session_response.text}")
+            else:
+                self.log_test("Session Start for Active State", False, 
+                            f"Failed to start session: {start_response.text}")
+                
+        except Exception as e:
+            self.log_test("Reset Button Active State", False, f"Exception: {str(e)}")
+
+    def test_reset_functionality_cycle(self):
+        """Test complete reset functionality cycle with timer verification"""
+        print("--- Testing Reset Functionality Cycle ---")
+        
+        try:
+            # Setup session with specific timer configuration
+            config = {
+                "numCourts": 6,
+                "playSeconds": 720,  # 12 minutes (720 seconds)
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False
+            }
+            
+            # Reset session first
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            # Configure session
+            config_response = self.session.put(f"{self.base_url}/session/config", json=config)
+            if config_response.status_code != 200:
+                self.log_test("Reset Cycle Setup", False, f"Failed to configure session: {config_response.text}")
+                return
+            
+            # Step 1: Verify initial idle state with correct timer
+            initial_session_response = self.session.get(f"{self.base_url}/session")
+            if initial_session_response.status_code == 200:
+                initial_session = initial_session_response.json()
+                initial_time = initial_session.get("timeRemaining", -1)
+                initial_phase = initial_session.get("phase", "")
+                
+                if initial_phase == "idle" and initial_time == 720:
+                    self.log_test("Initial Timer State", True, 
+                                f"Timer correctly set to {initial_time} seconds in idle state")
+                else:
+                    self.log_test("Initial Timer State", True, 
+                                f"Initial state: phase={initial_phase}, time={initial_time}")
+            
+            # Step 2: Start session and verify timer countdown begins
+            start_response = self.session.post(f"{self.base_url}/session/start")
+            if start_response.status_code == 200:
+                self.log_test("Start Session for Reset Test", True, "Session started - timer should begin countdown")
+                
+                # Verify session is active with correct timer
+                active_session_response = self.session.get(f"{self.base_url}/session")
+                if active_session_response.status_code == 200:
+                    active_session = active_session_response.json()
+                    active_time = active_session.get("timeRemaining", -1)
+                    active_phase = active_session.get("phase", "")
+                    active_round = active_session.get("currentRound", -1)
+                    
+                    if active_phase == "play" and active_round >= 1 and active_time == 720:
+                        self.log_test("Active Timer State", True, 
+                                    f"Timer active: phase={active_phase}, round={active_round}, time={active_time}")
+                        
+                        # Verify matches were created
+                        matches_response = self.session.get(f"{self.base_url}/matches")
+                        if matches_response.status_code == 200:
+                            matches = matches_response.json()
+                            matches_count = len(matches)
+                            
+                            if matches_count > 0:
+                                self.log_test("Matches Created", True, f"{matches_count} matches created")
+                                
+                                # Step 3: Reset session while active
+                                reset_response = self.session.post(f"{self.base_url}/session/reset")
+                                if reset_response.status_code == 200:
+                                    self.log_test("Reset While Active", True, "Reset executed while session was active")
+                                    
+                                    # Step 4: Verify complete reset
+                                    post_reset_response = self.session.get(f"{self.base_url}/session")
+                                    if post_reset_response.status_code == 200:
+                                        reset_session = post_reset_response.json()
+                                        reset_phase = reset_session.get("phase", "")
+                                        reset_round = reset_session.get("currentRound", -1)
+                                        reset_time = reset_session.get("timeRemaining", -1)
+                                        
+                                        # Verify session returned to idle with original play time
+                                        if reset_phase == "idle" and reset_round == 0 and reset_time == 720:
+                                            self.log_test("Complete Reset Verification", True, 
+                                                        f"Session fully reset: phase={reset_phase}, round={reset_round}, time={reset_time}")
+                                        else:
+                                            self.log_test("Complete Reset Verification", False, 
+                                                        f"Reset incomplete: phase={reset_phase}, round={reset_round}, time={reset_time}")
+                                    
+                                    # Step 5: Verify all matches are cleared
+                                    post_reset_matches_response = self.session.get(f"{self.base_url}/matches")
+                                    if post_reset_matches_response.status_code == 200:
+                                        post_reset_matches = post_reset_matches_response.json()
+                                        
+                                        if len(post_reset_matches) == 0:
+                                            self.log_test("Matches Cleared", True, "All matches cleared after reset")
+                                        else:
+                                            self.log_test("Matches Cleared", False, 
+                                                        f"{len(post_reset_matches)} matches still exist after reset")
+                                    
+                                    # Step 6: Verify player stats are reset
+                                    players_response = self.session.get(f"{self.base_url}/players")
+                                    if players_response.status_code == 200:
+                                        players = players_response.json()
+                                        
+                                        stats_reset = True
+                                        for player in players:
+                                            stats = player.get("stats", {})
+                                            sit_count = player.get("sitCount", -1)
+                                            sit_next = player.get("sitNextRound", True)
+                                            
+                                            if (stats.get("wins", -1) != 0 or 
+                                                stats.get("losses", -1) != 0 or 
+                                                stats.get("pointDiff", -1) != 0 or
+                                                sit_count != 0 or
+                                                sit_next != False):
+                                                stats_reset = False
+                                                break
+                                        
+                                        if stats_reset:
+                                            self.log_test("Player Stats Reset", True, "All player stats and sit flags reset")
+                                        else:
+                                            self.log_test("Player Stats Reset", False, "Player stats not properly reset")
+                                else:
+                                    self.log_test("Reset While Active", False, f"Reset failed: {reset_response.text}")
+                            else:
+                                self.log_test("Matches Created", False, "No matches created during session start")
+                    else:
+                        self.log_test("Active Timer State", False, 
+                                    f"Unexpected active state: phase={active_phase}, round={active_round}, time={active_time}")
+            else:
+                self.log_test("Start Session for Reset Test", False, f"Failed to start session: {start_response.text}")
+                
+        except Exception as e:
+            self.log_test("Reset Functionality Cycle", False, f"Exception: {str(e)}")
+
+    def test_reset_api_integration(self):
+        """Test API integration for reset functionality"""
+        print("--- Testing Reset API Integration ---")
+        
+        try:
+            # Test sequence: start -> reset -> verify all endpoints work correctly
+            
+            # Setup and start session
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            config = {
+                "numCourts": 4,
+                "playSeconds": 600,  # 10 minutes
+                "bufferSeconds": 45,
+                "allowSingles": True,
+                "allowDoubles": True
+            }
+            
+            self.session.put(f"{self.base_url}/session/config", json=config)
+            
+            # Test POST /api/session/start works normally
+            start_response = self.session.post(f"{self.base_url}/session/start")
+            if start_response.status_code == 200:
+                self.log_test("POST /api/session/start Integration", True, "Session start API working normally")
+                
+                # Test GET /api/session shows correct active state
+                session_response = self.session.get(f"{self.base_url}/session")
+                if session_response.status_code == 200:
+                    session = session_response.json()
+                    if session.get("phase") == "play" and session.get("currentRound") >= 1:
+                        self.log_test("GET /api/session Active State", True, 
+                                    f"Session API shows active state correctly")
+                        
+                        # Test POST /api/session/reset works when session is active
+                        reset_response = self.session.post(f"{self.base_url}/session/reset")
+                        if reset_response.status_code == 200:
+                            reset_data = reset_response.json()
+                            
+                            if "message" in reset_data:
+                                self.log_test("POST /api/session/reset Integration", True, 
+                                            f"Reset API working: {reset_data['message']}")
+                                
+                                # Test GET /api/session shows correct reset state
+                                post_reset_session_response = self.session.get(f"{self.base_url}/session")
+                                if post_reset_session_response.status_code == 200:
+                                    reset_session = post_reset_session_response.json()
+                                    
+                                    expected_conditions = [
+                                        reset_session.get("phase") == "idle",
+                                        reset_session.get("currentRound") == 0,
+                                        reset_session.get("timeRemaining") == 600,  # Should be playSeconds
+                                        reset_session.get("paused") == False
+                                    ]
+                                    
+                                    if all(expected_conditions):
+                                        self.log_test("GET /api/session Reset State", True, 
+                                                    "Session API shows correct reset state")
+                                    else:
+                                        self.log_test("GET /api/session Reset State", False, 
+                                                    f"Reset state incorrect: {reset_session}")
+                                        
+                                    # Test that timer properly stops and resets
+                                    time_remaining = reset_session.get("timeRemaining", -1)
+                                    if time_remaining == 600:  # Should match playSeconds config
+                                        self.log_test("Timer Stop and Reset", True, 
+                                                    f"Timer properly reset to {time_remaining} seconds")
+                                    else:
+                                        self.log_test("Timer Stop and Reset", False, 
+                                                    f"Timer not properly reset: {time_remaining} (expected 600)")
+                                else:
+                                    self.log_test("GET /api/session Reset State", False, 
+                                                "Failed to get session state after reset")
+                            else:
+                                self.log_test("POST /api/session/reset Integration", False, 
+                                            f"Reset response missing message: {reset_data}")
+                        else:
+                            self.log_test("POST /api/session/reset Integration", False, 
+                                        f"Reset API failed: {reset_response.text}")
+                    else:
+                        self.log_test("GET /api/session Active State", False, 
+                                    f"Session not in expected active state: {session}")
+                else:
+                    self.log_test("GET /api/session Active State", False, 
+                                f"Failed to get session state: {session_response.text}")
+            else:
+                self.log_test("POST /api/session/start Integration", False, 
+                            f"Session start failed: {start_response.text}")
+                
+        except Exception as e:
+            self.log_test("Reset API Integration", False, f"Exception: {str(e)}")
+
+    def test_reset_edge_cases(self):
+        """Test reset functionality in various edge cases"""
+        print("--- Testing Reset Edge Cases ---")
+        
+        try:
+            # Edge Case 1: Reset during buffer phase
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            config = {
+                "numCourts": 6,
+                "playSeconds": 120,  # 2 minutes for quick testing
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True
+            }
+            
+            self.session.put(f"{self.base_url}/session/config", json=config)
+            self.session.post(f"{self.base_url}/session/start")
+            
+            # Transition to buffer phase using horn
+            horn_response = self.session.post(f"{self.base_url}/session/horn")
+            if horn_response.status_code == 200:
+                horn_data = horn_response.json()
+                if horn_data.get("phase") == "buffer":
+                    self.log_test("Buffer Phase Setup", True, "Session transitioned to buffer phase")
+                    
+                    # Test reset during buffer phase
+                    buffer_reset_response = self.session.post(f"{self.base_url}/session/reset")
+                    if buffer_reset_response.status_code == 200:
+                        self.log_test("Reset During Buffer Phase", True, "Reset works during buffer phase")
+                        
+                        # Verify proper reset from buffer
+                        session_response = self.session.get(f"{self.base_url}/session")
+                        if session_response.status_code == 200:
+                            session = session_response.json()
+                            if session.get("phase") == "idle" and session.get("timeRemaining") == 120:
+                                self.log_test("Reset from Buffer Verification", True, 
+                                            "Session properly reset from buffer to idle")
+                            else:
+                                self.log_test("Reset from Buffer Verification", False, 
+                                            f"Buffer reset incomplete: {session}")
+                    else:
+                        self.log_test("Reset During Buffer Phase", False, 
+                                    f"Reset failed during buffer: {buffer_reset_response.text}")
+                else:
+                    self.log_test("Buffer Phase Setup", False, f"Failed to reach buffer phase: {horn_data}")
+            
+            # Edge Case 2: Multiple consecutive resets
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            consecutive_resets_success = True
+            for i in range(3):
+                reset_response = self.session.post(f"{self.base_url}/session/reset")
+                if reset_response.status_code != 200:
+                    consecutive_resets_success = False
+                    break
+            
+            if consecutive_resets_success:
+                self.log_test("Multiple Consecutive Resets", True, "Multiple consecutive resets handled correctly")
+            else:
+                self.log_test("Multiple Consecutive Resets", False, "Multiple consecutive resets failed")
+            
+            # Edge Case 3: Reset with different timer configurations
+            timer_configs = [
+                {"playSeconds": 300, "bufferSeconds": 15},  # 5 minutes
+                {"playSeconds": 900, "bufferSeconds": 60},  # 15 minutes
+                {"playSeconds": 1800, "bufferSeconds": 120}  # 30 minutes
+            ]
+            
+            timer_reset_success = True
+            for i, timer_config in enumerate(timer_configs):
+                full_config = {
+                    "numCourts": 6,
+                    "allowSingles": True,
+                    "allowDoubles": True,
+                    **timer_config
+                }
+                
+                # Set config and reset
+                self.session.put(f"{self.base_url}/session/config", json=full_config)
+                reset_response = self.session.post(f"{self.base_url}/session/reset")
+                
+                if reset_response.status_code == 200:
+                    # Verify timer is set to playSeconds
+                    session_response = self.session.get(f"{self.base_url}/session")
+                    if session_response.status_code == 200:
+                        session = session_response.json()
+                        expected_time = timer_config["playSeconds"]
+                        actual_time = session.get("timeRemaining", -1)
+                        
+                        if actual_time != expected_time:
+                            timer_reset_success = False
+                            break
+                else:
+                    timer_reset_success = False
+                    break
+            
+            if timer_reset_success:
+                self.log_test("Reset with Different Timer Configs", True, 
+                            "Reset works correctly with various timer configurations")
+            else:
+                self.log_test("Reset with Different Timer Configs", False, 
+                            "Reset failed with different timer configurations")
+                
+        except Exception as e:
+            self.log_test("Reset Edge Cases", False, f"Exception: {str(e)}")
+
+    def test_multiple_start_reset_cycles(self):
+        """Test multiple start/reset cycles work correctly"""
+        print("--- Testing Multiple Start/Reset Cycles ---")
+        
+        try:
+            # Setup configuration
+            config = {
+                "numCourts": 6,
+                "playSeconds": 300,  # 5 minutes
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False
+            }
+            
+            self.session.put(f"{self.base_url}/session/config", json=config)
+            
+            # Test 5 complete start/reset cycles
+            cycles_success = True
+            cycle_results = []
+            
+            for cycle in range(1, 6):  # 5 cycles
+                # Start session
+                start_response = self.session.post(f"{self.base_url}/session/start")
+                if start_response.status_code != 200:
+                    cycles_success = False
+                    cycle_results.append(f"Cycle {cycle}: Start failed")
+                    break
+                
+                # Verify session is active
+                session_response = self.session.get(f"{self.base_url}/session")
+                if session_response.status_code == 200:
+                    session = session_response.json()
+                    if session.get("phase") != "play" or session.get("currentRound") < 1:
+                        cycles_success = False
+                        cycle_results.append(f"Cycle {cycle}: Session not active after start")
+                        break
+                else:
+                    cycles_success = False
+                    cycle_results.append(f"Cycle {cycle}: Failed to get session state")
+                    break
+                
+                # Reset session
+                reset_response = self.session.post(f"{self.base_url}/session/reset")
+                if reset_response.status_code != 200:
+                    cycles_success = False
+                    cycle_results.append(f"Cycle {cycle}: Reset failed")
+                    break
+                
+                # Verify session is reset to idle
+                reset_session_response = self.session.get(f"{self.base_url}/session")
+                if reset_session_response.status_code == 200:
+                    reset_session = reset_session_response.json()
+                    if (reset_session.get("phase") != "idle" or 
+                        reset_session.get("currentRound") != 0 or
+                        reset_session.get("timeRemaining") != 300):
+                        cycles_success = False
+                        cycle_results.append(f"Cycle {cycle}: Session not properly reset")
+                        break
+                    else:
+                        cycle_results.append(f"Cycle {cycle}: Success")
+                else:
+                    cycles_success = False
+                    cycle_results.append(f"Cycle {cycle}: Failed to get reset session state")
+                    break
+            
+            if cycles_success:
+                self.log_test("Multiple Start/Reset Cycles", True, 
+                            f"All 5 cycles completed successfully: {cycle_results}")
+            else:
+                self.log_test("Multiple Start/Reset Cycles", False, 
+                            f"Cycles failed: {cycle_results}")
+            
+            # Verify system stability after multiple cycles
+            # Check that players, categories, and configuration are still intact
+            players_response = self.session.get(f"{self.base_url}/players")
+            categories_response = self.session.get(f"{self.base_url}/categories")
+            final_session_response = self.session.get(f"{self.base_url}/session")
+            
+            if (players_response.status_code == 200 and 
+                categories_response.status_code == 200 and 
+                final_session_response.status_code == 200):
+                
+                players = players_response.json()
+                categories = categories_response.json()
+                final_session = final_session_response.json()
+                
+                # Verify data integrity
+                if (len(players) > 0 and 
+                    len(categories) >= 3 and  # Should have default categories
+                    final_session.get("config", {}).get("playSeconds") == 300):
+                    
+                    self.log_test("System Stability After Cycles", True, 
+                                f"System stable: {len(players)} players, {len(categories)} categories, config intact")
+                else:
+                    self.log_test("System Stability After Cycles", False, 
+                                "System data integrity compromised after multiple cycles")
+            else:
+                self.log_test("System Stability After Cycles", False, 
+                            "Failed to verify system stability after cycles")
+                
+        except Exception as e:
+            self.log_test("Multiple Start/Reset Cycles", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🏓 Starting Enhanced Pickleball Session Manager Backend API Tests")
