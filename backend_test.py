@@ -2414,6 +2414,9 @@ class PickleballAPITester:
         # Run Court Allocation Optimization tests
         self.test_court_allocation_optimization()
         
+        # CRITICAL: Test the optimization fix
+        self.test_court_allocation_optimization_fix()
+        
         # Print summary
         print("=" * 60)
         print("🏓 TEST SUMMARY")
