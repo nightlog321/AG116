@@ -571,7 +571,7 @@ export default function PickleballManager() {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Pickleball Session Manager</Text>
+        <Text style={styles.headerTitle}>CourtChime</Text>
         {session && (
           <View style={styles.sessionInfo}>
             <Text style={styles.sessionText}>
