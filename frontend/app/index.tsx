@@ -542,7 +542,7 @@ export default function PickleballManager() {
       
       const link = document.createElement('a');
       link.href = url;
-      link.download = `pickleball-session-${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `courtchime-session-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
