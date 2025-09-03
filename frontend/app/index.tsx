@@ -559,7 +559,7 @@ export default function PickleballManager() {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor={colors.background} />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading Pickleball Manager...</Text>
+          <Text style={styles.loadingText}>Loading CourtChime...</Text>
         </View>
       </SafeAreaView>
     );
