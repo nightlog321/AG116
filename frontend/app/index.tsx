@@ -5,9 +5,9 @@ import * as DocumentPicker from 'expo-document-picker';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-// Notion-inspired color palette
+// Notion-inspired color palette with more grey shades
 const colors = {
-  // Notion's signature colors
+  // Notion's signature colors with grey focus
   background: '#ffffff',
   surface: '#f7f6f3',
   surfaceLight: '#fbfbfa',
@@ -19,22 +19,22 @@ const colors = {
   textSecondary: '#787774',
   textMuted: '#9b9a97',
   
-  // Notion's accent colors
-  primary: '#2383e2',      // Notion blue
-  primaryLight: '#e8f3ff',
-  success: '#0f7b0f',      // Notion green
-  successLight: '#edf3ed',
-  warning: '#d9730d',      // Notion orange
-  warningLight: '#faf3e8',
-  error: '#e03e3e',        // Notion red
-  errorLight: '#fdebeb',
+  // More grey-focused accent colors
+  primary: '#6b7280',      // Grey instead of blue
+  primaryLight: '#f3f4f6',
+  success: '#10b981',      // Keep green for success
+  successLight: '#ecfdf5',
+  warning: '#f59e0b',      // Keep orange for warning
+  warningLight: '#fef3c7',
+  error: '#ef4444',        // Keep red for error
+  errorLight: '#fee2e2',
   
-  // Notion purple for special elements
-  accent: '#9065b0',
-  accentLight: '#f4f1f7',
+  // Grey accents for buttons and highlights
+  accent: '#6b7280',       // Grey accent
+  accentLight: '#f9fafb',
   
   // Dark mode text (for headers)
-  textDark: '#2d2d2d',
+  textDark: '#1f2937',
 };
 
 // Types
