@@ -1254,6 +1254,14 @@ function AdminConsole({
           </TouchableOpacity>
         </View>
         
+        <TouchableOpacity 
+          style={[styles.primaryButton, { marginTop: 12 }]}
+          onPress={onAddTestData}
+        >
+          <Ionicons name="flask" size={20} color={colors.background} style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Add Test Data (12 Players)</Text>
+        </TouchableOpacity>
+        
         <Text style={styles.helpText}>
           CSV Format: Player Name, Player Level, Date (optional)
         </Text>
