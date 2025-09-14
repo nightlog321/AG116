@@ -846,6 +846,7 @@ export default function PickleballManager() {
               onExportCSV={exportCSV}
               onGenerateMatches={generateMatches}
               onResetTimer={resetTimer}
+              onAddTestData={addTestData}
             />
           )}
           
