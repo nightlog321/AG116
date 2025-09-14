@@ -849,6 +849,36 @@ async def delete_category(category_id: str):
         raise HTTPException(status_code=404, detail="Category not found")
     return {"message": "Category deleted"}
 
+# Data Management
+@api_router.delete("/clear-all-data", response_model=dict)
+async def clear_all_data():
+    """Clear all data from the database for fresh start"""
+    try:
+        # Clear all collections
+        await db.players.delete_many({})
+        await db.categories.delete_many({})
+        await db.matches.delete_many({})
+        await db.session.delete_many({})
+        
+        # Reinitialize with default categories
+        default_categories = [
+            Category(name="Beginner"),
+            Category(name="Intermediate"), 
+            Category(name="Advanced")
+        ]
+        
+        for category in default_categories:
+            await db.categories.insert_one(category.dict())
+        
+        # Create fresh session
+        session_obj = SessionState()
+        await db.session.insert_one(session_obj.dict())
+        
+        return {"message": "All data cleared successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clear data: {str(e)}")
+
 # Players
 @api_router.get("/players", response_model=List[Player])
 async def get_players():
