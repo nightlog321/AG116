@@ -132,6 +132,181 @@ def shuffle_list(items: List[Any]) -> List[Any]:
     random.shuffle(shuffled)
     return shuffled
 
+def calculate_rating_change(player_rating: float, opponent_avg_rating: float, game_result: str, 
+                          score_margin: int = 0, k_factor: float = 32.0) -> float:
+    """
+    DUPR-style rating calculation
+    
+    Args:
+        player_rating: Current rating of the player
+        opponent_avg_rating: Average rating of opponents in the match
+        game_result: 'W' for win, 'L' for loss
+        score_margin: Point difference (positive for wins, negative for losses)
+        k_factor: How much ratings can change (higher = more volatile)
+    
+    Returns:
+        Rating change (can be positive or negative)
+    """
+    # Expected score based on rating difference (ELO-style)
+    rating_diff = opponent_avg_rating - player_rating
+    expected_score = 1 / (1 + 10 ** (rating_diff / 400))
+    
+    # Actual score (1 for win, 0 for loss)
+    actual_score = 1.0 if game_result == 'W' else 0.0
+    
+    # Base rating change
+    base_change = k_factor * (actual_score - expected_score)
+    
+    # Margin multiplier (DUPR considers score margins)
+    # Closer games have less impact, blowout wins/losses have more impact
+    margin_multiplier = 1.0
+    if score_margin > 0:  # Win
+        margin_multiplier = min(1.5, 1.0 + (abs(score_margin) / 20.0))  # Cap at 1.5x
+    elif score_margin < 0:  # Loss  
+        margin_multiplier = min(1.5, 1.0 + (abs(score_margin) / 20.0))  # Same for losses
+    
+    # Apply diminishing returns for very high/low ratings
+    if player_rating > 6.0:  # High-rated players change less
+        base_change *= 0.8
+    elif player_rating < 3.0:  # Low-rated players can improve faster
+        base_change *= 1.2
+    
+    final_change = base_change * margin_multiplier
+    
+    # Ensure rating stays within reasonable bounds
+    new_rating = player_rating + final_change
+    if new_rating > 8.0:
+        final_change = 8.0 - player_rating
+    elif new_rating < 2.0:
+        final_change = 2.0 - player_rating
+    
+    return final_change
+
+async def update_player_ratings(match: dict, teamA_score: int, teamB_score: int):
+    """
+    Update player ratings based on match result (DUPR-style)
+    """
+    try:
+        # Get all players in the match
+        all_player_ids = match['teamA'] + match['teamB']
+        players = []
+        
+        for player_id in all_player_ids:
+            player = await db.players.find_one({"id": player_id})
+            if player:
+                players.append(player)
+        
+        if len(players) != len(all_player_ids):
+            return  # Some players not found
+        
+        # Split into teams
+        teamA_players = [p for p in players if p['id'] in match['teamA']]
+        teamB_players = [p for p in players if p['id'] in match['teamB']]
+        
+        # Calculate average ratings for each team
+        teamA_avg = sum(p['rating'] for p in teamA_players) / len(teamA_players)
+        teamB_avg = sum(p['rating'] for p in teamB_players) / len(teamB_players)
+        
+        # Determine winner and score margin
+        teamA_won = teamA_score > teamB_score
+        score_margin = abs(teamA_score - teamB_score)
+        
+        # Update ratings for all players
+        for player in teamA_players:
+            result = 'W' if teamA_won else 'L'
+            margin = score_margin if teamA_won else -score_margin
+            rating_change = calculate_rating_change(
+                player['rating'], teamB_avg, result, margin
+            )
+            
+            new_rating = round(player['rating'] + rating_change, 2)
+            new_matches = player.get('matchesPlayed', 0) + 1
+            new_wins = player.get('wins', 0) + (1 if teamA_won else 0)
+            new_losses = player.get('losses', 0) + (0 if teamA_won else 1)
+            
+            # Update recent form (last 10 games)
+            recent_form = player.get('recentForm', [])
+            recent_form.append(result)
+            if len(recent_form) > 10:
+                recent_form = recent_form[-10:]
+            
+            # Add to rating history
+            rating_history = player.get('ratingHistory', [])
+            rating_history.append({
+                'date': datetime.now().isoformat(),
+                'oldRating': player['rating'],
+                'newRating': new_rating,
+                'change': rating_change,
+                'matchId': match['id'],
+                'result': result
+            })
+            if len(rating_history) > 50:
+                rating_history = rating_history[-50:]  # Keep last 50 rating changes
+            
+            # Update player in database
+            await db.players.update_one(
+                {"id": player['id']},
+                {"$set": {
+                    "rating": new_rating,
+                    "matchesPlayed": new_matches,
+                    "wins": new_wins,
+                    "losses": new_losses,
+                    "recentForm": recent_form,
+                    "ratingHistory": rating_history,
+                    "lastUpdated": datetime.now().isoformat()
+                }}
+            )
+        
+        # Update ratings for Team B
+        for player in teamB_players:
+            result = 'L' if teamA_won else 'W'
+            margin = -score_margin if teamA_won else score_margin
+            rating_change = calculate_rating_change(
+                player['rating'], teamA_avg, result, margin
+            )
+            
+            new_rating = round(player['rating'] + rating_change, 2)
+            new_matches = player.get('matchesPlayed', 0) + 1
+            new_wins = player.get('wins', 0) + (0 if teamA_won else 1)
+            new_losses = player.get('losses', 0) + (1 if teamA_won else 0)
+            
+            # Update recent form
+            recent_form = player.get('recentForm', [])
+            recent_form.append(result)
+            if len(recent_form) > 10:
+                recent_form = recent_form[-10:]
+            
+            # Add to rating history
+            rating_history = player.get('ratingHistory', [])
+            rating_history.append({
+                'date': datetime.now().isoformat(),
+                'oldRating': player['rating'],
+                'newRating': new_rating,
+                'change': rating_change,
+                'matchId': match['id'],
+                'result': result
+            })
+            if len(rating_history) > 50:
+                rating_history = rating_history[-50:]
+            
+            # Update player in database
+            await db.players.update_one(
+                {"id": player['id']},
+                {"$set": {
+                    "rating": new_rating,
+                    "matchesPlayed": new_matches,
+                    "wins": new_wins,
+                    "losses": new_losses,
+                    "recentForm": recent_form,
+                    "ratingHistory": rating_history,
+                    "lastUpdated": datetime.now().isoformat()
+                }}
+            )
+            
+    except Exception as e:
+        print(f"Error updating player ratings: {e}")
+        # Continue without failing the match score update
+
 def calculate_partner_score(player_a: str, player_b: str, histories: Dict[str, Any]) -> int:
     """Calculate how often two players have been partners"""
     partners_history = histories.get('partners', {})
