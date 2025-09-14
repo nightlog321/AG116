@@ -943,6 +943,9 @@ async def update_match_score(match_id: str, score_update: MatchScoreUpdate):
             }}
         )
     
+    # Update DUPR-style ratings
+    await update_player_ratings(match, score_update.scoreA, score_update.scoreB)
+    
     updated_match = await db.matches.find_one({"id": match_id})
     return Match(**updated_match)
 
