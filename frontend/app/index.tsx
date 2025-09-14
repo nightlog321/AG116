@@ -729,7 +729,7 @@ function AdminConsole({
   onRefresh,
   onImportCSV,
   onExportCSV,
-  onStartSession,
+  onGenerateMatches,
   onResetTimer
 }: { 
   session: SessionState | null;
@@ -738,7 +738,7 @@ function AdminConsole({
   onRefresh: () => void;
   onImportCSV: () => void;
   onExportCSV: () => void;
-  onStartSession: () => void;
+  onGenerateMatches: () => void;
   onResetTimer: () => void;
 }) {
   const [newPlayerName, setNewPlayerName] = useState('');
