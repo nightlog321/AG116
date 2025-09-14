@@ -694,7 +694,7 @@ export default function PickleballManager() {
               }}
               onImportCSV={importCSV}
               onExportCSV={exportCSV}
-              onStartSession={startSession}
+              onGenerateMatches={generateMatches}
               onResetTimer={resetTimer}
             />
           )}
