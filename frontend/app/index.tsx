@@ -646,7 +646,7 @@ export default function PickleballManager() {
             color={activeTab === 'players' ? colors.text : colors.textMuted} 
           />
           <Text style={[styles.tabText, activeTab === 'players' && styles.activeTabText]}>
-            Players
+            Standings
           </Text>
         </TouchableOpacity>
       </View>
