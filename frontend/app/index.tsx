@@ -2334,7 +2334,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '600',
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
   },
   categoryBeginnerText: {
     color: '#2E7D32',
