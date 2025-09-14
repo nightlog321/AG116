@@ -539,17 +539,27 @@ export default function PickleballManager() {
   const importCSV = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: 'text/csv',
+        type: ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
         copyToCacheDirectory: true,
       });
 
       if (result.type === 'success') {
+        // Check if it's an Excel file
+        if (result.name?.endsWith('.xlsx') || result.name?.endsWith('.xls')) {
+          Alert.alert(
+            'Excel File Detected', 
+            'Please convert your Excel file to CSV format first. You can do this by opening the file in Excel and using "Save As" → "CSV (Comma delimited)".',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+
         const response = await fetch(result.uri);
         const csvText = await response.text();
         const importedPlayers = parseCSV(csvText);
         
         if (importedPlayers.length === 0) {
-          Alert.alert('Error', 'No valid players found in CSV file');
+          Alert.alert('Error', 'No valid players found in CSV file. Make sure your CSV has columns: Name, Category, Rating (optional)');
           return;
         }
 
