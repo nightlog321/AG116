@@ -612,6 +612,28 @@ export default function PickleballManager() {
     }
   };
 
+  const addTestData = async () => {
+    try {
+      Alert.alert('Adding Test Data', 'Adding sample players...');
+      
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/add-test-data`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        Alert.alert('✅ Test Data Added!', result.message + '\n\nRefreshing data...');
+        onRefresh();
+      } else {
+        const errorText = await response.text();
+        Alert.alert('❌ Failed to Add Test Data', errorText);
+      }
+    } catch (error) {
+      console.error('Error adding test data:', error);
+      Alert.alert('❌ Error', 'Failed to add test data');
+    }
+  };
+
   const processCSVData = async (csvText: string, fileName: string) => {
     try {
       console.log('🔍 Processing CSV data...');
