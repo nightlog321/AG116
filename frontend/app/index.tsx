@@ -538,136 +538,166 @@ export default function PickleballManager() {
   // CSV Import Function
   const importCSV = async () => {
     try {
-      Alert.alert('Import Started', 'Selecting CSV file...');
+      console.log('🔄 Import CSV button clicked!');
+      Alert.alert('Import Started', 'Starting CSV import process...');
       
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-        copyToCacheDirectory: true,
-      });
+      // Check if we're running in a web browser
+      if (Platform.OS === 'web') {
+        console.log('📱 Running on web platform');
+        // For web, use HTML file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.csv,text/csv';
+        input.onchange = async (event: any) => {
+          const file = event.target.files[0];
+          if (file) {
+            console.log('📁 File selected:', file.name, file.size, file.type);
+            Alert.alert('Processing', `Reading file: ${file.name}`);
+            
+            try {
+              const csvText = await file.text();
+              console.log('📄 CSV Text Length:', csvText.length);
+              
+              await processCSVData(csvText, file.name);
+            } catch (error) {
+              console.error('❌ Error reading file:', error);
+              Alert.alert('Import Failed', `Could not read file: ${error}`);
+            }
+          }
+        };
+        input.click();
+      } else {
+        console.log('📱 Running on mobile platform');
+        // For mobile, use expo-document-picker
+        const result = await DocumentPicker.getDocumentAsync({
+          type: ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+          copyToCacheDirectory: true,
+        });
 
-      if (result.type === 'cancel') {
-        Alert.alert('Import Cancelled', 'No file selected');
-        return;
-      }
-
-      console.log('File selected:', result.name, result.size, result.type);
-
-      if (result.type === 'success') {
-        // Check if it's an Excel file
-        if (result.name?.endsWith('.xlsx') || result.name?.endsWith('.xls')) {
-          Alert.alert(
-            'Excel File Detected', 
-            `File: ${result.name}\n\nPlease convert your Excel file to CSV format first. You can do this by opening the file in Excel and using "Save As" → "CSV (Comma delimited)".`,
-            [{ text: 'OK' }]
-          );
+        if (result.type === 'cancel') {
+          Alert.alert('Import Cancelled', 'No file selected');
           return;
         }
 
-        Alert.alert('Processing', 'Reading CSV file...');
+        console.log('📁 File selected:', result.name, result.size, result.type);
 
-        try {
-          const response = await fetch(result.uri);
-          const csvText = await response.text();
-          
-          console.log('CSV Text Length:', csvText.length);
-          console.log('CSV Preview:', csvText.substring(0, 200));
-          
-          if (!csvText || csvText.trim().length === 0) {
-            Alert.alert('Import Failed', 'The selected file appears to be empty.');
-            return;
-          }
-
-          Alert.alert('Processing', 'Parsing CSV data...');
-          
-          const importedPlayers = parseCSV(csvText);
-          
-          console.log('Parsed Players:', importedPlayers);
-          
-          if (importedPlayers.length === 0) {
+        if (result.type === 'success') {
+          // Check if it's an Excel file
+          if (result.name?.endsWith('.xlsx') || result.name?.endsWith('.xls')) {
             Alert.alert(
-              'Import Failed - No Valid Data', 
-              `No valid players found in CSV file.\n\nFile preview:\n${csvText.substring(0, 150)}...\n\nRequired format:\nName,Category,Rating\nJohn,Beginner,3.2\nJane,Intermediate,4.5`,
+              'Excel File Detected', 
+              `File: ${result.name}\n\nPlease convert your Excel file to CSV format first. You can do this by opening the file in Excel and using "Save As" → "CSV (Comma delimited)".`,
               [{ text: 'OK' }]
             );
             return;
           }
 
-          Alert.alert('Processing', `Found ${importedPlayers.length} players. Creating in database...`);
+          Alert.alert('Processing', `Reading file: ${result.name}`);
 
-          // Import players with progress tracking
-          let successCount = 0;
-          let errorCount = 0;
-          const errors: string[] = [];
-
-          for (const player of importedPlayers) {
-            try {
-              console.log('Creating player:', player);
-              
-              const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  name: player.name,
-                  category: player.category,
-                  rating: player.rating || 3.0
-                })
-              });
-
-              if (response.ok) {
-                successCount++;
-                console.log(`✅ Created player: ${player.name}`);
-              } else {
-                const errorText = await response.text();
-                console.error(`❌ Failed to create player ${player.name}:`, errorText);
-                errorCount++;
-                errors.push(`${player.name}: ${errorText}`);
-              }
-            } catch (error) {
-              console.error(`❌ Error creating player ${player.name}:`, error);
-              errorCount++;
-              errors.push(`${player.name}: ${error}`);
-            }
+          try {
+            const response = await fetch(result.uri);
+            const csvText = await response.text();
+            console.log('📄 CSV Text Length:', csvText.length);
+            
+            await processCSVData(csvText, result.name);
+          } catch (fetchError) {
+            console.error('❌ Error reading file:', fetchError);
+            Alert.alert('Import Failed - File Reading Error', `Could not read the selected file: ${fetchError}`);
           }
-
-          // Final result notification
-          if (successCount > 0 && errorCount === 0) {
-            Alert.alert(
-              '✅ Import Successful!', 
-              `Successfully imported ${successCount} players!\n\nRefreshing data...`,
-              [{ text: 'OK' }]
-            );
-            onRefresh();
-          } else if (successCount > 0 && errorCount > 0) {
-            Alert.alert(
-              '⚠️ Partial Import', 
-              `Imported ${successCount} players successfully.\n${errorCount} failed.\n\nErrors:\n${errors.slice(0, 3).join('\n')}`,
-              [{ text: 'OK' }]
-            );
-            onRefresh();
-          } else {
-            Alert.alert(
-              '❌ Import Failed', 
-              `Failed to import any players.\n\nErrors:\n${errors.slice(0, 3).join('\n')}`,
-              [{ text: 'OK' }]
-            );
-          }
-
-        } catch (fetchError) {
-          console.error('Error reading file:', fetchError);
-          Alert.alert(
-            'Import Failed - File Reading Error', 
-            `Could not read the selected file.\n\nError: ${fetchError}\n\nPlease ensure the file is a valid CSV format.`,
-            [{ text: 'OK' }]
-          );
         }
       }
     } catch (error) {
-      console.error('Import error:', error);
-      Alert.alert(
-        'Import Failed - Unexpected Error', 
-        `An unexpected error occurred during import.\n\nError: ${error}\n\nPlease try again or contact support.`,
-        [{ text: 'OK' }]
-      );
+      console.error('❌ Import error:', error);
+      Alert.alert('Import Failed - Unexpected Error', `An unexpected error occurred: ${error}`);
+    }
+  };
+
+  const processCSVData = async (csvText: string, fileName: string) => {
+    try {
+      console.log('🔍 Processing CSV data...');
+      
+      if (!csvText || csvText.trim().length === 0) {
+        Alert.alert('Import Failed', 'The selected file appears to be empty.');
+        return;
+      }
+
+      Alert.alert('Processing', 'Parsing CSV data...');
+      
+      const importedPlayers = parseCSV(csvText);
+      
+      console.log('👥 Parsed Players:', importedPlayers);
+      
+      if (importedPlayers.length === 0) {
+        Alert.alert(
+          'Import Failed - No Valid Data', 
+          `No valid players found in CSV file.\n\nFile: ${fileName}\nFile preview:\n${csvText.substring(0, 150)}...\n\nRequired format:\nName,Category,Rating\nJohn,Beginner,3.2\nJane,Intermediate,4.5`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      Alert.alert('Processing', `Found ${importedPlayers.length} players. Creating in database...`);
+
+      // Import players with progress tracking
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      for (const player of importedPlayers) {
+        try {
+          console.log('➕ Creating player:', player);
+          
+          const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: player.name,
+              category: player.category,
+              rating: player.rating || 3.0
+            })
+          });
+
+          if (response.ok) {
+            successCount++;
+            console.log(`✅ Created player: ${player.name}`);
+          } else {
+            const errorText = await response.text();
+            console.error(`❌ Failed to create player ${player.name}:`, errorText);
+            errorCount++;
+            errors.push(`${player.name}: ${errorText}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error creating player ${player.name}:`, error);
+          errorCount++;
+          errors.push(`${player.name}: ${error}`);
+        }
+      }
+
+      // Final result notification
+      if (successCount > 0 && errorCount === 0) {
+        Alert.alert(
+          '✅ Import Successful!', 
+          `Successfully imported ${successCount} players!\n\nRefreshing data...`,
+          [{ text: 'OK' }]
+        );
+        onRefresh();
+      } else if (successCount > 0 && errorCount > 0) {
+        Alert.alert(
+          '⚠️ Partial Import', 
+          `Imported ${successCount} players successfully.\n${errorCount} failed.\n\nErrors:\n${errors.slice(0, 3).join('\n')}`,
+          [{ text: 'OK' }]
+        );
+        onRefresh();
+      } else {
+        Alert.alert(
+          '❌ Import Failed', 
+          `Failed to import any players.\n\nErrors:\n${errors.slice(0, 3).join('\n')}`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('❌ Error processing CSV:', error);
+      Alert.alert('Import Failed', `Error processing CSV data: ${error}`);
     }
   };
 
