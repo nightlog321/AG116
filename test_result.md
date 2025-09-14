@@ -318,6 +318,18 @@ backend:
           agent: "testing"
           comment: "🏆 DUPR-STYLE PLAYERS STANDINGS SYSTEM FULLY FUNCTIONAL! ✅ TAB NAME CHANGE: Successfully changed from 'Players' to 'Standings' tab with proper functionality. ✅ COMPREHENSIVE UI TRANSFORMATION: Complete redesign from simple player cards to professional club standings system. Header displays 'Club Standings' title with 'DUPR-Style Rating System' subtitle. ✅ PLAYER RANKINGS: Players properly sorted by rating (highest first) with numerical rankings (1, 2, 3...). Found 13 players with rankings starting from 1. ✅ RATING DISPLAY: All ratings displayed in correct format (X.XX) showing values like 8.00. Rating system fully integrated with backend DUPR data. ✅ PLAYER STATISTICS: Win-loss records displayed (1-1, 1-0, etc.), win percentages shown (50%, 100%), matches played count visible. ✅ RECENT FORM: Recent match results displayed in format 'Form: L-W' showing last match outcomes. ✅ RATING LEGEND: Complete color-coded rating scale at bottom with all 4 categories - '5.5+ Elite', '4.5+ Advanced', '3.5+ Intermediate', 'Below 3.5 Beginner'. ✅ MOBILE RESPONSIVENESS: Fully responsive on mobile viewport (390x844), scrollable interface, readable text (16px font), touch interactions working. ✅ DATA INTEGRATION: Successfully integrated with backend DUPR rating system, displaying real player data with ratings and statistics. Minor cosmetic items missing (trophy/medal icons, trend arrows) but core functionality perfect. The transformation from simple player list to comprehensive DUPR-style club standings system is complete and production-ready!"
 
+  - task: "Category Stickers in DUPR Standings"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/index.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added small category stickers/labels below player names in DUPR-style standings system. Each player now has a colored badge showing their category (BEGINNER, INTERMEDIATE, ADVANCED) with specific colors: Beginner (light green #E8F5E8 with dark green text #2E7D32), Intermediate (light orange #FFF3E0 with dark orange text #F57C00), Advanced (light pink #FCE4EC with dark pink text #C2185B). Stickers are small (9px font), have 8px border radius, uppercase bold text, and are designed to make all ranking boxes uniform in height."
+
 frontend:
   - task: "Navigation & UI Structure"
     implemented: true
