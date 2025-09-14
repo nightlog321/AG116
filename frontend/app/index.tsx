@@ -1819,8 +1819,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   toggleButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.accent, // Use grey accent instead of primary
+    borderColor: colors.accent,
   },
   toggleButtonText: {
     color: colors.textSecondary,
