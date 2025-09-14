@@ -3412,6 +3412,10 @@ class PickleballAPITester:
         # NEW: Test Reset/Stop Button Functionality
         self.test_reset_button_functionality()
         
+        # NEW: Test DUPR Rating System
+        self.test_dupr_rating_system()
+        self.test_team_average_rating_calculation()
+        
         # Print summary
         print("=" * 60)
         print("🏓 TEST SUMMARY")
