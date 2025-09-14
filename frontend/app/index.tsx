@@ -1789,7 +1789,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     minWidth: 60, // Smaller minimum width
   },
-  },
   timeInputs: {
     flexDirection: 'row',
     alignItems: 'center',
