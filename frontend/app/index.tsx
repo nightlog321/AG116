@@ -1637,17 +1637,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   header: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.borderLight,
   },
   headerTitle: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: '700',
+    color: colors.textDark,
+    fontSize: 22,
+    fontWeight: '600',
     textAlign: 'center',
-    letterSpacing: 0.5,
+    letterSpacing: -0.5, // Notion-style tight spacing
   },
   sessionInfo: {
     flexDirection: 'row',
