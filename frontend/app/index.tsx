@@ -1928,15 +1928,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 40,
   },
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.primary,
-    minWidth: 140,
-  },
   buttonDisabled: {
     opacity: 0.4, // Notion-style opacity
   },
