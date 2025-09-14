@@ -2208,12 +2208,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: colors.border,
+    minHeight: 80, // Ensure consistent height
   },
   rankContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 60,
-    marginRight: 16,
+    width: 50, // Reduced from 60
+    marginRight: 12, // Reduced from 16
   },
   rankNumber: {
     color: colors.text,
@@ -2222,14 +2223,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   playerInfo: {
-    flex: 1,
-    marginRight: 16,
+    flex: 2, // Increased from 1 for more space
+    marginRight: 12, // Reduced from 16
+    minWidth: 120, // Ensure minimum width for names
   },
   standingPlayerName: {
     color: colors.text,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
+    flexWrap: 'nowrap', // Prevent wrapping
   },
   standingPlayerCategory: {
     color: colors.textMuted,
