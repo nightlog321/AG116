@@ -1053,12 +1053,12 @@ function AdminConsole({
         {/* Session Control Buttons */}
         <View style={styles.sessionControlButtons}>
           <TouchableOpacity 
-            style={[styles.primaryButton, players.length < 4 && styles.buttonDisabled]}
-            onPress={onStartSession}
-            disabled={players.length < 4}
+            style={[styles.primaryButton, (players.length < 4 || (session && session.phase !== 'idle')) && styles.buttonDisabled]}
+            onPress={onGenerateMatches}
+            disabled={players.length < 4 || (session && session.phase !== 'idle')}
           >
-            <Ionicons name="play" size={20} color={colors.text} style={styles.buttonIcon} />
-            <Text style={styles.buttonText}>Let's Play</Text>
+            <Ionicons name="calendar" size={20} color={colors.text} style={styles.buttonIcon} />
+            <Text style={styles.buttonText}>Generate Matches</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
