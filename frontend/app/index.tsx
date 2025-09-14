@@ -2013,8 +2013,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkboxButtonActive: {
-    backgroundColor: colors.success,
-    borderColor: colors.success,
+    backgroundColor: colors.accent, // Use grey accent instead of primary
+    borderColor: colors.accent,
   },
   checkboxButtonText: {
     color: colors.textSecondary,
