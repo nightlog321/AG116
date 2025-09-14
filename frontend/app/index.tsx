@@ -556,10 +556,20 @@ export default function PickleballManager() {
 
         const response = await fetch(result.uri);
         const csvText = await response.text();
+        
+        console.log('CSV Text Length:', csvText.length);
+        console.log('CSV Preview:', csvText.substring(0, 200));
+        
         const importedPlayers = parseCSV(csvText);
         
+        console.log('Parsed Players:', importedPlayers);
+        
         if (importedPlayers.length === 0) {
-          Alert.alert('Error', 'No valid players found in CSV file. Make sure your CSV has columns: Name, Category, Rating (optional)');
+          Alert.alert('Error', `No valid players found in CSV file. 
+          
+File preview: ${csvText.substring(0, 100)}
+          
+Make sure your CSV has columns: Name, Category, Rating (optional)`);
           return;
         }
 
