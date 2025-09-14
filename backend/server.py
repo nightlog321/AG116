@@ -63,6 +63,14 @@ class Player(BaseModel):
     sitNextRound: bool = False
     sitCount: int = 0
     missDueToCourtLimit: int = 0
+    # DUPR-style rating fields
+    rating: float = 3.0  # Starting rating (typical DUPR range 2.0-8.0)
+    matchesPlayed: int = 0
+    wins: int = 0
+    losses: int = 0
+    recentForm: List[str] = []  # Last 10 results: 'W' or 'L'
+    ratingHistory: List[dict] = []  # Track rating changes over time
+    lastUpdated: str = Field(default_factory=lambda: datetime.now().isoformat())
     stats: PlayerStats = Field(default_factory=PlayerStats)
 
 class PlayerCreate(BaseModel):
