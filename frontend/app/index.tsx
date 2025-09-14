@@ -2314,11 +2314,11 @@ const styles = StyleSheet.create({
   },
   // Category sticker styles
   categorySticker: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: 4, // Reduced padding
+    paddingVertical: 1, // Reduced padding
+    borderRadius: 6, // Reduced border radius
     alignSelf: 'flex-start',
-    marginTop: 4,
+    marginTop: 2, // Reduced margin
     borderWidth: 1,
   },
   categoryBeginner: {
