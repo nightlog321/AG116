@@ -1272,8 +1272,68 @@ function CourtsDashboard({
           <Ionicons name="tennisball" size={48} color={colors.success} />
           <Text style={styles.emptyTitle}>Session Not Started</Text>
           <Text style={styles.emptyText}>
-            Start a session from the Admin tab to see court assignments
+            Generate matches from the Admin tab to see court assignments
           </Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (session.phase === 'ready') {
+    const currentMatches = getCurrentMatches();
+    return (
+      <View style={styles.dashboardContainer}>
+        {/* Show court assignments */}
+        <ScrollView style={styles.courtsScroll}>
+          {Array.from({ length: session.config.numCourts }, (_, i) => i).map((courtIndex) => {
+            const match = currentMatches.find(m => m.courtIndex === courtIndex);
+            
+            return (
+              <View key={courtIndex} style={styles.courtCard}>
+                <Text style={styles.courtTitle}>Court {courtIndex + 1}</Text>
+                {match ? (
+                  <View style={styles.courtMatch}>
+                    <View style={styles.matchTeams}>
+                      <View style={styles.team}>
+                        <Text style={styles.teamLabel}>Team A:</Text>
+                        {match.teamA.map(playerId => (
+                          <Text key={playerId} style={styles.playerName}>
+                            {getPlayerName(playerId)}
+                          </Text>
+                        ))}
+                      </View>
+                      <Text style={styles.vs}>VS</Text>
+                      <View style={styles.team}>
+                        <Text style={styles.teamLabel}>Team B:</Text>
+                        {match.teamB.map(playerId => (
+                          <Text key={playerId} style={styles.playerName}>
+                            {getPlayerName(playerId)}
+                          </Text>
+                        ))}
+                      </View>
+                    </View>
+                    <Text style={styles.matchType}>{match.matchType.toUpperCase()}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.emptyCourt}>No match assigned</Text>
+                )}
+              </View>
+            );
+          })}
+        </ScrollView>
+
+        {/* Let's Play Button - only show when ready */}
+        <View style={styles.readyActionContainer}>
+          <Text style={styles.readyMessage}>
+            ✅ Court assignments ready! Players can see their matches above.
+          </Text>
+          <TouchableOpacity 
+            style={styles.letsPlayButton}
+            onPress={onStartSession}
+          >
+            <Ionicons name="play" size={24} color={colors.text} />
+            <Text style={styles.letsPlayText}>Let's Play!</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
