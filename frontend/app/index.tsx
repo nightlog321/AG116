@@ -32,6 +32,21 @@ interface Player {
   sitNextRound: boolean;
   sitCount: number;
   missDueToCourtLimit: number;
+  // DUPR-style rating fields
+  rating: number;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  recentForm: string[];
+  ratingHistory: Array<{
+    date: string;
+    oldRating: number;
+    newRating: number;
+    change: number;
+    matchId: string;
+    result: string;
+  }>;
+  lastUpdated: string;
   stats: {
     wins: number;
     losses: number;
