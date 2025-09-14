@@ -2242,7 +2242,7 @@ const styles = StyleSheet.create({
   },
   ratingContainer: {
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 12, // Reduced from 16
   },
   ratingBox: {
     alignItems: 'center',
@@ -2250,7 +2250,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceLight,
     borderRadius: 8,
     padding: 8,
-    minWidth: 60,
+    minWidth: 55, // Reduced from 60
   },
   ratingNumber: {
     fontSize: 18,
