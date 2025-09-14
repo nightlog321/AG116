@@ -879,6 +879,45 @@ async def clear_all_data():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to clear data: {str(e)}")
 
+@api_router.post("/add-test-data", response_model=dict)
+async def add_test_data():
+    """Add sample test players for testing purposes"""
+    try:
+        # Sample players with ratings
+        test_players = [
+            {"name": "John Smith", "category": "Beginner", "rating": 3.2},
+            {"name": "Jane Doe", "category": "Beginner", "rating": 3.5},
+            {"name": "Mike Johnson", "category": "Intermediate", "rating": 4.1},
+            {"name": "Sarah Wilson", "category": "Intermediate", "rating": 4.3},
+            {"name": "David Brown", "category": "Advanced", "rating": 5.2},
+            {"name": "Lisa Garcia", "category": "Advanced", "rating": 5.5},
+            {"name": "Tom Anderson", "category": "Beginner", "rating": 3.0},
+            {"name": "Emily Chen", "category": "Intermediate", "rating": 4.0},
+            {"name": "Robert Taylor", "category": "Advanced", "rating": 5.8},
+            {"name": "Maria Rodriguez", "category": "Beginner", "rating": 3.3},
+            {"name": "James Wilson", "category": "Intermediate", "rating": 4.2},
+            {"name": "Ashley Johnson", "category": "Advanced", "rating": 5.1}
+        ]
+        
+        # Clear existing players first
+        await db.players.delete_many({})
+        
+        # Add test players
+        created_count = 0
+        for player_data in test_players:
+            player = Player(
+                name=player_data["name"],
+                category=player_data["category"],
+                rating=player_data["rating"]
+            )
+            await db.players.insert_one(player.dict())
+            created_count += 1
+        
+        return {"message": f"Successfully added {created_count} test players"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add test data: {str(e)}")
+
 # Players
 @api_router.get("/players", response_model=List[Player])
 async def get_players():
