@@ -1103,7 +1103,10 @@ function AdminConsole({
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Data Management</Text>
         <Text style={styles.cardSubtitle}>
-          Import/Export player data in CSV format
+          Import/Export player data. CSV Format: Name, Category, Rating (optional)
+        </Text>
+        <Text style={styles.cardSubtitle}>
+          📝 Excel files: Please convert to CSV first (Excel → Save As → CSV)
         </Text>
         
         <View style={styles.buttonRow}>
