@@ -1774,20 +1774,21 @@ const styles = StyleSheet.create({
   },
   configLabel: {
     color: colors.textSecondary,
-    fontSize: 16,
+    fontSize: 14, // Notion-style smaller labels
     fontWeight: '500',
     flex: 1,
   },
   configInput: {
     color: colors.text,
-    fontSize: 16,
-    padding: 12,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 8,
+    fontSize: 14,
+    padding: 8, // Notion-style tighter padding
+    backgroundColor: colors.background,
+    borderRadius: 4, // Notion-style subtle rounding
     borderWidth: 1,
     borderColor: colors.border,
     textAlign: 'center',
-    minWidth: 70,
+    minWidth: 60, // Smaller minimum width
+  },
   },
   timeInputs: {
     flexDirection: 'row',
