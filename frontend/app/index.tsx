@@ -1080,8 +1080,8 @@ function AdminConsole({
             onPress={onResetTimer}
             disabled={!session || session.phase === 'idle'}
           >
-            <Ionicons name="stop" size={20} color={colors.text} style={styles.buttonIcon} />
-            <Text style={styles.buttonText}>Reset</Text>
+            <Ionicons name="stop" size={20} color={colors.textSecondary} style={styles.buttonIcon} />
+            <Text style={styles.secondaryButtonText}>Reset</Text>
           </TouchableOpacity>
         </View>
       </View>
