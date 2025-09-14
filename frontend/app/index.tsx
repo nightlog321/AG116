@@ -465,7 +465,32 @@ export default function PickleballManager() {
     }
   };
 
-  // Start session function
+  // Generate matches function (without starting timer)
+  const generateMatches = async () => {
+    try {
+      // Initialize audio on user interaction
+      initializeAudio();
+      
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/generate-matches`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        // Refresh data to get the updated session state
+        await fetchSession();
+        await fetchPlayers();
+        await fetchCategories();
+        await fetchMatches();
+        
+        Alert.alert('Matches Generated!', 'Players can now see their court assignments. Go to Courts tab and click "Let\'s Play" when ready.');
+      }
+    } catch (error) {
+      console.error('Error generating matches:', error);
+      Alert.alert('Error', 'Failed to generate matches');
+    }
+  };
+
+  // Start session function (just starts timer)
   const startSession = async () => {
     try {
       // Initialize audio on user interaction
