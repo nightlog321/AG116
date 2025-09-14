@@ -1812,25 +1812,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   toggleButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: colors.surfaceLight,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 4, // Notion-style subtle rounding
+    backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
   },
   toggleButtonActive: {
-    backgroundColor: colors.success,
-    borderColor: colors.success,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   toggleButtonText: {
     color: colors.textSecondary,
-    fontSize: 14,
+    fontSize: 12, // Smaller Notion-style text
     fontWeight: '500',
     textAlign: 'center',
   },
   toggleButtonTextActive: {
-    color: colors.text,
+    color: colors.background, // White text on active buttons
     fontWeight: '600',
   },
   saveButton: {
