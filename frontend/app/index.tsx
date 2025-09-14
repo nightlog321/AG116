@@ -2309,4 +2309,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
+  // Category sticker styles
+  categorySticker: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    borderWidth: 1,
+  },
+  categoryBeginner: {
+    backgroundColor: '#E8F5E8',
+    borderColor: '#4CAF50',
+  },
+  categoryIntermediate: {
+    backgroundColor: '#FFF3E0',
+    borderColor: '#FF9800',
+  },
+  categoryAdvanced: {
+    backgroundColor: '#FCE4EC',
+    borderColor: '#E91E63',
+  },
+  categoryStickerText: {
+    fontSize: 9,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  categoryBeginnerText: {
+    color: '#2E7D32',
+  },
+  categoryIntermediateText: {
+    color: '#F57C00',
+  },
+  categoryAdvancedText: {
+    color: '#C2185B',
+  },
 });
