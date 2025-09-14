@@ -222,6 +222,8 @@ const parseCSV = (csvText: string) => {
           player.name = value;
         } else if (header.includes('level') || header.includes('category')) {
           player.category = value;
+        } else if (header.includes('rating')) {
+          player.rating = parseFloat(value) || 3.0; // Default to 3.0 if invalid
         } else if (header.includes('date')) {
           player.date = value;
         }
