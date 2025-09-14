@@ -294,6 +294,18 @@ backend:
           agent: "testing"
           comment: "🎯 RESET/STOP BUTTON FUNCTIONALITY FULLY TESTED AND WORKING! ✅ COMPREHENSIVE TESTING COMPLETED: All 18 reset-specific tests passed with 100% success rate. (1) Button State Testing: Reset endpoint accessible in both idle and active states - frontend should handle UI state management (disable button in idle, enable in active). (2) Reset Functionality: Complete reset cycle works perfectly - session transitions from active (play phase, round 1, timer 720s) to idle (round 0, timer reset to playSeconds). (3) API Integration: All endpoints working correctly - POST /api/session/start, GET /api/session, POST /api/session/reset all function as expected. Timer properly stops and resets to original play time. (4) Complete Reset Verification: Session returns to idle state ✅, Timer resets to original play time (720s) ✅, All matches cleared ✅, Player stats reset (wins/losses/pointDiff/sitCount/sitNextRound) ✅. (5) Edge Cases: Reset works during buffer phase ✅, Multiple consecutive resets handled ✅, Reset with different timer configurations (5min/15min/30min) ✅. (6) Multiple Cycles: 5 complete start/reset cycles successful ✅, System stability maintained ✅. The Reset/Stop button backend functionality is production-ready and meets all requirements!"
 
+  - task: "DUPR-Style Rating System"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🏓 DUPR-STYLE RATING SYSTEM FULLY FUNCTIONAL! ✅ PLAYER RATING FIELDS: All players have required DUPR fields (rating=3.0 default, matchesPlayed, wins, losses, recentForm, ratingHistory, lastUpdated) with correct data types and bounds (2.0-8.0). ✅ RATING ALGORITHM: ELO-based calculation working - ratings update automatically when match scores are entered via PUT /api/matches/{id}/score. Algorithm considers opponent ratings, score margins, and applies diminishing returns for high/low rated players. ✅ DATABASE INTEGRATION: All players have complete rating data stored and retrieved correctly. Rating bounds validation working (2.0-8.0 range enforced). ✅ API INTEGRATION: Match scoring triggers automatic rating updates. Multiple score scenarios tested (blowout wins, close games) - all update player ratings and match history correctly. ✅ TEAM AVERAGE CALCULATION: Doubles matches properly calculate team average ratings for DUPR algorithm. All doubles matches have correct 2v2 structure for team rating calculations. ✅ EDGE CASES: Rating history tracking (max 50 entries), recent form tracking (max 10 W/L results), rating bounds enforcement all working correctly. The DUPR-style rating system transforms the simple player management into a comprehensive club standings system as requested!"
+
 frontend:
   - task: "Navigation & UI Structure"
     implemented: true
