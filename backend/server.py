@@ -1038,66 +1038,33 @@ async def generate_matches():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate matches: {str(e)}")
 
-@api_router.post("/session/start")
+@api_router.post("/session/start", response_model=SessionState)
 async def start_session():
-    """Start a new pickleball session and generate the first round"""
+    """Start the timer for matches that are already generated"""
     try:
-        # Get current session
-        session = await db.session.find_one()
-        if not session:
-            raise HTTPException(status_code=404, detail="Session not found")
+        session_obj = await get_session()
         
-        session_obj = SessionState(**session)
-        
-        # Check if we have enough players based on enabled formats
-        players_count = await db.players.count_documents({})
-        
-        # Validate format configuration
-        if not session_obj.config.allowSingles and not session_obj.config.allowDoubles:
+        # Must be in 'ready' phase to start timer
+        if session_obj.phase != SessionPhase.ready:
             raise HTTPException(
                 status_code=400,
-                detail="At least one format (Singles or Doubles) must be enabled"
+                detail="Session must be in 'ready' phase to start timer. Generate matches first."
             )
         
-        # Determine minimum players needed
-        if session_obj.config.allowDoubles:
-            min_players = 4  # Need at least 4 for doubles
-        elif session_obj.config.allowSingles:
-            min_players = 2  # Need at least 2 for singles
-        else:
-            min_players = 2  # Fallback
-        
-        if players_count < min_players:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Need at least {min_players} players to start session"
-            )
-        
-        # Clear any existing matches
-        await db.matches.delete_many({})
-        
-        # Generate first round
-        matches = await schedule_round(1)
-        
-        # Update session state
+        # Start the timer by setting phase to 'play'
         await db.session.update_one(
             {}, 
             {"$set": {
-                "phase": SessionPhase.play.value,
-                "currentRound": 1,
-                "paused": False,
+                "phase": SessionPhase.play,
                 "timeRemaining": session_obj.config.playSeconds
             }}
         )
         
-        return {
-            "message": "Session started successfully",
-            "round": 1,
-            "matches_created": len(matches)
-        }
+        return await get_session()
         
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error starting session: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to start session: {str(e)}")
 
 @api_router.post("/session/next-round")
