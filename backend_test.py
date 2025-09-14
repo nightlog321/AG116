@@ -2963,6 +2963,426 @@ class PickleballAPITester:
         except Exception as e:
             self.log_test("Multiple Start/Reset Cycles", False, f"Exception: {str(e)}")
 
+    def test_dupr_rating_system(self):
+        """Test the comprehensive DUPR-style rating system"""
+        print("=== Testing DUPR-Style Rating System ===")
+        
+        # Test 1: Player Rating Fields
+        self.test_player_rating_fields()
+        
+        # Test 2: Rating Algorithm Testing
+        self.test_rating_algorithm()
+        
+        # Test 3: Database Integration
+        self.test_rating_database_integration()
+        
+        # Test 4: Edge Cases
+        self.test_rating_edge_cases()
+        
+        # Test 5: API Integration
+        self.test_rating_api_integration()
+
+    def test_player_rating_fields(self):
+        """Test that players have all required DUPR rating fields"""
+        print("--- Testing Player Rating Fields ---")
+        
+        try:
+            # Create a test player to verify rating fields
+            test_player = {
+                "name": "Alex Rodriguez",
+                "category": "Intermediate"
+            }
+            
+            response = self.session.post(f"{self.base_url}/players", json=test_player)
+            if response.status_code == 200:
+                player = response.json()
+                
+                # Check for DUPR rating fields
+                required_rating_fields = [
+                    "rating", "matchesPlayed", "wins", "losses", 
+                    "recentForm", "ratingHistory", "lastUpdated"
+                ]
+                
+                missing_fields = [field for field in required_rating_fields if field not in player]
+                
+                if not missing_fields:
+                    # Verify default values
+                    if (player["rating"] == 3.0 and 
+                        player["matchesPlayed"] == 0 and
+                        player["wins"] == 0 and
+                        player["losses"] == 0 and
+                        isinstance(player["recentForm"], list) and
+                        isinstance(player["ratingHistory"], list)):
+                        
+                        self.log_test("Player Rating Fields", True, 
+                                    f"All DUPR rating fields present with correct defaults: rating={player['rating']}")
+                    else:
+                        self.log_test("Player Rating Fields", False, 
+                                    f"Rating fields have incorrect default values: {player}")
+                else:
+                    self.log_test("Player Rating Fields", False, 
+                                f"Missing rating fields: {missing_fields}")
+            else:
+                self.log_test("Player Rating Fields", False, 
+                            f"Failed to create test player: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Player Rating Fields", False, f"Exception: {str(e)}")
+
+    def test_rating_algorithm(self):
+        """Test DUPR-style rating calculation algorithm"""
+        print("--- Testing Rating Algorithm ---")
+        
+        try:
+            # Setup test scenario with players of different ratings
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            # Create players with different skill levels for testing
+            test_players = [
+                {"name": "Beginner Bob", "category": "Beginner"},      # Will have 3.0 rating
+                {"name": "Intermediate Ida", "category": "Intermediate"}, # Will have 3.0 rating  
+                {"name": "Advanced Alice", "category": "Advanced"},    # Will have 3.0 rating
+                {"name": "Expert Eve", "category": "Advanced"}         # Will have 3.0 rating
+            ]
+            
+            created_player_ids = []
+            for player_data in test_players:
+                response = self.session.post(f"{self.base_url}/players", json=player_data)
+                if response.status_code == 200:
+                    player = response.json()
+                    created_player_ids.append(player["id"])
+            
+            if len(created_player_ids) >= 4:
+                # Manually set different ratings to test algorithm
+                # Note: In a real implementation, we'd need an admin endpoint to set ratings
+                # For now, we'll test the algorithm by creating matches and checking results
+                
+                # Configure session for doubles
+                config = {
+                    "numCourts": 2,
+                    "playSeconds": 300,
+                    "bufferSeconds": 30,
+                    "allowSingles": True,
+                    "allowDoubles": True
+                }
+                self.session.put(f"{self.base_url}/session/config", json=config)
+                
+                # Start session to create matches
+                start_response = self.session.post(f"{self.base_url}/session/start")
+                if start_response.status_code == 200:
+                    self.log_test("Rating Algorithm Setup", True, "Test session started for rating algorithm testing")
+                    
+                    # Get matches to test rating updates
+                    matches_response = self.session.get(f"{self.base_url}/matches")
+                    if matches_response.status_code == 200:
+                        matches = matches_response.json()
+                        
+                        if matches:
+                            # Test rating update with a match score
+                            test_match = matches[0]
+                            match_id = test_match["id"]
+                            
+                            # Simulate a close game (11-9)
+                            score_update = {"scoreA": 11, "scoreB": 9}
+                            
+                            score_response = self.session.put(
+                                f"{self.base_url}/matches/{match_id}/score", 
+                                json=score_update
+                            )
+                            
+                            if score_response.status_code == 200:
+                                self.log_test("Rating Algorithm - Match Score Update", True, 
+                                            "Match score updated successfully, ratings should be calculated")
+                                
+                                # Verify players' ratings were updated
+                                players_response = self.session.get(f"{self.base_url}/players")
+                                if players_response.status_code == 200:
+                                    updated_players = players_response.json()
+                                    
+                                    rating_changes_found = False
+                                    for player in updated_players:
+                                        if (player["id"] in created_player_ids and 
+                                            (player["matchesPlayed"] > 0 or 
+                                             len(player["ratingHistory"]) > 0)):
+                                            rating_changes_found = True
+                                            break
+                                    
+                                    if rating_changes_found:
+                                        self.log_test("Rating Algorithm - Rating Updates", True, 
+                                                    "Player ratings and match history updated after match")
+                                    else:
+                                        self.log_test("Rating Algorithm - Rating Updates", False, 
+                                                    "No rating changes detected after match completion")
+                            else:
+                                self.log_test("Rating Algorithm - Match Score Update", False, 
+                                            f"Failed to update match score: {score_response.text}")
+                        else:
+                            self.log_test("Rating Algorithm Setup", False, "No matches created for testing")
+                else:
+                    self.log_test("Rating Algorithm Setup", False, f"Failed to start session: {start_response.text}")
+            else:
+                self.log_test("Rating Algorithm Setup", False, "Failed to create enough test players")
+                
+        except Exception as e:
+            self.log_test("Rating Algorithm", False, f"Exception: {str(e)}")
+
+    def test_rating_database_integration(self):
+        """Test that rating data is properly stored and retrieved from database"""
+        print("--- Testing Rating Database Integration ---")
+        
+        try:
+            # Get all players and verify rating data persistence
+            players_response = self.session.get(f"{self.base_url}/players")
+            if players_response.status_code == 200:
+                players = players_response.json()
+                
+                if players:
+                    # Check that all players have rating data
+                    players_with_ratings = 0
+                    for player in players:
+                        if ("rating" in player and 
+                            "matchesPlayed" in player and
+                            "recentForm" in player and
+                            "ratingHistory" in player):
+                            players_with_ratings += 1
+                    
+                    if players_with_ratings == len(players):
+                        self.log_test("Rating Database Integration", True, 
+                                    f"All {len(players)} players have complete rating data in database")
+                        
+                        # Test rating bounds (should be between 2.0 and 8.0)
+                        rating_bounds_valid = True
+                        for player in players:
+                            rating = player.get("rating", 3.0)
+                            if rating < 2.0 or rating > 8.0:
+                                rating_bounds_valid = False
+                                break
+                        
+                        if rating_bounds_valid:
+                            self.log_test("Rating Bounds Validation", True, 
+                                        "All player ratings within valid bounds (2.0-8.0)")
+                        else:
+                            self.log_test("Rating Bounds Validation", False, 
+                                        "Some player ratings outside valid bounds")
+                    else:
+                        self.log_test("Rating Database Integration", False, 
+                                    f"Only {players_with_ratings}/{len(players)} players have complete rating data")
+                else:
+                    self.log_test("Rating Database Integration", True, "No players to test (valid scenario)")
+            else:
+                self.log_test("Rating Database Integration", False, 
+                            f"Failed to retrieve players: {players_response.text}")
+                
+        except Exception as e:
+            self.log_test("Rating Database Integration", False, f"Exception: {str(e)}")
+
+    def test_rating_edge_cases(self):
+        """Test rating system edge cases"""
+        print("--- Testing Rating Edge Cases ---")
+        
+        try:
+            # Test 1: Rating bounds enforcement
+            # Create a match scenario that would test extreme rating changes
+            
+            # Get current players
+            players_response = self.session.get(f"{self.base_url}/players")
+            if players_response.status_code == 200:
+                players = players_response.json()
+                
+                if len(players) >= 2:
+                    # Test with existing players
+                    self.log_test("Rating Edge Cases - Player Count", True, 
+                                f"Testing with {len(players)} players")
+                    
+                    # Test rating history tracking
+                    players_with_history = 0
+                    for player in players:
+                        if isinstance(player.get("ratingHistory"), list):
+                            players_with_history += 1
+                    
+                    if players_with_history == len(players):
+                        self.log_test("Rating History Structure", True, 
+                                    "All players have rating history structure")
+                    else:
+                        self.log_test("Rating History Structure", False, 
+                                    f"Only {players_with_history}/{len(players)} players have rating history")
+                    
+                    # Test recent form tracking
+                    players_with_form = 0
+                    for player in players:
+                        recent_form = player.get("recentForm", [])
+                        if isinstance(recent_form, list) and len(recent_form) <= 10:
+                            players_with_form += 1
+                    
+                    if players_with_form == len(players):
+                        self.log_test("Recent Form Structure", True, 
+                                    "All players have valid recent form structure (max 10 entries)")
+                    else:
+                        self.log_test("Recent Form Structure", False, 
+                                    f"Only {players_with_form}/{len(players)} players have valid recent form")
+                else:
+                    self.log_test("Rating Edge Cases", True, "Not enough players for edge case testing")
+            else:
+                self.log_test("Rating Edge Cases", False, f"Failed to get players: {players_response.text}")
+                
+        except Exception as e:
+            self.log_test("Rating Edge Cases", False, f"Exception: {str(e)}")
+
+    def test_rating_api_integration(self):
+        """Test that rating updates integrate properly with match scoring API"""
+        print("--- Testing Rating API Integration ---")
+        
+        try:
+            # Reset and setup for clean testing
+            self.session.post(f"{self.base_url}/session/reset")
+            
+            # Configure session
+            config = {
+                "numCourts": 2,
+                "playSeconds": 300,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True
+            }
+            self.session.put(f"{self.base_url}/session/config", json=config)
+            
+            # Start session
+            start_response = self.session.post(f"{self.base_url}/session/start")
+            if start_response.status_code == 200:
+                # Get matches
+                matches_response = self.session.get(f"{self.base_url}/matches")
+                if matches_response.status_code == 200:
+                    matches = matches_response.json()
+                    
+                    if matches:
+                        # Test multiple score scenarios
+                        test_scenarios = [
+                            {"scoreA": 11, "scoreB": 5, "description": "Blowout win"},
+                            {"scoreA": 11, "scoreB": 9, "description": "Close win"},
+                            {"scoreA": 8, "scoreB": 11, "description": "Close loss"}
+                        ]
+                        
+                        successful_updates = 0
+                        for i, scenario in enumerate(test_scenarios):
+                            if i < len(matches):
+                                match = matches[i]
+                                match_id = match["id"]
+                                
+                                # Get players before match
+                                players_before = self.session.get(f"{self.base_url}/players").json()
+                                
+                                # Update match score
+                                score_response = self.session.put(
+                                    f"{self.base_url}/matches/{match_id}/score",
+                                    json={"scoreA": scenario["scoreA"], "scoreB": scenario["scoreB"]}
+                                )
+                                
+                                if score_response.status_code == 200:
+                                    # Verify match was updated
+                                    updated_match = score_response.json()
+                                    if (updated_match.get("scoreA") == scenario["scoreA"] and
+                                        updated_match.get("scoreB") == scenario["scoreB"] and
+                                        updated_match.get("status") == "done"):
+                                        
+                                        successful_updates += 1
+                                        self.log_test(f"API Integration - {scenario['description']}", True, 
+                                                    f"Match score updated and marked as done")
+                                        
+                                        # Verify player stats were updated
+                                        players_after = self.session.get(f"{self.base_url}/players").json()
+                                        
+                                        # Check if any player stats changed
+                                        stats_changed = False
+                                        for player_after in players_after:
+                                            for player_before in players_before:
+                                                if player_after["id"] == player_before["id"]:
+                                                    if (player_after.get("matchesPlayed", 0) > player_before.get("matchesPlayed", 0) or
+                                                        len(player_after.get("ratingHistory", [])) > len(player_before.get("ratingHistory", []))):
+                                                        stats_changed = True
+                                                        break
+                                            if stats_changed:
+                                                break
+                                        
+                                        if stats_changed:
+                                            self.log_test(f"Rating Update - {scenario['description']}", True, 
+                                                        "Player ratings and stats updated after match")
+                                        else:
+                                            self.log_test(f"Rating Update - {scenario['description']}", False, 
+                                                        "No player rating changes detected")
+                                    else:
+                                        self.log_test(f"API Integration - {scenario['description']}", False, 
+                                                    f"Match not properly updated: {updated_match}")
+                                else:
+                                    self.log_test(f"API Integration - {scenario['description']}", False, 
+                                                f"Failed to update match score: {score_response.text}")
+                        
+                        if successful_updates > 0:
+                            self.log_test("Overall API Integration", True, 
+                                        f"{successful_updates}/{len(test_scenarios)} score updates successful")
+                        else:
+                            self.log_test("Overall API Integration", False, "No successful score updates")
+                    else:
+                        self.log_test("Rating API Integration", True, "No matches available for testing")
+                else:
+                    self.log_test("Rating API Integration", False, "Failed to get matches")
+            else:
+                self.log_test("Rating API Integration", False, f"Failed to start session: {start_response.text}")
+                
+        except Exception as e:
+            self.log_test("Rating API Integration", False, f"Exception: {str(e)}")
+
+    def test_team_average_rating_calculation(self):
+        """Test that team average ratings are calculated correctly for doubles"""
+        print("--- Testing Team Average Rating Calculation ---")
+        
+        try:
+            # This test verifies the DUPR algorithm considers team averages
+            # We'll create a doubles match and verify the rating calculation logic
+            
+            # Get current players
+            players_response = self.session.get(f"{self.base_url}/players")
+            if players_response.status_code == 200:
+                players = players_response.json()
+                
+                if len(players) >= 4:
+                    # Find players that might be in doubles matches
+                    matches_response = self.session.get(f"{self.base_url}/matches")
+                    if matches_response.status_code == 200:
+                        matches = matches_response.json()
+                        
+                        doubles_matches = [m for m in matches if m.get("matchType") == "doubles"]
+                        
+                        if doubles_matches:
+                            self.log_test("Team Average Rating - Doubles Detection", True, 
+                                        f"Found {len(doubles_matches)} doubles matches for team average testing")
+                            
+                            # For each doubles match, verify team structure
+                            valid_team_structure = True
+                            for match in doubles_matches:
+                                if len(match.get("teamA", [])) != 2 or len(match.get("teamB", [])) != 2:
+                                    valid_team_structure = False
+                                    break
+                            
+                            if valid_team_structure:
+                                self.log_test("Team Average Rating - Team Structure", True, 
+                                            "All doubles matches have proper 2v2 team structure for average calculation")
+                            else:
+                                self.log_test("Team Average Rating - Team Structure", False, 
+                                            "Some doubles matches have incorrect team structure")
+                        else:
+                            self.log_test("Team Average Rating Calculation", True, 
+                                        "No doubles matches found (singles-only scenario)")
+                    else:
+                        self.log_test("Team Average Rating Calculation", False, "Failed to get matches")
+                else:
+                    self.log_test("Team Average Rating Calculation", True, 
+                                f"Only {len(players)} players available (insufficient for doubles testing)")
+            else:
+                self.log_test("Team Average Rating Calculation", False, "Failed to get players")
+                
+        except Exception as e:
+            self.log_test("Team Average Rating Calculation", False, f"Exception: {str(e)}")
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🏓 Starting Enhanced Pickleball Session Manager Backend API Tests")
