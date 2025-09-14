@@ -5,23 +5,36 @@ import * as DocumentPicker from 'expo-document-picker';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-// Modern Color Palette
+// Notion-inspired color palette
 const colors = {
-  primary: '#667eea',      // Modern purple-blue
-  primaryDark: '#5a6fd8',
-  secondary: '#764ba2',    // Deep purple
-  success: '#2dd4bf',      // Modern teal
-  successDark: '#0f766e',
-  warning: '#f59e0b',      // Warm amber
-  danger: '#ef4444',       // Modern red
-  background: '#0f172a',   // Deep slate
-  surface: '#1e293b',      // Slate
-  surfaceLight: '#334155', // Light slate
-  text: '#f8fafc',         // Light text
-  textSecondary: '#cbd5e1', // Muted text
-  textMuted: '#64748b',    // Very muted text
-  border: '#475569',       // Border color
-  accent: '#06b6d4',       // Cyan accent
+  // Notion's signature colors
+  background: '#ffffff',
+  surface: '#f7f6f3',
+  surfaceLight: '#fbfbfa',
+  border: '#e9e9e7',
+  borderLight: '#f1f1ef',
+  
+  // Text colors (Notion style)
+  text: '#37352f',
+  textSecondary: '#787774',
+  textMuted: '#9b9a97',
+  
+  // Notion's accent colors
+  primary: '#2383e2',      // Notion blue
+  primaryLight: '#e8f3ff',
+  success: '#0f7b0f',      // Notion green
+  successLight: '#edf3ed',
+  warning: '#d9730d',      // Notion orange
+  warningLight: '#faf3e8',
+  error: '#e03e3e',        // Notion red
+  errorLight: '#fdebeb',
+  
+  // Notion purple for special elements
+  accent: '#9065b0',
+  accentLight: '#f4f1f7',
+  
+  // Dark mode text (for headers)
+  textDark: '#2d2d2d',
 };
 
 // Types
