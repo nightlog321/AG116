@@ -1443,7 +1443,22 @@ function PlayersBoard({ players, matches }: { players: Player[]; matches: Match[
               {/* Player Info */}
               <View style={styles.playerInfo}>
                 <Text style={styles.standingPlayerName}>{player.name}</Text>
-                <Text style={styles.standingPlayerCategory}>{player.category}</Text>
+                {/* Category Sticker */}
+                <View style={[
+                  styles.categorySticker, 
+                  player.category === 'Beginner' && styles.categoryBeginner,
+                  player.category === 'Intermediate' && styles.categoryIntermediate,
+                  player.category === 'Advanced' && styles.categoryAdvanced
+                ]}>
+                  <Text style={[
+                    styles.categoryStickerText,
+                    player.category === 'Beginner' && styles.categoryBeginnerText,
+                    player.category === 'Intermediate' && styles.categoryIntermediateText,
+                    player.category === 'Advanced' && styles.categoryAdvancedText
+                  ]}>
+                    {player.category.toUpperCase()}
+                  </Text>
+                </View>
               </View>
               
               {/* Rating */}
