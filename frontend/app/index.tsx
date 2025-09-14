@@ -1369,28 +1369,44 @@ function CourtsDashboard({
 
 // Players Board Component (same structure, updated styles)
 function PlayersBoard({ players, matches }: { players: Player[]; matches: Match[] }) {
-  const getCurrentAssignment = (playerId: string) => {
-    // Find current round matches that include this player
-    const currentRound = Math.max(0, ...matches.map(m => m.roundIndex));
-    const currentMatches = matches.filter(m => m.roundIndex === currentRound);
+  // Sort players by rating (highest first) for standings
+  const sortedPlayers = [...players].sort((a, b) => (b.rating || 3.0) - (a.rating || 3.0));
+  
+  const formatRecentForm = (recentForm: string[]) => {
+    if (!recentForm || recentForm.length === 0) return 'No recent matches';
+    return recentForm.slice(-5).join('-'); // Show last 5 results
+  };
+  
+  const formatRating = (rating: number) => {
+    return rating ? rating.toFixed(2) : '3.00';
+  };
+  
+  const getRatingTrend = (ratingHistory: any[]) => {
+    if (!ratingHistory || ratingHistory.length < 2) return null;
+    const recent = ratingHistory.slice(-3); // Last 3 rating changes
+    if (recent.length < 2) return null;
     
-    for (const match of currentMatches) {
-      if ([...match.teamA, ...match.teamB].includes(playerId)) {
-        return `Court ${match.courtIndex + 1} - ${match.matchType}`;
-      }
-    }
-    
-    return 'Sitting this round';
+    const trend = recent[recent.length - 1].newRating - recent[0].oldRating;
+    if (trend > 0.1) return 'up';
+    if (trend < -0.1) return 'down';
+    return 'stable';
+  };
+  
+  const getRatingColor = (rating: number) => {
+    if (rating >= 5.5) return '#FFD700'; // Gold for high ratings
+    if (rating >= 4.5) return '#C0C0C0'; // Silver for good ratings  
+    if (rating >= 3.5) return '#CD7F32'; // Bronze for average ratings
+    return colors.textMuted; // Default for lower ratings
   };
 
   if (players.length === 0) {
     return (
       <View style={styles.dashboardContainer}>
         <View style={styles.card}>
-          <Ionicons name="people" size={48} color={colors.primary} />
+          <Ionicons name="trophy" size={48} color={colors.primary} />
           <Text style={styles.emptyTitle}>No Players</Text>
           <Text style={styles.emptyText}>
-            Add players from the Admin tab to get started
+            Add players from the Admin tab to get started with ratings
           </Text>
         </View>
       </View>
@@ -1398,30 +1414,93 @@ function PlayersBoard({ players, matches }: { players: Player[]; matches: Match[
   }
 
   return (
-    <View style={styles.playersContainer}>
-      {players.map((player) => (
-        <View key={player.id} style={styles.playerCard}>
-          <Text style={styles.playerCardName}>{player.name}</Text>
-          <Text style={styles.playerCardCategory}>{player.category}</Text>
-          <View style={styles.playerCardStats}>
-            <Text style={styles.playerCardStat}>
-              Record: {player.stats.wins}-{player.stats.losses}
-            </Text>
-            <Text style={styles.playerCardStat}>
-              Point Diff: {player.stats.pointDiff > 0 ? '+' : ''}{player.stats.pointDiff}
-            </Text>
-            <Text style={styles.playerCardStat}>
-              Sits: {player.sitCount}
-            </Text>
+    <View style={styles.standingsContainer}>
+      {/* Header */}
+      <View style={styles.standingsHeader}>
+        <Text style={styles.standingsTitle}>Club Standings</Text>
+        <Text style={styles.standingsSubtitle}>DUPR-Style Rating System</Text>
+      </View>
+      
+      {/* Standings List */}
+      <ScrollView style={styles.standingsList}>
+        {sortedPlayers.map((player, index) => {
+          const winRate = (player.matchesPlayed || 0) > 0 
+            ? ((player.wins || 0) / (player.matchesPlayed || 1) * 100).toFixed(0)
+            : '0';
+          const trend = getRatingTrend(player.ratingHistory || []);
+          const ratingColor = getRatingColor(player.rating || 3.0);
+          
+          return (
+            <View key={player.id} style={styles.standingRow}>
+              {/* Rank */}
+              <View style={styles.rankContainer}>
+                <Text style={styles.rankNumber}>{index + 1}</Text>
+                {index === 0 && <Ionicons name="trophy" size={16} color="#FFD700" />}
+                {index === 1 && <Ionicons name="medal" size={16} color="#C0C0C0" />}
+                {index === 2 && <Ionicons name="medal" size={16} color="#CD7F32" />}
+              </View>
+              
+              {/* Player Info */}
+              <View style={styles.playerInfo}>
+                <Text style={styles.standingPlayerName}>{player.name}</Text>
+                <Text style={styles.standingPlayerCategory}>{player.category}</Text>
+              </View>
+              
+              {/* Rating */}
+              <View style={styles.ratingContainer}>
+                <View style={styles.ratingBox}>
+                  <Text style={[styles.ratingNumber, { color: ratingColor }]}>
+                    {formatRating(player.rating || 3.0)}
+                  </Text>
+                  {trend && (
+                    <Ionicons 
+                      name={trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'remove'} 
+                      size={16} 
+                      color={trend === 'up' ? '#00ff00' : trend === 'down' ? '#ff4444' : colors.textMuted}
+                    />
+                  )}
+                </View>
+              </View>
+              
+              {/* Stats */}
+              <View style={styles.playerStats}>
+                <Text style={styles.statText}>
+                  {player.wins || 0}-{player.losses || 0}
+                </Text>
+                <Text style={styles.statSubtext}>
+                  {winRate}% ({player.matchesPlayed || 0} matches)
+                </Text>
+                <Text style={styles.recentForm}>
+                  Form: {formatRecentForm(player.recentForm || [])}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+      </ScrollView>
+      
+      {/* Legend */}
+      <View style={styles.ratingsLegend}>
+        <Text style={styles.legendTitle}>Rating Scale</Text>
+        <View style={styles.legendRow}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, { backgroundColor: '#FFD700' }]} />
+            <Text style={styles.legendText}>5.5+ Elite</Text>
           </View>
-          <Text style={[
-            styles.playerAssignment,
-            getCurrentAssignment(player.id).includes('Court') ? styles.playerAssigned : null
-          ]}>
-            {getCurrentAssignment(player.id)}
-          </Text>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, { backgroundColor: '#C0C0C0' }]} />
+            <Text style={styles.legendText}>4.5+ Advanced</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, { backgroundColor: '#CD7F32' }]} />
+            <Text style={styles.legendText}>3.5+ Intermediate</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, { backgroundColor: colors.textMuted }]} />
+            <Text style={styles.legendText}>Below 3.5 Beginner</Text>
+          </View>
         </View>
-      ))}
+      </View>
     </View>
   );
 }
