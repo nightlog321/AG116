@@ -41,6 +41,7 @@ class MatchType(str, Enum):
 
 class SessionPhase(str, Enum):
     idle = "idle"
+    ready = "ready"  # New phase: matches generated, waiting for timer start
     play = "play"
     buffer = "buffer"
     ended = "ended"
