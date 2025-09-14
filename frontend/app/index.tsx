@@ -2435,4 +2435,39 @@ const styles = StyleSheet.create({
   categoryAdvancedText: {
     color: '#C2185B',
   },
+  // Ready phase styles
+  courtsScroll: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  readyActionContainer: {
+    padding: 20,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    alignItems: 'center',
+  },
+  readyMessage: {
+    color: colors.success,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  letsPlayButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 200,
+  },
+  letsPlayText: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '700',
+    marginLeft: 8,
+  },
 });
