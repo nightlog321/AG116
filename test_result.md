@@ -429,7 +429,7 @@ metadata:
 
 test_plan:
   current_focus: 
-    []
+    - "Category Stickers in DUPR Standings"
   stuck_tasks: 
     []
   test_all: false
