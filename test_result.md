@@ -417,7 +417,7 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Reset/Stop Button Functionality"
+    []
   stuck_tasks: 
     []
   test_all: false
