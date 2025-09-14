@@ -1417,8 +1417,7 @@ function PlayersBoard({ players, matches }: { players: Player[]; matches: Match[
     <View style={styles.standingsContainer}>
       {/* Header */}
       <View style={styles.standingsHeader}>
-        <Text style={styles.standingsTitle}>Club Standings</Text>
-        <Text style={styles.standingsSubtitle}>DUPR-Style Rating System</Text>
+        <Text style={styles.standingsTitle}>Player Ratings</Text>
       </View>
       
       {/* Standings List */}
