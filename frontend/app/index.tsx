@@ -2259,7 +2259,8 @@ const styles = StyleSheet.create({
   },
   playerStats: {
     alignItems: 'flex-end',
-    minWidth: 100,
+    minWidth: 90, // Reduced from 100
+    maxWidth: 110, // Add max width to prevent expansion
   },
   statText: {
     color: colors.text,
