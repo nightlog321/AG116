@@ -2490,7 +2490,7 @@ const styles = StyleSheet.create({
     minWidth: 200,
   },
   letsPlayText: {
-    color: colors.text,
+    color: colors.background, // White text on grey button
     fontSize: 18,
     fontWeight: '700',
     marginLeft: 8,
