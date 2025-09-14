@@ -2203,35 +2203,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    padding: 12, // Reduced padding
+    marginBottom: 8, // Reduced margin
     borderWidth: 1,
     borderColor: colors.border,
-    minHeight: 80, // Ensure consistent height
+    minHeight: 70, // Reduced height
   },
   rankContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 50, // Reduced from 60
-    marginRight: 12, // Reduced from 16
+    width: 40, // Further reduced
+    marginRight: 8, // Reduced margin
   },
   rankNumber: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 16, // Reduced font size
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 2, // Reduced margin
   },
   playerInfo: {
-    flex: 2, // Increased from 1 for more space
-    marginRight: 12, // Reduced from 16
-    minWidth: 120, // Ensure minimum width for names
+    flex: 1,
+    marginRight: 8, // Reduced margin
+    justifyContent: 'center',
   },
   standingPlayerName: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 14, // Reduced font size
     fontWeight: '600',
     marginBottom: 2,
-    flexWrap: 'nowrap', // Prevent wrapping
+    numberOfLines: 1, // Prevent text wrapping
   },
   standingPlayerCategory: {
     color: colors.textMuted,
