@@ -1937,20 +1937,19 @@ const styles = StyleSheet.create({
     minWidth: 140,
   },
   buttonDisabled: {
-    backgroundColor: colors.surfaceLight,
-    opacity: 0.6,
+    opacity: 0.4, // Notion-style opacity
   },
   buttonIcon: {
-    marginRight: 8,
+    marginRight: 6, // Tighter spacing like Notion
   },
   buttonText: {
-    color: colors.text,
-    fontSize: 16,
+    color: colors.background, // White text on primary buttons
+    fontSize: 14,
     fontWeight: '600',
   },
   secondaryButtonText: {
-    color: colors.primary,
-    fontSize: 16,
+    color: colors.text, // Dark text on secondary buttons
+    fontSize: 14,
     fontWeight: '600',
   },
   helpText: {
