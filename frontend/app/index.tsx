@@ -882,7 +882,8 @@ function AdminConsole({
   onImportCSV,
   onExportCSV,
   onGenerateMatches,
-  onResetTimer
+  onResetTimer,
+  onAddTestData
 }: { 
   session: SessionState | null;
   categories: Category[];
@@ -892,6 +893,7 @@ function AdminConsole({
   onExportCSV: () => void;
   onGenerateMatches: () => void;
   onResetTimer: () => void;
+  onAddTestData: () => void;
 }) {
   const [newPlayerName, setNewPlayerName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
