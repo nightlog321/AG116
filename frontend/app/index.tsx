@@ -709,6 +709,7 @@ export default function PickleballManager() {
                 fetchPlayers();
                 fetchSession();
               }}
+              onStartSession={startSession}
             />
           )}
           
