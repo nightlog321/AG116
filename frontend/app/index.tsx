@@ -579,7 +579,8 @@ export default function PickleballManager() {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         name: player.name,
-                        category: player.category
+                        category: player.category,
+                        rating: player.rating || 3.0 // Include rating if provided, default to 3.0
                       })
                     });
                   }
