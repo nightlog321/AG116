@@ -2241,40 +2241,40 @@ const styles = StyleSheet.create({
   },
   ratingContainer: {
     alignItems: 'center',
-    marginRight: 12, // Reduced from 16
+    marginRight: 8, // Reduced margin
   },
   ratingBox: {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surfaceLight,
-    borderRadius: 8,
-    padding: 8,
-    minWidth: 55, // Reduced from 60
+    borderRadius: 6, // Reduced border radius
+    padding: 6, // Reduced padding
+    minWidth: 45, // Further reduced
   },
   ratingNumber: {
-    fontSize: 18,
+    fontSize: 14, // Reduced font size
     fontWeight: '700',
-    marginBottom: 2,
+    marginBottom: 0, // Removed margin
   },
   playerStats: {
     alignItems: 'flex-end',
-    minWidth: 90, // Reduced from 100
-    maxWidth: 110, // Add max width to prevent expansion
+    minWidth: 80, // Further reduced
+    maxWidth: 90, // Reduced max width
   },
   statText: {
     color: colors.text,
-    fontSize: 14,
+    fontSize: 12, // Reduced font size
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 1, // Reduced margin
   },
   statSubtext: {
     color: colors.textMuted,
-    fontSize: 12,
-    marginBottom: 4,
+    fontSize: 10, // Reduced font size
+    marginBottom: 2, // Reduced margin
   },
   recentForm: {
     color: colors.textSecondary,
-    fontSize: 11,
+    fontSize: 9, // Reduced font size
     fontFamily: 'monospace',
   },
   ratingsLegend: {
