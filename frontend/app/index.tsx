@@ -1720,28 +1720,30 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
+    backgroundColor: colors.background,
+    borderRadius: 8, // Notion-style subtle rounding
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowColor: colors.text,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03, // Very subtle shadow like Notion
+    shadowRadius: 3,
+    elevation: 1,
   },
   cardTitle: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 8,
+    color: colors.textDark,
+    fontSize: 16,
+    fontWeight: '600', // Notion uses 600 weight, not 700
+    marginBottom: 12,
+    letterSpacing: -0.2, // Tight spacing like Notion
   },
   cardSubtitle: {
     color: colors.textSecondary,
-    fontSize: 16,
+    fontSize: 14,
     marginBottom: 16,
+    lineHeight: 20, // Better line height for readability
   },
   cardHeader: {
     flexDirection: 'row',
