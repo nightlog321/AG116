@@ -849,6 +849,88 @@ async def create_singles_matches(
 
 # API Routes
 
+# Clubs
+@api_router.get("/clubs", response_model=List[Club])
+async def get_clubs(db_session: AsyncSession = Depends(get_db_session)):
+    """Get all clubs"""
+    try:
+        result = await db_session.execute(select(DBClub))
+        clubs = result.scalars().all()
+        
+        # Convert SQLAlchemy models to Pydantic models
+        club_list = []
+        for db_club in clubs:
+            club_dict = {
+                "name": db_club.name,
+                "display_name": db_club.display_name,
+                "description": db_club.description,
+                "created_at": db_club.created_at.isoformat() if db_club.created_at else datetime.now().isoformat()
+            }
+            club_list.append(Club(**club_dict))
+        
+        return club_list
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get clubs: {str(e)}")
+
+@api_router.post("/clubs", response_model=Club)
+async def create_club(club: ClubCreate, db_session: AsyncSession = Depends(get_db_session)):
+    """Register a new club"""
+    try:
+        # Check if club already exists
+        result = await db_session.execute(select(DBClub).where(DBClub.name == club.name))
+        existing = result.scalar_one_or_none()
+        
+        if existing:
+            raise HTTPException(status_code=400, detail="Club name already exists")
+        
+        # Create new club
+        db_club = DBClub(
+            name=club.name,
+            display_name=club.display_name,
+            description=club.description
+        )
+        
+        db_session.add(db_club)
+        await db_session.commit()
+        await db_session.refresh(db_club)
+        
+        # Create default session for the new club
+        default_session = DBSession(
+            club_name=club.name,
+            config=json.dumps({
+                "numCourts": 4,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": False
+            }),
+            histories=json.dumps({
+                "partnerHistory": {},
+                "opponentHistory": {}
+            })
+        )
+        db_session.add(default_session)
+        await db_session.commit()
+        
+        # Convert to Pydantic model for response
+        club_dict = {
+            "name": db_club.name,
+            "display_name": db_club.display_name,
+            "description": db_club.description,
+            "created_at": db_club.created_at.isoformat() if db_club.created_at else datetime.now().isoformat()
+        }
+        
+        return Club(**club_dict)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create club: {str(e)}")
+
 # Categories
 @api_router.get("/categories", response_model=List[Category])
 async def get_categories(db_session: AsyncSession = Depends(get_db_session)):
