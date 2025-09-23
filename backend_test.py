@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Tests for Pickleball Session Manager
-Tests all core CRUD operations and session management functionality
+CourtChime Multi-Club Architecture Backend Testing
+Tests the new multi-club functionality including club management, data isolation, and backward compatibility.
 """
 
 import requests
 import json
-import os
+import sys
 from typing import Dict, List, Any
-import time
 
-# Get backend URL from environment
-BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
+# Backend URL from frontend environment
+BASE_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
 
 class PickleballAPITester:
     def __init__(self):
