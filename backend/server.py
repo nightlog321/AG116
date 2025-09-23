@@ -862,22 +862,63 @@ async def get_categories(db_session: AsyncSession = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=f"Failed to get categories: {str(e)}")
 
 @api_router.post("/categories", response_model=Category)
-async def create_category(category: CategoryCreate):
-    # Check if category already exists
-    existing = await db.categories.find_one({"name": category.name})
-    if existing:
-        raise HTTPException(status_code=400, detail="Category already exists")
-    
-    cat_obj = Category(**category.dict())
-    await db.categories.insert_one(cat_obj.dict())
-    return cat_obj
+async def create_category(category: CategoryCreate, db_session: AsyncSession = Depends(get_db_session)):
+    """Create a new category in SQLite database"""
+    try:
+        # Check if category already exists
+        result = await db_session.execute(select(DBCategory).where(DBCategory.name == category.name))
+        existing = result.scalar_one_or_none()
+        
+        if existing:
+            raise HTTPException(status_code=400, detail="Category already exists")
+        
+        # Create new category
+        db_category = DBCategory(
+            name=category.name,
+            description=category.description
+        )
+        
+        db_session.add(db_category)
+        await db_session.commit()
+        await db_session.refresh(db_category)
+        
+        # Convert to Pydantic model for response
+        category_dict = {
+            "id": db_category.id,
+            "name": db_category.name,
+            "description": db_category.description
+        }
+        
+        return Category(**category_dict)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create category: {str(e)}")
 
 @api_router.delete("/categories/{category_id}")
-async def delete_category(category_id: str):
-    result = await db.categories.delete_one({"id": category_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Category not found")
-    return {"message": "Category deleted"}
+async def delete_category(category_id: str, db_session: AsyncSession = Depends(get_db_session)):
+    """Delete a category from SQLite database"""
+    try:
+        # Find the category
+        result = await db_session.execute(select(DBCategory).where(DBCategory.id == category_id))
+        db_category = result.scalar_one_or_none()
+        
+        if not db_category:
+            raise HTTPException(status_code=404, detail="Category not found")
+        
+        # Delete the category
+        await db_session.delete(db_category)
+        await db_session.commit()
+        
+        return {"message": "Category deleted"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete category: {str(e)}")
 
 # Data Management
 @api_router.delete("/clear-all-data", response_model=dict)
