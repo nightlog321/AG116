@@ -1340,14 +1340,46 @@ async def update_match_score(match_id: str, score_update: MatchScoreUpdate):
 
 # Session Management
 @api_router.get("/session", response_model=SessionState)
-async def get_session():
-    session = await db.session.find_one()
-    if not session:
-        # Create default session
-        session_obj = SessionState()
-        await db.session.insert_one(session_obj.dict())
-        return session_obj
-    return SessionState(**session)
+async def get_session(db_session: AsyncSession = Depends(get_db_session)):
+    """Get current session from SQLite database"""
+    try:
+        result = await db_session.execute(select(DBSession))
+        session = result.scalar_one_or_none()
+        
+        if not session:
+            # Create default session
+            session_obj = SessionState()
+            db_session_record = DBSession(
+                current_round=session_obj.currentRound,
+                phase=session_obj.phase.value,
+                time_remaining=session_obj.timeRemaining,
+                paused=session_obj.paused,
+                config=json.dumps(session_obj.config.dict()),
+                histories=json.dumps(session_obj.histories)
+            )
+            db_session.add(db_session_record)
+            await db_session.commit()
+            await db_session.refresh(db_session_record)
+            return session_obj
+        
+        # Convert SQLAlchemy model back to Pydantic model
+        config = json.loads(session.config) if session.config else {}
+        histories = json.loads(session.histories) if session.histories else {}
+        
+        session_state = SessionState(
+            id=session.id,
+            currentRound=session.current_round,
+            phase=session.phase,
+            timeRemaining=session.time_remaining,
+            paused=session.paused,
+            config=SessionConfig(**config),
+            histories=histories
+        )
+        
+        return session_state
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get session: {str(e)}")
 
 @api_router.put("/session/config", response_model=SessionState)
 async def update_session_config(config: SessionConfig):
