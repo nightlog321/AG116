@@ -115,13 +115,26 @@ async def init_database():
     await create_tables()
     
     async with async_session() as session:
-        # Check if categories exist
+        # Check if clubs exist
         from sqlalchemy import select
+        result = await session.execute(select(Club))
+        clubs = result.scalars().all()
+        
+        if not clubs:
+            # Create default "Main Club"
+            default_club = Club(
+                name="Main Club",
+                display_name="Main Club",
+                description="Default club for existing data migration"
+            )
+            session.add(default_club)
+        
+        # Check if categories exist
         result = await session.execute(select(Category))
         categories = result.scalars().all()
         
         if not categories:
-            # Add default categories
+            # Add default global categories
             default_categories = [
                 Category(name="Beginner"),
                 Category(name="Intermediate"),
@@ -130,10 +143,16 @@ async def init_database():
             
             for category in default_categories:
                 session.add(category)
-            
-            # Add default session
+        
+        # Check if session exists for Main Club
+        result = await session.execute(select(Session).where(Session.club_name == "Main Club"))
+        main_session = result.scalar_one_or_none()
+        
+        if not main_session:
+            # Add default session for Main Club
             from datetime import datetime
             default_session = Session(
+                club_name="Main Club",
                 config=json.dumps({
                     "numCourts": 4,
                     "playSeconds": 720,
@@ -150,5 +169,5 @@ async def init_database():
             )
             session.add(default_session)
             
-            await session.commit()
-            print("✅ Database initialized with default data")
+        await session.commit()
+        print("✅ Database initialized with default multi-club data")
