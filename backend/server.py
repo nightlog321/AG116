@@ -1134,11 +1134,25 @@ async def update_player(player_id: str, updates: PlayerUpdate, db_session: Async
         raise HTTPException(status_code=500, detail=f"Failed to update player: {str(e)}")
 
 @api_router.delete("/players/{player_id}")
-async def delete_player(player_id: str):
-    result = await db.players.delete_one({"id": player_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Player not found")
-    return {"message": "Player deleted"}
+async def delete_player(player_id: str, db_session: AsyncSession = Depends(get_db_session)):
+    """Delete a player from SQLite database"""
+    try:
+        # Find the player
+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id))
+        db_player = result.scalar_one_or_none()
+        
+        if not db_player:
+            raise HTTPException(status_code=404, detail="Player not found")
+        
+        # Delete the player
+        await db_session.delete(db_player)
+        await db_session.commit()
+        
+        return {"message": "Player deleted"}
+        
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete player: {str(e)}")
 
 # Matches
 @api_router.get("/matches", response_model=List[Match])
