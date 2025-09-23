@@ -1,18 +1,29 @@
-from fastapi import FastAPI, APIRouter, HTTPException
-from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
-import os
-import logging
-from pathlib import Path
+from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-import uuid
-from datetime import datetime
+from typing import Optional, List, Any, Dict
 from enum import Enum
+import uuid
+import asyncio
+import os
+from datetime import datetime
 import random
 import math
+import json
+import logging
+from pathlib import Path
 from collections import defaultdict
+from dotenv import load_dotenv
+from motor.motor_asyncio import AsyncIOMotorClient
+
+# Import SQLAlchemy components
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete, update, and_, or_
+from database import (
+    get_db_session, init_database, 
+    Player as DBPlayer, Category as DBCategory, 
+    Match as DBMatch, Session as DBSession
+)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
