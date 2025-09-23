@@ -1105,7 +1105,7 @@ async def add_test_data(db: AsyncSession = Depends(get_db_session)):
 async def get_players(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
     """Get all players from SQLite database for a specific club"""
     try:
-        result = await db_session.execute(select(DBPlayer))
+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == club_name))
         players = result.scalars().all()
         
         # Convert SQLAlchemy models to Pydantic models for response
