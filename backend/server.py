@@ -1185,13 +1185,14 @@ async def get_sqlite_players(db_session: AsyncSession = Depends(get_db_session))
         raise HTTPException(status_code=500, detail=f"Failed to get players: {str(e)}")
 
 @api_router.post("/players", response_model=Player)
-async def create_player(player: PlayerCreate, db_session: AsyncSession = Depends(get_db_session)):
+async def create_player(player: PlayerCreate, club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
     """Create a new player in SQLite database"""
     try:
         # Create SQLAlchemy player object
         db_player = DBPlayer(
             name=player.name,
             category=player.category,
+            club_name=club_name,  # Assign to specific club
             rating=3.0,  # Default DUPR rating
             recent_form=json.dumps([]),  # Empty recent form
             rating_history=json.dumps([])  # Empty rating history
