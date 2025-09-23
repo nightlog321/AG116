@@ -1437,13 +1437,14 @@ async def update_match_score(match_id: str, score_update: MatchScoreUpdate):
 async def get_session(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
     """Get current session from SQLite database for a specific club"""
     try:
-        result = await db_session.execute(select(DBSession))
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
         session = result.scalar_one_or_none()
         
         if not session:
-            # Create default session
+            # Create default session for this club
             session_obj = SessionState()
             db_session_record = DBSession(
+                club_name=club_name,
                 current_round=session_obj.currentRound,
                 phase=session_obj.phase.value,
                 time_remaining=session_obj.timeRemaining,
