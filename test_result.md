@@ -456,7 +456,7 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Category Stickers in DUPR Standings"
+    - "Multi-Club Architecture Implementation"
   stuck_tasks: 
     []
   test_all: false
