@@ -14,8 +14,6 @@ import logging
 from pathlib import Path
 from collections import defaultdict
 from dotenv import load_dotenv
-from motor.motor_asyncio import AsyncIOMotorClient
-
 # Import SQLAlchemy components
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, update, and_, or_
