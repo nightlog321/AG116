@@ -1434,8 +1434,8 @@ async def update_match_score(match_id: str, score_update: MatchScoreUpdate):
 
 # Session Management
 @api_router.get("/session", response_model=SessionState)
-async def get_session(db_session: AsyncSession = Depends(get_db_session)):
-    """Get current session from SQLite database"""
+async def get_session(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Get current session from SQLite database for a specific club"""
     try:
         result = await db_session.execute(select(DBSession))
         session = result.scalar_one_or_none()
