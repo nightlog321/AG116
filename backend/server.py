@@ -1082,12 +1082,13 @@ async def add_test_data(db: AsyncSession = Depends(get_db_session)):
         # Clear existing players first
         await db.execute(delete(DBPlayer))
         
-        # Add test players
+        # Add test players to Main Club
         created_count = 0
         for player_data in test_players:
             player = DBPlayer(
                 name=player_data["name"],
                 category=player_data["category"],
+                club_name="Main Club",  # Assign to Main Club
                 rating=player_data["rating"]
             )
             db.add(player)
