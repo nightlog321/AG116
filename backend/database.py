@@ -83,6 +83,7 @@ class Session(Base):
     __tablename__ = "session"
     
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    club_name = Column(String, ForeignKey("clubs.name"), nullable=False)
     current_round = Column(Integer, default=0)
     phase = Column(String, default="idle")  # idle, ready, play, buffer, ended
     time_remaining = Column(Integer, default=720)  # seconds
@@ -93,6 +94,9 @@ class Session(Base):
     
     # Histories as JSON
     histories = Column(Text, default="{}")  # JSON string for partner/opponent histories
+    
+    # Relationship to club
+    club = relationship("Club", backref="sessions")
 
 # Database helper functions
 async def get_db_session():
