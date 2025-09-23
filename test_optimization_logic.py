@@ -6,7 +6,7 @@ Test to understand the optimization logic issue
 import requests
 import json
 
-BACKEND_URL = "https://courtmanager.preview.emergentagent.com/api"
+BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
 
 def test_optimization_logic():
     session = requests.Session()

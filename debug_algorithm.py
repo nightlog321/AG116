@@ -6,7 +6,7 @@ Debug the algorithm step by step
 import requests
 import json
 
-BACKEND_URL = "https://courtmanager.preview.emergentagent.com/api"
+BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
 
 def debug_algorithm():
     session = requests.Session()

@@ -9,7 +9,7 @@ import json
 import time
 
 # Get backend URL from environment
-BACKEND_URL = "https://courtmanager.preview.emergentagent.com/api"
+BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
 
 class ForceCrossCategoryTester:
     def __init__(self):

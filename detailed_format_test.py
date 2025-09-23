@@ -7,7 +7,7 @@ Analyzes the actual behavior of the new format system
 import requests
 import json
 
-BACKEND_URL = "https://courtmanager.preview.emergentagent.com/api"
+BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
 
 def test_detailed_scenarios():
     session = requests.Session()

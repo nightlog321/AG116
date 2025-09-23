@@ -7,7 +7,7 @@ Analyzes why court utilization is suboptimal
 import requests
 import json
 
-BACKEND_URL = "https://courtmanager.preview.emergentagent.com/api"
+BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
 
 class DetailedAnalyzer:
     def __init__(self):
