@@ -65,6 +65,17 @@ class Format(str, Enum):
     auto = "auto"
 
 # Data Models
+class Club(BaseModel):
+    name: str  # Primary key - club identifier
+    display_name: str
+    description: Optional[str] = None
+    created_at: Optional[str] = Field(default_factory=lambda: datetime.now().isoformat())
+
+class ClubCreate(BaseModel):
+    name: str
+    display_name: str
+    description: Optional[str] = None
+
 class PlayerStats(BaseModel):
     wins: int = 0
     losses: int = 0
