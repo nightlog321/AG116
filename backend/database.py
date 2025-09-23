@@ -39,6 +39,7 @@ class Player(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
     category = Column(String, nullable=False)
+    club_name = Column(String, ForeignKey("clubs.name"), nullable=False)
     sit_next_round = Column(Boolean, default=False)
     sit_count = Column(Integer, default=0)
     miss_due_to_court_limit = Column(Integer, default=0)
@@ -56,6 +57,9 @@ class Player(Base):
     stats_wins = Column(Integer, default=0)
     stats_losses = Column(Integer, default=0)
     stats_point_diff = Column(Integer, default=0)
+    
+    # Relationship to club
+    club = relationship("Club", backref="players")
 
 class Match(Base):
     __tablename__ = "matches"
