@@ -1400,6 +1400,4 @@ async def startup_event():
 async def shutdown_event():
     print("🔄 Shutting down...")
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# Removed MongoDB cleanup as we're using SQLite now
