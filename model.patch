@@ -1,242 +1,300 @@
 diff --git a/backend/server.py b/backend/server.py
-index 0162023..b6f8db5 100644
+index b6f8db5..4694baa 100644
 --- a/backend/server.py
 +++ b/backend/server.py
-@@ -869,36 +869,52 @@ async def delete_category(category_id: str):
+@@ -960,6 +960,48 @@ async def get_players():
+     players = await db.players.find().to_list(1000)
+     return [Player(**player) for player in players]
  
- # Data Management
- @api_router.delete("/clear-all-data", response_model=dict)
--async def clear_all_data():
-+async def clear_all_data(db: AsyncSession = Depends(get_db_session)):
-     """Clear all data from the database for fresh start"""
-     try:
--        # Clear all collections
--        await db.players.delete_many({})
--        await db.categories.delete_many({})
--        await db.matches.delete_many({})
--        await db.session.delete_many({})
-+        # Clear all SQLite tables
-+        await db.execute(delete(DBPlayer))
-+        await db.execute(delete(DBCategory))  
-+        await db.execute(delete(DBMatch))
-+        await db.execute(delete(DBSession))
-         
-         # Reinitialize with default categories
-         default_categories = [
--            Category(name="Beginner"),
--            Category(name="Intermediate"), 
--            Category(name="Advanced")
-+            DBCategory(name="Beginner"),
-+            DBCategory(name="Intermediate"), 
-+            DBCategory(name="Advanced")
-         ]
-         
-         for category in default_categories:
--            await db.categories.insert_one(category.dict())
-+            db.add(category)
-         
-         # Create fresh session
--        session_obj = SessionState()
--        await db.session.insert_one(session_obj.dict())
-+        session_obj = DBSession(
-+            config=json.dumps({
-+                "numCourts": 4,
-+                "playSeconds": 720,
-+                "bufferSeconds": 30,
-+                "allowSingles": True,
-+                "allowDoubles": True,
-+                "allowCrossCategory": False,
-+                "maximizeCourtUsage": False
-+            }),
-+            histories=json.dumps({
-+                "partnerHistory": {},
-+                "opponentHistory": {}
-+            })
-+        )
-+        db.add(session_obj)
-         
-+        await db.commit()
-         return {"message": "All data cleared successfully"}
-         
-     except Exception as e:
-+        await db.rollback()
-         raise HTTPException(status_code=500, detail=f"Failed to clear data: {str(e)}")
- 
- @api_router.post("/add-test-data", response_model=dict)
--async def add_test_data():
-+async def add_test_data(db: AsyncSession = Depends(get_db_session)):
-     """Add sample test players for testing purposes"""
-     try:
-         # Sample players with ratings
-@@ -918,22 +934,24 @@ async def add_test_data():
-         ]
-         
-         # Clear existing players first
--        await db.players.delete_many({})
-+        await db.execute(delete(DBPlayer))
-         
-         # Add test players
-         created_count = 0
-         for player_data in test_players:
--            player = Player(
-+            player = DBPlayer(
-                 name=player_data["name"],
-                 category=player_data["category"],
-                 rating=player_data["rating"]
-             )
--            await db.players.insert_one(player.dict())
-+            db.add(player)
-             created_count += 1
-         
-+        await db.commit()
-         return {"message": f"Successfully added {created_count} test players"}
-         
-     except Exception as e:
-+        await db.rollback()
-         raise HTTPException(status_code=500, detail=f"Failed to add test data: {str(e)}")
- 
- # Players
++# SQLite Players API (for testing)
++@api_router.get("/sqlite/players")
++async def get_sqlite_players(db_session: AsyncSession = Depends(get_db_session)):
++    """Get players from SQLite database"""
++    try:
++        result = await db_session.execute(select(DBPlayer))
++        players = result.scalars().all()
++        
++        # Convert SQLAlchemy models to Pydantic models for response
++        player_list = []
++        for db_player in players:
++            # Parse JSON fields
++            recent_form = json.loads(db_player.recent_form) if db_player.recent_form else []
++            rating_history = json.loads(db_player.rating_history) if db_player.rating_history else []
++            
++            player_dict = {
++                "id": db_player.id,
++                "name": db_player.name,
++                "category": db_player.category,
++                "sitNextRound": db_player.sit_next_round,
++                "sitCount": db_player.sit_count,
++                "missDueToCourtLimit": db_player.miss_due_to_court_limit,
++                "rating": db_player.rating,
++                "matchesPlayed": db_player.matches_played,
++                "wins": db_player.wins,
++                "losses": db_player.losses,
++                "recentForm": recent_form,
++                "ratingHistory": rating_history,
++                "lastUpdated": db_player.last_updated.isoformat() if db_player.last_updated else datetime.now().isoformat(),
++                "stats": {
++                    "wins": db_player.stats_wins,
++                    "losses": db_player.stats_losses,
++                    "pointDiff": db_player.stats_point_diff
++                }
++            }
++            player_list.append(player_dict)
++        
++        return player_list
++        
++    except Exception as e:
++        raise HTTPException(status_code=500, detail=f"Failed to get players: {str(e)}")
++
+ @api_router.post("/players", response_model=Player)
+ async def create_player(player: PlayerCreate):
+     player_obj = Player(**player.dict())
 diff --git a/model.patch b/model.patch
-index 40bd9e0..e69de29 100644
+index daac3b8..e69de29 100644
 --- a/model.patch
 +++ b/model.patch
-@@ -1,139 +0,0 @@
--diff --git a/backend/courtchime.db b/backend/courtchime.db
--new file mode 100644
--index 0000000..3213c8c
--Binary files /dev/null and b/backend/courtchime.db differ
+@@ -1,242 +0,0 @@
 -diff --git a/backend/server.py b/backend/server.py
--index a1d30e7..0162023 100644
+-index 0162023..b6f8db5 100644
 ---- a/backend/server.py
 -+++ b/backend/server.py
--@@ -33,12 +33,19 @@ mongo_url = os.environ['MONGO_URL']
-- client = AsyncIOMotorClient(mongo_url)
-- db = client[os.environ['DB_NAME']]
+-@@ -869,36 +869,52 @@ async def delete_category(category_id: str):
 - 
---# Create the main app without a prefix
---app = FastAPI()
---
---# Create a router with the /api prefix
--+# Initialize FastAPI app
--+app = FastAPI(title="CourtChime API", version="1.0.0")
-- api_router = APIRouter(prefix="/api")
+- # Data Management
+- @api_router.delete("/clear-all-data", response_model=dict)
+--async def clear_all_data():
+-+async def clear_all_data(db: AsyncSession = Depends(get_db_session)):
+-     """Clear all data from the database for fresh start"""
+-     try:
+--        # Clear all collections
+--        await db.players.delete_many({})
+--        await db.categories.delete_many({})
+--        await db.matches.delete_many({})
+--        await db.session.delete_many({})
+-+        # Clear all SQLite tables
+-+        await db.execute(delete(DBPlayer))
+-+        await db.execute(delete(DBCategory))  
+-+        await db.execute(delete(DBMatch))
+-+        await db.execute(delete(DBSession))
+-         
+-         # Reinitialize with default categories
+-         default_categories = [
+--            Category(name="Beginner"),
+--            Category(name="Intermediate"), 
+--            Category(name="Advanced")
+-+            DBCategory(name="Beginner"),
+-+            DBCategory(name="Intermediate"), 
+-+            DBCategory(name="Advanced")
+-         ]
+-         
+-         for category in default_categories:
+--            await db.categories.insert_one(category.dict())
+-+            db.add(category)
+-         
+-         # Create fresh session
+--        session_obj = SessionState()
+--        await db.session.insert_one(session_obj.dict())
+-+        session_obj = DBSession(
+-+            config=json.dumps({
+-+                "numCourts": 4,
+-+                "playSeconds": 720,
+-+                "bufferSeconds": 30,
+-+                "allowSingles": True,
+-+                "allowDoubles": True,
+-+                "allowCrossCategory": False,
+-+                "maximizeCourtUsage": False
+-+            }),
+-+            histories=json.dumps({
+-+                "partnerHistory": {},
+-+                "opponentHistory": {}
+-+            })
+-+        )
+-+        db.add(session_obj)
+-         
+-+        await db.commit()
+-         return {"message": "All data cleared successfully"}
+-         
+-     except Exception as e:
+-+        await db.rollback()
+-         raise HTTPException(status_code=500, detail=f"Failed to clear data: {str(e)}")
 - 
--+# CORS middleware
--+app.add_middleware(
--+    CORSMiddleware,
--+    allow_origins=["*"],
--+    allow_credentials=True,
--+    allow_methods=["*"],
--+    allow_headers=["*"],
--+)
--+
-- # Enums
-- class MatchStatus(str, Enum):
--     pending = "pending"
--@@ -1321,14 +1328,6 @@ async def initialize_data():
-- # Include the router in the main app
-- app.include_router(api_router)
+- @api_router.post("/add-test-data", response_model=dict)
+--async def add_test_data():
+-+async def add_test_data(db: AsyncSession = Depends(get_db_session)):
+-     """Add sample test players for testing purposes"""
+-     try:
+-         # Sample players with ratings
+-@@ -918,22 +934,24 @@ async def add_test_data():
+-         ]
+-         
+-         # Clear existing players first
+--        await db.players.delete_many({})
+-+        await db.execute(delete(DBPlayer))
+-         
+-         # Add test players
+-         created_count = 0
+-         for player_data in test_players:
+--            player = Player(
+-+            player = DBPlayer(
+-                 name=player_data["name"],
+-                 category=player_data["category"],
+-                 rating=player_data["rating"]
+-             )
+--            await db.players.insert_one(player.dict())
+-+            db.add(player)
+-             created_count += 1
+-         
+-+        await db.commit()
+-         return {"message": f"Successfully added {created_count} test players"}
+-         
+-     except Exception as e:
+-+        await db.rollback()
+-         raise HTTPException(status_code=500, detail=f"Failed to add test data: {str(e)}")
 - 
---app.add_middleware(
---    CORSMiddleware,
---    allow_credentials=True,
---    allow_origins=["*"],
---    allow_methods=["*"],
---    allow_headers=["*"],
---)
---
-- # Configure logging
-- logging.basicConfig(
--     level=logging.INFO,
--@@ -1336,6 +1335,16 @@ logging.basicConfig(
-- )
-- logger = logging.getLogger(__name__)
-- 
--+# Initialize database on startup
--+@app.on_event("startup")
--+async def startup_event():
--+    await init_database()
--+    print("✅ SQLite database initialized")
--+
--+@app.on_event("shutdown") 
--+async def shutdown_event():
--+    print("🔄 Shutting down...")
--+
-- @app.on_event("shutdown")
-- async def shutdown_db_client():
--     client.close()
--\ No newline at end of file
+- # Players
 -diff --git a/model.patch b/model.patch
--index 3b72c36..e69de29 100644
+-index 40bd9e0..e69de29 100644
 ---- a/model.patch
 -+++ b/model.patch
--@@ -1,69 +0,0 @@
+-@@ -1,139 +0,0 @@
+--diff --git a/backend/courtchime.db b/backend/courtchime.db
+--new file mode 100644
+--index 0000000..3213c8c
+--Binary files /dev/null and b/backend/courtchime.db differ
 --diff --git a/backend/server.py b/backend/server.py
---index c5ceef9..a1d30e7 100644
+--index a1d30e7..0162023 100644
 ----- a/backend/server.py
 --+++ b/backend/server.py
---@@ -1,18 +1,29 @@
----from fastapi import FastAPI, APIRouter, HTTPException
----from dotenv import load_dotenv
----from starlette.middleware.cors import CORSMiddleware
----from motor.motor_asyncio import AsyncIOMotorClient
----import os
----import logging
----from pathlib import Path
---+from fastapi import FastAPI, APIRouter, HTTPException, Depends
---+from fastapi.middleware.cors import CORSMiddleware
--- from pydantic import BaseModel, Field
----from typing import List, Optional, Dict, Any
---+from typing import Optional, List, Any, Dict
---+from enum import Enum
--- import uuid
---+import asyncio
---+import os
--- from datetime import datetime
----from enum import Enum
--- import random
--- import math
---+import json
---+import logging
---+from pathlib import Path
--- from collections import defaultdict
---+from dotenv import load_dotenv
---+from motor.motor_asyncio import AsyncIOMotorClient
---+
---+# Import SQLAlchemy components
---+from sqlalchemy.ext.asyncio import AsyncSession
---+from sqlalchemy import select, delete, update, and_, or_
---+from database import (
---+    get_db_session, init_database, 
---+    Player as DBPlayer, Category as DBCategory, 
---+    Match as DBMatch, Session as DBSession
---+)
+--@@ -33,12 +33,19 @@ mongo_url = os.environ['MONGO_URL']
+-- client = AsyncIOMotorClient(mongo_url)
+-- db = client[os.environ['DB_NAME']]
 -- 
--- ROOT_DIR = Path(__file__).parent
--- load_dotenv(ROOT_DIR / '.env')
+---# Create the main app without a prefix
+---app = FastAPI()
+---
+---# Create a router with the /api prefix
+--+# Initialize FastAPI app
+--+app = FastAPI(title="CourtChime API", version="1.0.0")
+-- api_router = APIRouter(prefix="/api")
+-- 
+--+# CORS middleware
+--+app.add_middleware(
+--+    CORSMiddleware,
+--+    allow_origins=["*"],
+--+    allow_credentials=True,
+--+    allow_methods=["*"],
+--+    allow_headers=["*"],
+--+)
+--+
+-- # Enums
+-- class MatchStatus(str, Enum):
+--     pending = "pending"
+--@@ -1321,14 +1328,6 @@ async def initialize_data():
+-- # Include the router in the main app
+-- app.include_router(api_router)
+-- 
+---app.add_middleware(
+---    CORSMiddleware,
+---    allow_credentials=True,
+---    allow_origins=["*"],
+---    allow_methods=["*"],
+---    allow_headers=["*"],
+---)
+---
+-- # Configure logging
+-- logging.basicConfig(
+--     level=logging.INFO,
+--@@ -1336,6 +1335,16 @@ logging.basicConfig(
+-- )
+-- logger = logging.getLogger(__name__)
+-- 
+--+# Initialize database on startup
+--+@app.on_event("startup")
+--+async def startup_event():
+--+    await init_database()
+--+    print("✅ SQLite database initialized")
+--+
+--+@app.on_event("shutdown") 
+--+async def shutdown_event():
+--+    print("🔄 Shutting down...")
+--+
+-- @app.on_event("shutdown")
+-- async def shutdown_db_client():
+--     client.close()
+--\ No newline at end of file
 --diff --git a/model.patch b/model.patch
---index 2c48481..e69de29 100644
+--index 3b72c36..e69de29 100644
 ----- a/model.patch
 --+++ b/model.patch
---@@ -1,21 +0,0 @@
----diff --git a/backend/requirements.txt b/backend/requirements.txt
----index 1e0e438..bb32b8b 100644
------- a/backend/requirements.txt
----+++ b/backend/requirements.txt
----@@ -4,13 +4,14 @@ boto3>=1.34.129
---- requests-oauthlib>=2.0.0
---- cryptography>=42.0.8
---- python-dotenv>=1.0.1
-----pymongo==4.5.0
----+sqlalchemy==2.0.23
---- pydantic>=2.6.4
---- email-validator>=2.2.0
---- pyjwt>=2.10.1
---- passlib>=1.7.4
---- tzdata>=2024.2
-----motor==3.3.1
----+alembic==1.12.1
----+aiosqlite==0.19.0
---- pytest>=8.0.0
---- black>=24.1.1
---- isort>=5.13.2
+--@@ -1,69 +0,0 @@
+---diff --git a/backend/server.py b/backend/server.py
+---index c5ceef9..a1d30e7 100644
+------ a/backend/server.py
+---+++ b/backend/server.py
+---@@ -1,18 +1,29 @@
+----from fastapi import FastAPI, APIRouter, HTTPException
+----from dotenv import load_dotenv
+----from starlette.middleware.cors import CORSMiddleware
+----from motor.motor_asyncio import AsyncIOMotorClient
+----import os
+----import logging
+----from pathlib import Path
+---+from fastapi import FastAPI, APIRouter, HTTPException, Depends
+---+from fastapi.middleware.cors import CORSMiddleware
+--- from pydantic import BaseModel, Field
+----from typing import List, Optional, Dict, Any
+---+from typing import Optional, List, Any, Dict
+---+from enum import Enum
+--- import uuid
+---+import asyncio
+---+import os
+--- from datetime import datetime
+----from enum import Enum
+--- import random
+--- import math
+---+import json
+---+import logging
+---+from pathlib import Path
+--- from collections import defaultdict
+---+from dotenv import load_dotenv
+---+from motor.motor_asyncio import AsyncIOMotorClient
+---+
+---+# Import SQLAlchemy components
+---+from sqlalchemy.ext.asyncio import AsyncSession
+---+from sqlalchemy import select, delete, update, and_, or_
+---+from database import (
+---+    get_db_session, init_database, 
+---+    Player as DBPlayer, Category as DBCategory, 
+---+    Match as DBMatch, Session as DBSession
+---+)
+--- 
+--- ROOT_DIR = Path(__file__).parent
+--- load_dotenv(ROOT_DIR / '.env')
+---diff --git a/model.patch b/model.patch
+---index 2c48481..e69de29 100644
+------ a/model.patch
+---+++ b/model.patch
+---@@ -1,21 +0,0 @@
+----diff --git a/backend/requirements.txt b/backend/requirements.txt
+----index 1e0e438..bb32b8b 100644
+------- a/backend/requirements.txt
+----+++ b/backend/requirements.txt
+----@@ -4,13 +4,14 @@ boto3>=1.34.129
+---- requests-oauthlib>=2.0.0
+---- cryptography>=42.0.8
+---- python-dotenv>=1.0.1
+-----pymongo==4.5.0
+----+sqlalchemy==2.0.23
+---- pydantic>=2.6.4
+---- email-validator>=2.2.0
+---- pyjwt>=2.10.1
+---- passlib>=1.7.4
+---- tzdata>=2024.2
+-----motor==3.3.1
+----+alembic==1.12.1
+----+aiosqlite==0.19.0
+---- pytest>=8.0.0
+---- black>=24.1.1
+---- isort>=5.13.2
