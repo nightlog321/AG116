@@ -1382,23 +1382,61 @@ async def get_session(db_session: AsyncSession = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=f"Failed to get session: {str(e)}")
 
 @api_router.put("/session/config", response_model=SessionState)
-async def update_session_config(config: SessionConfig):
-    # Validate that at least one format is selected
-    if not config.allowSingles and not config.allowDoubles:
-        raise HTTPException(
-            status_code=400, 
-            detail="At least one format (Singles or Doubles) must be selected"
+async def update_session_config(config: SessionConfig, db_session: AsyncSession = Depends(get_db_session)):
+    """Update session configuration in SQLite database"""
+    try:
+        # Validate that at least one format is selected
+        if not config.allowSingles and not config.allowDoubles:
+            raise HTTPException(
+                status_code=400, 
+                detail="At least one format (Singles or Doubles) must be selected"
+            )
+        
+        result = await db_session.execute(select(DBSession))
+        session = result.scalar_one_or_none()
+        
+        if not session:
+            # Create new session with provided config
+            session_obj = SessionState(config=config)
+            db_session_record = DBSession(
+                current_round=session_obj.currentRound,
+                phase=session_obj.phase.value,
+                time_remaining=session_obj.timeRemaining,
+                paused=session_obj.paused,
+                config=json.dumps(config.dict()),
+                histories=json.dumps(session_obj.histories)
+            )
+            db_session.add(db_session_record)
+            await db_session.commit()
+            await db_session.refresh(db_session_record)
+            return session_obj
+        
+        # Update existing session config
+        session.config = json.dumps(config.dict())
+        await db_session.commit()
+        await db_session.refresh(session)
+        
+        # Convert back to Pydantic model for response
+        config_data = json.loads(session.config) if session.config else {}
+        histories = json.loads(session.histories) if session.histories else {}
+        
+        session_state = SessionState(
+            id=session.id,
+            currentRound=session.current_round,
+            phase=session.phase,
+            timeRemaining=session.time_remaining,
+            paused=session.paused,
+            config=SessionConfig(**config_data),
+            histories=histories
         )
-    
-    session = await db.session.find_one()
-    if not session:
-        session_obj = SessionState(config=config)
-        await db.session.insert_one(session_obj.dict())
-        return session_obj
-    
-    await db.session.update_one({}, {"$set": {"config": config.dict()}})
-    updated_session = await db.session.find_one()
-    return SessionState(**updated_session)
+        
+        return session_state
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update session config: {str(e)}")
 
 @api_router.post("/session/generate-matches", response_model=SessionState)
 async def generate_matches():
