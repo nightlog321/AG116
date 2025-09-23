@@ -35,9 +35,16 @@ db = client[os.environ['DB_NAME']]
 
 # Initialize FastAPI app
 app = FastAPI(title="CourtChime API", version="1.0.0")
-
-# Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Enums
 class MatchStatus(str, Enum):
