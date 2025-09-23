@@ -18,6 +18,14 @@ Base = declarative_base()
 
 # Database Models (SQLAlchemy equivalent of Pydantic models)
 
+class Club(Base):
+    __tablename__ = "clubs"
+    
+    name = Column(String, primary_key=True)  # Club name is the identifier
+    display_name = Column(String, nullable=False)  # For display purposes
+    description = Column(String)
+    created_at = Column(DateTime, default=datetime.now)
+
 class Category(Base):
     __tablename__ = "categories"
     
