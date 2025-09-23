@@ -68,12 +68,16 @@ class Match(Base):
     round_index = Column(Integer, nullable=False)
     court_index = Column(Integer, nullable=False)
     category = Column(String, nullable=False)
+    club_name = Column(String, ForeignKey("clubs.name"), nullable=False)
     match_type = Column(String, nullable=False)  # 'singles' or 'doubles'
     team_a = Column(Text, nullable=False)  # JSON string for list of player IDs
     team_b = Column(Text, nullable=False)  # JSON string for list of player IDs
     score_a = Column(Integer)
     score_b = Column(Integer)
     status = Column(String, default="pending")  # pending, completed
+    
+    # Relationship to club
+    club = relationship("Club", backref="matches")
 
 class Session(Base):
     __tablename__ = "session"
