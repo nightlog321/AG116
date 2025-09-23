@@ -1079,16 +1079,59 @@ async def create_player(player: PlayerCreate, db_session: AsyncSession = Depends
         raise HTTPException(status_code=500, detail=f"Failed to create player: {str(e)}")
 
 @api_router.put("/players/{player_id}", response_model=Player)
-async def update_player(player_id: str, updates: PlayerUpdate):
-    player = await db.players.find_one({"id": player_id})
-    if not player:
-        raise HTTPException(status_code=404, detail="Player not found")
-    
-    update_data = {k: v for k, v in updates.dict().items() if v is not None}
-    await db.players.update_one({"id": player_id}, {"$set": update_data})
-    
-    updated_player = await db.players.find_one({"id": player_id})
-    return Player(**updated_player)
+async def update_player(player_id: str, updates: PlayerUpdate, db_session: AsyncSession = Depends(get_db_session)):
+    """Update a player in SQLite database"""
+    try:
+        # Find the player
+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id))
+        db_player = result.scalar_one_or_none()
+        
+        if not db_player:
+            raise HTTPException(status_code=404, detail="Player not found")
+        
+        # Update fields that are provided
+        update_data = {k: v for k, v in updates.dict().items() if v is not None}
+        
+        if "name" in update_data:
+            db_player.name = update_data["name"]
+        if "category" in update_data:
+            db_player.category = update_data["category"]
+        if "sitNextRound" in update_data:
+            db_player.sit_next_round = update_data["sitNextRound"]
+        
+        await db_session.commit()
+        await db_session.refresh(db_player)
+        
+        # Convert back to Pydantic model for response
+        recent_form = json.loads(db_player.recent_form) if db_player.recent_form else []
+        rating_history = json.loads(db_player.rating_history) if db_player.rating_history else []
+        
+        player_dict = {
+            "id": db_player.id,
+            "name": db_player.name,
+            "category": db_player.category,
+            "sitNextRound": db_player.sit_next_round,
+            "sitCount": db_player.sit_count,
+            "missDueToCourtLimit": db_player.miss_due_to_court_limit,
+            "rating": db_player.rating,
+            "matchesPlayed": db_player.matches_played,
+            "wins": db_player.wins,
+            "losses": db_player.losses,
+            "recentForm": recent_form,
+            "ratingHistory": rating_history,
+            "lastUpdated": db_player.last_updated.isoformat() if db_player.last_updated else datetime.now().isoformat(),
+            "stats": {
+                "wins": db_player.stats_wins,
+                "losses": db_player.stats_losses,
+                "pointDiff": db_player.stats_point_diff
+            }
+        }
+        
+        return Player(**player_dict)
+        
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update player: {str(e)}")
 
 @api_router.delete("/players/{player_id}")
 async def delete_player(player_id: str):
