@@ -1247,9 +1247,37 @@ async def get_matches(db_session: AsyncSession = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=f"Failed to get matches: {str(e)}")
 
 @api_router.get("/matches/round/{round_index}", response_model=List[Match])
-async def get_matches_by_round(round_index: int):
-    matches = await db.matches.find({"roundIndex": round_index}).to_list(1000)
-    return [Match(**match) for match in matches]
+async def get_matches_by_round(round_index: int, db_session: AsyncSession = Depends(get_db_session)):
+    """Get matches by round from SQLite database"""
+    try:
+        result = await db_session.execute(select(DBMatch).where(DBMatch.round_index == round_index))
+        matches = result.scalars().all()
+        
+        # Convert SQLAlchemy models to Pydantic models
+        match_list = []
+        for db_match in matches:
+            # Parse JSON fields
+            team_a = json.loads(db_match.team_a) if db_match.team_a else []
+            team_b = json.loads(db_match.team_b) if db_match.team_b else []
+            
+            match_dict = {
+                "id": db_match.id,
+                "roundIndex": db_match.round_index,
+                "courtIndex": db_match.court_index,
+                "category": db_match.category,
+                "teamA": team_a,
+                "teamB": team_b,
+                "status": db_match.status,
+                "matchType": db_match.match_type,
+                "scoreA": db_match.score_a,
+                "scoreB": db_match.score_b
+            }
+            match_list.append(Match(**match_dict))
+        
+        return match_list
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get matches by round: {str(e)}")
 
 @api_router.put("/matches/{match_id}/score", response_model=Match)
 async def update_match_score(match_id: str, score_update: MatchScoreUpdate):
