@@ -840,9 +840,26 @@ async def create_singles_matches(
 
 # Categories
 @api_router.get("/categories", response_model=List[Category])
-async def get_categories():
-    categories = await db.categories.find().to_list(1000)
-    return [Category(**cat) for cat in categories]
+async def get_categories(db_session: AsyncSession = Depends(get_db_session)):
+    """Get all categories from SQLite database"""
+    try:
+        result = await db_session.execute(select(DBCategory))
+        categories = result.scalars().all()
+        
+        # Convert SQLAlchemy models to Pydantic models
+        category_list = []
+        for db_category in categories:
+            category_dict = {
+                "id": db_category.id,
+                "name": db_category.name,
+                "description": db_category.description
+            }
+            category_list.append(Category(**category_dict))
+        
+        return category_list
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get categories: {str(e)}")
 
 @api_router.post("/categories", response_model=Category)
 async def create_category(category: CategoryCreate):
