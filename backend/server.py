@@ -1336,6 +1336,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    await init_database()
+    print("✅ SQLite database initialized")
+
+@app.on_event("shutdown") 
+async def shutdown_event():
+    print("🔄 Shutting down...")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
