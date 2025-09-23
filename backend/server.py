@@ -869,36 +869,52 @@ async def delete_category(category_id: str):
 
 # Data Management
 @api_router.delete("/clear-all-data", response_model=dict)
-async def clear_all_data():
+async def clear_all_data(db: AsyncSession = Depends(get_db_session)):
     """Clear all data from the database for fresh start"""
     try:
-        # Clear all collections
-        await db.players.delete_many({})
-        await db.categories.delete_many({})
-        await db.matches.delete_many({})
-        await db.session.delete_many({})
+        # Clear all SQLite tables
+        await db.execute(delete(DBPlayer))
+        await db.execute(delete(DBCategory))  
+        await db.execute(delete(DBMatch))
+        await db.execute(delete(DBSession))
         
         # Reinitialize with default categories
         default_categories = [
-            Category(name="Beginner"),
-            Category(name="Intermediate"), 
-            Category(name="Advanced")
+            DBCategory(name="Beginner"),
+            DBCategory(name="Intermediate"), 
+            DBCategory(name="Advanced")
         ]
         
         for category in default_categories:
-            await db.categories.insert_one(category.dict())
+            db.add(category)
         
         # Create fresh session
-        session_obj = SessionState()
-        await db.session.insert_one(session_obj.dict())
+        session_obj = DBSession(
+            config=json.dumps({
+                "numCourts": 4,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": False
+            }),
+            histories=json.dumps({
+                "partnerHistory": {},
+                "opponentHistory": {}
+            })
+        )
+        db.add(session_obj)
         
+        await db.commit()
         return {"message": "All data cleared successfully"}
         
     except Exception as e:
+        await db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to clear data: {str(e)}")
 
 @api_router.post("/add-test-data", response_model=dict)
-async def add_test_data():
+async def add_test_data(db: AsyncSession = Depends(get_db_session)):
     """Add sample test players for testing purposes"""
     try:
         # Sample players with ratings
@@ -918,22 +934,24 @@ async def add_test_data():
         ]
         
         # Clear existing players first
-        await db.players.delete_many({})
+        await db.execute(delete(DBPlayer))
         
         # Add test players
         created_count = 0
         for player_data in test_players:
-            player = Player(
+            player = DBPlayer(
                 name=player_data["name"],
                 category=player_data["category"],
                 rating=player_data["rating"]
             )
-            await db.players.insert_one(player.dict())
+            db.add(player)
             created_count += 1
         
+        await db.commit()
         return {"message": f"Successfully added {created_count} test players"}
         
     except Exception as e:
+        await db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to add test data: {str(e)}")
 
 # Players
