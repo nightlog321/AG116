@@ -960,6 +960,48 @@ async def get_players():
     players = await db.players.find().to_list(1000)
     return [Player(**player) for player in players]
 
+# SQLite Players API (for testing)
+@api_router.get("/sqlite/players")
+async def get_sqlite_players(db_session: AsyncSession = Depends(get_db_session)):
+    """Get players from SQLite database"""
+    try:
+        result = await db_session.execute(select(DBPlayer))
+        players = result.scalars().all()
+        
+        # Convert SQLAlchemy models to Pydantic models for response
+        player_list = []
+        for db_player in players:
+            # Parse JSON fields
+            recent_form = json.loads(db_player.recent_form) if db_player.recent_form else []
+            rating_history = json.loads(db_player.rating_history) if db_player.rating_history else []
+            
+            player_dict = {
+                "id": db_player.id,
+                "name": db_player.name,
+                "category": db_player.category,
+                "sitNextRound": db_player.sit_next_round,
+                "sitCount": db_player.sit_count,
+                "missDueToCourtLimit": db_player.miss_due_to_court_limit,
+                "rating": db_player.rating,
+                "matchesPlayed": db_player.matches_played,
+                "wins": db_player.wins,
+                "losses": db_player.losses,
+                "recentForm": recent_form,
+                "ratingHistory": rating_history,
+                "lastUpdated": db_player.last_updated.isoformat() if db_player.last_updated else datetime.now().isoformat(),
+                "stats": {
+                    "wins": db_player.stats_wins,
+                    "losses": db_player.stats_losses,
+                    "pointDiff": db_player.stats_point_diff
+                }
+            }
+            player_list.append(player_dict)
+        
+        return player_list
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get players: {str(e)}")
+
 @api_router.post("/players", response_model=Player)
 async def create_player(player: PlayerCreate):
     player_obj = Player(**player.dict())
