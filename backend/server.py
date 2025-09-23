@@ -1034,10 +1034,49 @@ async def get_sqlite_players(db_session: AsyncSession = Depends(get_db_session))
         raise HTTPException(status_code=500, detail=f"Failed to get players: {str(e)}")
 
 @api_router.post("/players", response_model=Player)
-async def create_player(player: PlayerCreate):
-    player_obj = Player(**player.dict())
-    await db.players.insert_one(player_obj.dict())
-    return player_obj
+async def create_player(player: PlayerCreate, db_session: AsyncSession = Depends(get_db_session)):
+    """Create a new player in SQLite database"""
+    try:
+        # Create SQLAlchemy player object
+        db_player = DBPlayer(
+            name=player.name,
+            category=player.category,
+            rating=3.0,  # Default DUPR rating
+            recent_form=json.dumps([]),  # Empty recent form
+            rating_history=json.dumps([])  # Empty rating history
+        )
+        
+        db_session.add(db_player)
+        await db_session.commit()
+        await db_session.refresh(db_player)
+        
+        # Convert back to Pydantic model for response
+        player_dict = {
+            "id": db_player.id,
+            "name": db_player.name,
+            "category": db_player.category,
+            "sitNextRound": db_player.sit_next_round,
+            "sitCount": db_player.sit_count,
+            "missDueToCourtLimit": db_player.miss_due_to_court_limit,
+            "rating": db_player.rating,
+            "matchesPlayed": db_player.matches_played,
+            "wins": db_player.wins,
+            "losses": db_player.losses,
+            "recentForm": [],
+            "ratingHistory": [],
+            "lastUpdated": db_player.last_updated.isoformat() if db_player.last_updated else datetime.now().isoformat(),
+            "stats": {
+                "wins": db_player.stats_wins,
+                "losses": db_player.stats_losses,
+                "pointDiff": db_player.stats_point_diff
+            }
+        }
+        
+        return Player(**player_dict)
+        
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create player: {str(e)}")
 
 @api_router.put("/players/{player_id}", response_model=Player)
 async def update_player(player_id: str, updates: PlayerUpdate):
