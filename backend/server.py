@@ -20,7 +20,7 @@ from sqlalchemy import select, delete, update, and_, or_
 from database import (
     get_db_session, init_database, 
     Player as DBPlayer, Category as DBCategory, 
-    Match as DBMatch, Session as DBSession
+    Match as DBMatch, Session as DBSession, Club as DBClub
 )
 
 ROOT_DIR = Path(__file__).parent
