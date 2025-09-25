@@ -1035,7 +1035,6 @@ async def clear_all_data(db: AsyncSession = Depends(get_db_session)):
             db.add(category)
         
         # Create default club if it doesn't exist
-        from database import Club as DBClub
         result = await db.execute(select(DBClub).where(DBClub.name == "Main Club"))
         main_club = result.scalar_one_or_none()
         
