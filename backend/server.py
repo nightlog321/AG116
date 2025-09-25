@@ -1613,10 +1613,10 @@ async def generate_matches(club_name: str = "Main Club", db_session: AsyncSessio
         raise HTTPException(status_code=500, detail=f"Failed to generate matches: {str(e)}")
 
 @api_router.post("/session/start", response_model=SessionState)
-async def start_session():
+async def start_session(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
     """Start the timer for matches that are already generated"""
     try:
-        session_obj = await get_session()
+        session_obj = await get_session(club_name, db_session)
         
         # Must be in 'ready' phase to start timer
         if session_obj.phase != SessionPhase.ready:
@@ -1626,19 +1626,21 @@ async def start_session():
             )
         
         # Start the timer by setting phase to 'play'
-        await db.session.update_one(
-            {}, 
-            {"$set": {
-                "phase": SessionPhase.play,
-                "timeRemaining": session_obj.config.playSeconds
-            }}
-        )
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
+        session = result.scalar_one_or_none()
         
-        return await get_session()
+        if session:
+            session.phase = SessionPhase.play.value
+            session.time_remaining = session_obj.config.playSeconds
+        
+        await db_session.commit()
+        
+        return await get_session(club_name, db_session)
         
     except HTTPException:
         raise
     except Exception as e:
+        await db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to start session: {str(e)}")
 
 @api_router.post("/session/next-round")
