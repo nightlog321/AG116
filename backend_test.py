@@ -16,393 +16,433 @@ BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
 
 class BackendTester:
     def __init__(self):
-        self.base_url = BASE_URL
+        self.session = requests.Session()
+        self.session.headers.update({
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        })
         self.test_results = []
-        self.failed_tests = []
         
     def log_test(self, test_name: str, success: bool, details: str = ""):
-        """Log test result"""
+        """Log test results"""
         status = "✅ PASS" if success else "❌ FAIL"
-        result = f"{status}: {test_name}"
+        print(f"{status}: {test_name}")
         if details:
-            result += f" - {details}"
+            print(f"   Details: {details}")
         
-        self.test_results.append(result)
-        if not success:
-            self.failed_tests.append(f"{test_name}: {details}")
-        print(result)
-        
-    def make_request(self, method: str, endpoint: str, data: Dict = None, params: Dict = None) -> Dict:
-        """Make HTTP request to API"""
-        url = f"{self.base_url}{endpoint}"
-        
+        self.test_results.append({
+            'test': test_name,
+            'success': success,
+            'details': details
+        })
+    
+    def test_add_test_data(self) -> bool:
+        """Test POST /api/add-test-data - Add test players"""
         try:
-            if method.upper() == "GET":
-                response = requests.get(url, params=params, timeout=30)
-            elif method.upper() == "POST":
-                response = requests.post(url, json=data, params=params, timeout=30)
-            elif method.upper() == "PUT":
-                response = requests.put(url, json=data, params=params, timeout=30)
-            elif method.upper() == "DELETE":
-                response = requests.delete(url, params=params, timeout=30)
-            else:
-                raise ValueError(f"Unsupported method: {method}")
-                
-            return {
-                "status_code": response.status_code,
-                "data": response.json() if response.content else {},
-                "success": 200 <= response.status_code < 300
-            }
-        except requests.exceptions.RequestException as e:
-            return {
-                "status_code": 0,
-                "data": {"error": str(e)},
-                "success": False
-            }
-        except json.JSONDecodeError:
-            return {
-                "status_code": response.status_code,
-                "data": {"error": "Invalid JSON response"},
-                "success": False
-            }
-
-    def test_club_management_apis(self):
-        """Test 1: Club Management APIs"""
-        print("\n🏢 TESTING CLUB MANAGEMENT APIs")
-        
-        # Test 1.1: GET /api/clubs - should return "Main Club" that was auto-created
-        print("\n1.1 Testing GET /api/clubs - should return Main Club")
-        response = self.make_request("GET", "/clubs")
-        
-        if response["success"]:
-            clubs = response["data"]
-            main_club_found = any(club.get("name") == "Main Club" for club in clubs)
+            response = self.session.post(f"{BACKEND_URL}/add-test-data")
             
-            if main_club_found:
-                self.log_test("GET /api/clubs returns Main Club", True, f"Found Main Club in {len(clubs)} clubs")
+            if response.status_code == 200:
+                data = response.json()
+                self.log_test("Add Test Data", True, f"Response: {data}")
+                return True
             else:
-                self.log_test("GET /api/clubs returns Main Club", False, f"Main Club not found in clubs: {[c.get('name') for c in clubs]}")
-        else:
-            self.log_test("GET /api/clubs returns Main Club", False, f"API call failed: {response['data']}")
-        
-        # Test 1.2: POST /api/clubs - should create new clubs with auto-generated sessions
-        print("\n1.2 Testing POST /api/clubs - create Tennis Club")
-        club_data = {
-            "name": "Tennis Club",
-            "display_name": "Tennis Club",
-            "description": "A tennis club for testing multi-club functionality"
-        }
-        
-        response = self.make_request("POST", "/clubs", data=club_data)
-        
-        if response["success"]:
-            created_club = response["data"]
-            if created_club.get("name") == "Tennis Club":
-                self.log_test("POST /api/clubs creates Tennis Club", True, f"Created club: {created_club.get('display_name')}")
+                self.log_test("Add Test Data", False, f"Status: {response.status_code}, Response: {response.text}")
+                return False
                 
-                # Verify the club appears in GET /api/clubs
-                clubs_response = self.make_request("GET", "/clubs")
-                if clubs_response["success"]:
-                    clubs = clubs_response["data"]
-                    tennis_club_found = any(club.get("name") == "Tennis Club" for club in clubs)
-                    self.log_test("Tennis Club appears in clubs list", tennis_club_found, f"Total clubs: {len(clubs)}")
-                else:
-                    self.log_test("Tennis Club appears in clubs list", False, "Failed to get clubs list")
-            else:
-                self.log_test("POST /api/clubs creates Tennis Club", False, f"Unexpected club data: {created_club}")
-        else:
-            self.log_test("POST /api/clubs creates Tennis Club", False, f"API call failed: {response['data']}")
-
-    def test_club_aware_data_apis(self):
-        """Test 2: Club-Aware Data APIs with backward compatibility"""
-        print("\n📊 TESTING CLUB-AWARE DATA APIs")
-        
-        # Test 2.1: GET /api/players?club_name=Main Club - should return empty initially
-        print("\n2.1 Testing GET /api/players?club_name=Main Club - should be empty initially")
-        response = self.make_request("GET", "/players", params={"club_name": "Main Club"})
-        
-        if response["success"]:
-            players = response["data"]
-            if len(players) == 0:
-                self.log_test("GET /api/players?club_name=Main Club returns empty", True, "No players found as expected")
-            else:
-                self.log_test("GET /api/players?club_name=Main Club returns empty", False, f"Found {len(players)} players, expected 0")
-        else:
-            self.log_test("GET /api/players?club_name=Main Club returns empty", False, f"API call failed: {response['data']}")
-        
-        # Test 2.2: POST /api/add-test-data - should add 13 test players to "Main Club"
-        print("\n2.2 Testing POST /api/add-test-data - add test players to Main Club")
-        response = self.make_request("POST", "/add-test-data")
-        
-        if response["success"]:
-            result = response["data"]
-            if "Successfully added" in result.get("message", ""):
-                self.log_test("POST /api/add-test-data adds players", True, result.get("message"))
-            else:
-                self.log_test("POST /api/add-test-data adds players", False, f"Unexpected message: {result}")
-        else:
-            self.log_test("POST /api/add-test-data adds players", False, f"API call failed: {response['data']}")
-        
-        # Test 2.3: GET /api/players?club_name=Main Club - should now return 13 players
-        print("\n2.3 Testing GET /api/players?club_name=Main Club - should return 13 players")
-        response = self.make_request("GET", "/players", params={"club_name": "Main Club"})
-        
-        if response["success"]:
-            players = response["data"]
-            if len(players) >= 12:  # Allow for 12+ players (test data might vary)
-                self.log_test("GET /api/players?club_name=Main Club returns test players", True, f"Found {len(players)} players")
+        except Exception as e:
+            self.log_test("Add Test Data", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_get_players(self) -> bool:
+        """Test GET /api/players - Verify players exist"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/players")
+            
+            if response.status_code == 200:
+                players = response.json()
+                player_count = len(players)
+                self.log_test("Get Players", True, f"Found {player_count} players")
                 
-                # Verify player structure and club assignment
+                # Show player details for verification
                 if players:
-                    sample_player = players[0]
-                    required_fields = ["id", "name", "category", "rating"]
-                    missing_fields = [field for field in required_fields if field not in sample_player]
-                    
-                    if not missing_fields:
-                        self.log_test("Player data structure is correct", True, f"All required fields present: {required_fields}")
-                    else:
-                        self.log_test("Player data structure is correct", False, f"Missing fields: {missing_fields}")
+                    print("   Player Details:")
+                    for player in players[:3]:  # Show first 3 players
+                        print(f"     - {player.get('name', 'Unknown')} ({player.get('category', 'Unknown')})")
+                
+                return player_count > 0
             else:
-                self.log_test("GET /api/players?club_name=Main Club returns test players", False, f"Found {len(players)} players, expected 12+")
-        else:
-            self.log_test("GET /api/players?club_name=Main Club returns test players", False, f"API call failed: {response['data']}")
-        
-        # Test 2.4: GET /api/session?club_name=Main Club - should return session for Main Club
-        print("\n2.4 Testing GET /api/session?club_name=Main Club - should return Main Club session")
-        response = self.make_request("GET", "/session", params={"club_name": "Main Club"})
-        
-        if response["success"]:
-            session = response["data"]
-            required_fields = ["id", "currentRound", "phase", "config"]
-            missing_fields = [field for field in required_fields if field not in session]
+                self.log_test("Get Players", False, f"Status: {response.status_code}, Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Get Players", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_get_session_initial(self) -> Dict[str, Any]:
+        """Test GET /api/session - Check initial session state"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/session")
             
-            if not missing_fields:
-                self.log_test("GET /api/session?club_name=Main Club returns session", True, f"Session phase: {session.get('phase')}")
+            if response.status_code == 200:
+                session = response.json()
+                phase = session.get('phase', 'unknown')
+                current_round = session.get('currentRound', 0)
                 
-                # Verify session config structure
-                config = session.get("config", {})
-                config_fields = ["numCourts", "playSeconds", "allowSingles", "allowDoubles"]
-                missing_config = [field for field in config_fields if field not in config]
+                self.log_test("Get Session (Initial)", True, 
+                             f"Phase: {phase}, Round: {current_round}")
                 
-                if not missing_config:
-                    self.log_test("Session config structure is correct", True, f"Config fields: {list(config.keys())}")
-                else:
-                    self.log_test("Session config structure is correct", False, f"Missing config fields: {missing_config}")
-            else:
-                self.log_test("GET /api/session?club_name=Main Club returns session", False, f"Missing session fields: {missing_fields}")
-        else:
-            self.log_test("GET /api/session?club_name=Main Club returns session", False, f"API call failed: {response['data']}")
-
-    def test_multi_club_isolation(self):
-        """Test 3: Multi-Club Isolation Test"""
-        print("\n🔒 TESTING MULTI-CLUB DATA ISOLATION")
-        
-        # Test 3.1: GET /api/players?club_name=Tennis Club - should return empty (isolated)
-        print("\n3.1 Testing GET /api/players?club_name=Tennis Club - should be empty (isolated)")
-        response = self.make_request("GET", "/players", params={"club_name": "Tennis Club"})
-        
-        if response["success"]:
-            tennis_players = response["data"]
-            if len(tennis_players) == 0:
-                self.log_test("Tennis Club players isolated (empty)", True, "No players found in Tennis Club as expected")
-            else:
-                self.log_test("Tennis Club players isolated (empty)", False, f"Found {len(tennis_players)} players in Tennis Club, expected 0")
-        else:
-            self.log_test("Tennis Club players isolated (empty)", False, f"API call failed: {response['data']}")
-        
-        # Test 3.2: GET /api/players?club_name=Main Club - should still return 13 players
-        print("\n3.2 Testing GET /api/players?club_name=Main Club - should still have players")
-        response = self.make_request("GET", "/players", params={"club_name": "Main Club"})
-        
-        if response["success"]:
-            main_players = response["data"]
-            if len(main_players) >= 12:
-                self.log_test("Main Club players still present", True, f"Main Club has {len(main_players)} players")
-            else:
-                self.log_test("Main Club players still present", False, f"Main Club has {len(main_players)} players, expected 12+")
-        else:
-            self.log_test("Main Club players still present", False, f"API call failed: {response['data']}")
-        
-        # Test 3.3: POST /api/players with club_name=Tennis Club - create player for Tennis Club
-        print("\n3.3 Testing POST /api/players with club_name=Tennis Club - create isolated player")
-        player_data = {
-            "name": "Tennis Player One",
-            "category": "Intermediate"
-        }
-        
-        response = self.make_request("POST", "/players", data=player_data, params={"club_name": "Tennis Club"})
-        
-        if response["success"]:
-            created_player = response["data"]
-            if created_player.get("name") == "Tennis Player One":
-                self.log_test("POST /api/players creates Tennis Club player", True, f"Created: {created_player.get('name')}")
+                print(f"   Session Details:")
+                print(f"     - ID: {session.get('id', 'Unknown')}")
+                print(f"     - Phase: {phase}")
+                print(f"     - Current Round: {current_round}")
+                print(f"     - Time Remaining: {session.get('timeRemaining', 0)}")
+                print(f"     - Paused: {session.get('paused', False)}")
                 
-                # Verify the player appears in Tennis Club
-                tennis_response = self.make_request("GET", "/players", params={"club_name": "Tennis Club"})
-                if tennis_response["success"]:
-                    tennis_players = tennis_response["data"]
-                    if len(tennis_players) == 1:
-                        self.log_test("Tennis Club player appears in Tennis Club", True, f"Tennis Club now has {len(tennis_players)} player")
-                    else:
-                        self.log_test("Tennis Club player appears in Tennis Club", False, f"Tennis Club has {len(tennis_players)} players, expected 1")
-                else:
-                    self.log_test("Tennis Club player appears in Tennis Club", False, "Failed to get Tennis Club players")
+                config = session.get('config', {})
+                print(f"     - Config: Courts={config.get('numCourts', 0)}, PlayTime={config.get('playSeconds', 0)}s")
+                
+                return session
             else:
-                self.log_test("POST /api/players creates Tennis Club player", False, f"Unexpected player data: {created_player}")
-        else:
-            self.log_test("POST /api/players creates Tennis Club player", False, f"API call failed: {response['data']}")
-        
-        # Test 3.4: Verify complete data isolation - Main Club should still have same number of players
-        print("\n3.4 Testing complete data isolation - Main Club unaffected")
-        response = self.make_request("GET", "/players", params={"club_name": "Main Club"})
-        
-        if response["success"]:
-            main_players = response["data"]
-            if len(main_players) >= 12:
-                self.log_test("Data isolation verified - Main Club unaffected", True, f"Main Club still has {len(main_players)} players")
-            else:
-                self.log_test("Data isolation verified - Main Club unaffected", False, f"Main Club has {len(main_players)} players, expected 12+")
-        else:
-            self.log_test("Data isolation verified - Main Club unaffected", False, f"API call failed: {response['data']}")
-
-    def test_backward_compatibility(self):
-        """Test 4: Backward Compatibility"""
-        print("\n🔄 TESTING BACKWARD COMPATIBILITY")
-        
-        # Test 4.1: GET /api/players (no club_name parameter) - should default to "Main Club"
-        print("\n4.1 Testing GET /api/players (no club_name) - should default to Main Club")
-        response = self.make_request("GET", "/players")
-        
-        if response["success"]:
-            default_players = response["data"]
+                self.log_test("Get Session (Initial)", False, f"Status: {response.status_code}, Response: {response.text}")
+                return {}
+                
+        except Exception as e:
+            self.log_test("Get Session (Initial)", False, f"Exception: {str(e)}")
+            return {}
+    
+    def test_generate_matches(self) -> bool:
+        """Test POST /api/session/generate-matches - CRITICAL TEST"""
+        try:
+            response = self.session.post(f"{BACKEND_URL}/session/generate-matches")
             
-            # Compare with explicit Main Club request
-            main_response = self.make_request("GET", "/players", params={"club_name": "Main Club"})
-            if main_response["success"]:
-                main_players = main_response["data"]
+            if response.status_code == 200:
+                session = response.json()
+                phase = session.get('phase', 'unknown')
+                current_round = session.get('currentRound', 0)
                 
-                if len(default_players) == len(main_players) and len(default_players) >= 12:
-                    self.log_test("GET /api/players defaults to Main Club", True, f"Both return {len(default_players)} players")
-                    
-                    # Verify same player IDs
-                    default_ids = {p.get("id") for p in default_players}
-                    main_ids = {p.get("id") for p in main_players}
-                    
-                    if default_ids == main_ids:
-                        self.log_test("Default and explicit Main Club return same players", True, "Player IDs match")
-                    else:
-                        self.log_test("Default and explicit Main Club return same players", False, "Player IDs don't match")
-                else:
-                    self.log_test("GET /api/players defaults to Main Club", False, f"Default: {len(default_players)}, Main: {len(main_players)} players")
+                success = phase == 'ready' and current_round == 1
+                
+                self.log_test("Generate Matches", success, 
+                             f"Phase: {phase}, Round: {current_round} (Expected: ready, 1)")
+                
+                if not success:
+                    print(f"   ❌ CRITICAL ISSUE: Expected phase='ready' and round=1, got phase='{phase}' and round={current_round}")
+                
+                return success
             else:
-                self.log_test("GET /api/players defaults to Main Club", False, "Failed to get Main Club players for comparison")
-        else:
-            self.log_test("GET /api/players defaults to Main Club", False, f"API call failed: {response['data']}")
-        
-        # Test 4.2: GET /api/session (no club_name parameter) - should default to "Main Club"
-        print("\n4.2 Testing GET /api/session (no club_name) - should default to Main Club")
-        response = self.make_request("GET", "/session")
-        
-        if response["success"]:
-            default_session = response["data"]
+                self.log_test("Generate Matches", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+                # Check if endpoint exists
+                if response.status_code == 404:
+                    print("   ❌ CRITICAL ISSUE: /api/session/generate-matches endpoint does not exist!")
+                elif response.status_code == 500:
+                    print("   ❌ CRITICAL ISSUE: Server error when generating matches!")
+                
+                return False
+                
+        except Exception as e:
+            self.log_test("Generate Matches", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_get_matches(self) -> List[Dict[str, Any]]:
+        """Test GET /api/matches - Check if matches were created"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/matches")
             
-            # Compare with explicit Main Club request
-            main_response = self.make_request("GET", "/session", params={"club_name": "Main Club"})
-            if main_response["success"]:
-                main_session = main_response["data"]
+            if response.status_code == 200:
+                matches = response.json()
+                match_count = len(matches)
                 
-                # Compare key fields
-                default_id = default_session.get("id")
-                main_id = main_session.get("id")
+                success = match_count > 0
+                self.log_test("Get Matches", success, f"Found {match_count} matches")
                 
-                if default_id == main_id:
-                    self.log_test("GET /api/session defaults to Main Club", True, f"Both return session ID: {default_id}")
+                if matches:
+                    print("   Match Details:")
+                    for i, match in enumerate(matches[:3]):  # Show first 3 matches
+                        court = match.get('courtIndex', 'Unknown')
+                        category = match.get('category', 'Unknown')
+                        team_a = match.get('teamA', [])
+                        team_b = match.get('teamB', [])
+                        match_type = match.get('matchType', 'Unknown')
+                        status = match.get('status', 'Unknown')
+                        
+                        print(f"     Match {i+1}: Court {court}, {category}, {match_type}")
+                        print(f"       Team A: {len(team_a)} players, Team B: {len(team_b)} players")
+                        print(f"       Status: {status}")
                 else:
-                    self.log_test("GET /api/session defaults to Main Club", False, f"Default ID: {default_id}, Main ID: {main_id}")
+                    print("   ❌ CRITICAL ISSUE: No matches found after generate-matches!")
+                
+                return matches
             else:
-                self.log_test("GET /api/session defaults to Main Club", False, "Failed to get Main Club session for comparison")
-        else:
-            self.log_test("GET /api/session defaults to Main Club", False, f"API call failed: {response['data']}")
-
-    def test_session_isolation(self):
-        """Test 5: Session Isolation Between Clubs"""
-        print("\n⚙️ TESTING SESSION ISOLATION BETWEEN CLUBS")
-        
-        # Test 5.1: GET /api/session?club_name=Tennis Club - should return separate session
-        print("\n5.1 Testing GET /api/session?club_name=Tennis Club - should have separate session")
-        response = self.make_request("GET", "/session", params={"club_name": "Tennis Club"})
-        
-        if response["success"]:
-            tennis_session = response["data"]
+                self.log_test("Get Matches", False, f"Status: {response.status_code}, Response: {response.text}")
+                return []
+                
+        except Exception as e:
+            self.log_test("Get Matches", False, f"Exception: {str(e)}")
+            return []
+    
+    def test_session_after_generate(self) -> Dict[str, Any]:
+        """Test GET /api/session - Verify session state after generate matches"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/session")
             
-            # Get Main Club session for comparison
-            main_response = self.make_request("GET", "/session", params={"club_name": "Main Club"})
-            if main_response["success"]:
-                main_session = main_response["data"]
+            if response.status_code == 200:
+                session = response.json()
+                phase = session.get('phase', 'unknown')
+                current_round = session.get('currentRound', 0)
                 
-                # Sessions should have different IDs
-                tennis_id = tennis_session.get("id")
-                main_id = main_session.get("id")
+                expected_phase = 'ready'
+                expected_round = 1
                 
-                if tennis_id != main_id:
-                    self.log_test("Tennis Club has separate session", True, f"Tennis: {tennis_id}, Main: {main_id}")
-                else:
-                    self.log_test("Tennis Club has separate session", False, f"Both clubs have same session ID: {tennis_id}")
+                success = phase == expected_phase and current_round == expected_round
+                
+                self.log_test("Session After Generate", success, 
+                             f"Phase: {phase}, Round: {current_round} (Expected: {expected_phase}, {expected_round})")
+                
+                if not success:
+                    print(f"   ❌ ISSUE: Session should be in 'ready' phase with round 1 after generating matches")
+                    print(f"   Current state: phase='{phase}', round={current_round}")
+                
+                return session
             else:
-                self.log_test("Tennis Club has separate session", False, "Failed to get Main Club session for comparison")
-        else:
-            self.log_test("Tennis Club has separate session", False, f"API call failed: {response['data']}")
-
-    def run_all_tests(self):
-        """Run all multi-club architecture tests"""
-        print("🚀 STARTING MULTI-CLUB ARCHITECTURE TESTING")
-        print(f"Backend URL: {self.base_url}")
-        print("=" * 80)
+                self.log_test("Session After Generate", False, f"Status: {response.status_code}, Response: {response.text}")
+                return {}
+                
+        except Exception as e:
+            self.log_test("Session After Generate", False, f"Exception: {str(e)}")
+            return {}
+    
+    def test_start_session(self) -> bool:
+        """Test POST /api/session/start - Let's Play button functionality"""
+        try:
+            response = self.session.post(f"{BACKEND_URL}/session/start")
+            
+            if response.status_code == 200:
+                session = response.json()
+                phase = session.get('phase', 'unknown')
+                current_round = session.get('currentRound', 0)
+                
+                expected_phase = 'play'
+                expected_round = 1
+                
+                success = phase == expected_phase and current_round == expected_round
+                
+                self.log_test("Start Session (Let's Play)", success, 
+                             f"Phase: {phase}, Round: {current_round} (Expected: {expected_phase}, {expected_round})")
+                
+                if not success:
+                    print(f"   ❌ ISSUE: Let's Play button should transition to 'play' phase")
+                    print(f"   Current state: phase='{phase}', round={current_round}")
+                
+                return success
+            else:
+                self.log_test("Start Session (Let's Play)", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+                if response.status_code == 400:
+                    print("   ❌ ISSUE: Session start failed - might not be in correct phase")
+                    print(f"   Response: {response.text}")
+                
+                return False
+                
+        except Exception as e:
+            self.log_test("Start Session (Let's Play)", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_session_after_start(self) -> Dict[str, Any]:
+        """Test GET /api/session - Verify session state after start"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/session")
+            
+            if response.status_code == 200:
+                session = response.json()
+                phase = session.get('phase', 'unknown')
+                current_round = session.get('currentRound', 0)
+                time_remaining = session.get('timeRemaining', 0)
+                
+                expected_phase = 'play'
+                expected_round = 1
+                
+                success = phase == expected_phase and current_round == expected_round
+                
+                self.log_test("Session After Start", success, 
+                             f"Phase: {phase}, Round: {current_round}, Time: {time_remaining}s")
+                
+                if success:
+                    print("   ✅ SUCCESS: Session is now in play phase with timer running")
+                else:
+                    print(f"   ❌ ISSUE: Expected play phase with round 1, got phase='{phase}', round={current_round}")
+                
+                return session
+            else:
+                self.log_test("Session After Start", False, f"Status: {response.status_code}, Response: {response.text}")
+                return {}
+                
+        except Exception as e:
+            self.log_test("Session After Start", False, f"Exception: {str(e)}")
+            return {}
+    
+    def test_court_assignments(self, matches: List[Dict[str, Any]]) -> bool:
+        """Test court assignments in matches"""
+        if not matches:
+            self.log_test("Court Assignments", False, "No matches to test court assignments")
+            return False
         
         try:
-            # Test 1: Club Management APIs
-            self.test_club_management_apis()
+            court_indices = [match.get('courtIndex') for match in matches]
+            unique_courts = set(court_indices)
             
-            # Test 2: Club-Aware Data APIs
-            self.test_club_aware_data_apis()
+            # Check if court indices are valid (0-based indexing)
+            valid_courts = all(isinstance(court, int) and court >= 0 for court in court_indices)
             
-            # Test 3: Multi-Club Isolation
-            self.test_multi_club_isolation()
+            success = valid_courts and len(unique_courts) > 0
             
-            # Test 4: Backward Compatibility
-            self.test_backward_compatibility()
+            self.log_test("Court Assignments", success, 
+                         f"Courts used: {sorted(unique_courts)}, Total matches: {len(matches)}")
             
-            # Test 5: Session Isolation
-            self.test_session_isolation()
+            if not success:
+                print(f"   ❌ ISSUE: Invalid court assignments found")
+                print(f"   Court indices: {court_indices}")
+            
+            return success
             
         except Exception as e:
-            self.log_test("Test execution", False, f"Unexpected error: {str(e)}")
+            self.log_test("Court Assignments", False, f"Exception: {str(e)}")
+            return False
+    
+    def run_comprehensive_test(self):
+        """Run comprehensive test of match generation and courts functionality"""
+        print("=" * 80)
+        print("🏓 COURTCHIME BACKEND TESTING - MATCH GENERATION & COURTS FUNCTIONALITY")
+        print("=" * 80)
+        print(f"Backend URL: {BACKEND_URL}")
+        print()
         
-        # Print summary
-        print("\n" + "=" * 80)
-        print("🏁 MULTI-CLUB ARCHITECTURE TEST SUMMARY")
+        # Test sequence based on user's reported issues
+        print("📋 TESTING SEQUENCE:")
+        print("1. Add test players")
+        print("2. Check initial session state")
+        print("3. Generate matches (CRITICAL TEST)")
+        print("4. Verify matches were created")
+        print("5. Check session is in 'ready' phase")
+        print("6. Start session (Let's Play button)")
+        print("7. Verify session is in 'play' phase")
+        print("8. Test court assignments")
+        print()
+        
+        # Step 1: Add test data
+        print("🔄 Step 1: Adding test players...")
+        players_added = self.test_add_test_data()
+        
+        if players_added:
+            self.test_get_players()
+        
+        print()
+        
+        # Step 2: Check initial session
+        print("🔄 Step 2: Checking initial session state...")
+        initial_session = self.test_get_session_initial()
+        print()
+        
+        # Step 3: Generate matches (CRITICAL)
+        print("🔄 Step 3: Generating matches (CRITICAL TEST)...")
+        matches_generated = self.test_generate_matches()
+        print()
+        
+        # Step 4: Check matches were created
+        print("🔄 Step 4: Verifying matches were created...")
+        matches = self.test_get_matches()
+        print()
+        
+        # Step 5: Check session state after generate
+        print("🔄 Step 5: Checking session state after generate...")
+        ready_session = self.test_session_after_generate()
+        print()
+        
+        # Step 6: Start session (Let's Play)
+        print("🔄 Step 6: Starting session (Let's Play button)...")
+        session_started = self.test_start_session()
+        print()
+        
+        # Step 7: Check session state after start
+        print("🔄 Step 7: Verifying session state after start...")
+        play_session = self.test_session_after_start()
+        print()
+        
+        # Step 8: Test court assignments
+        print("🔄 Step 8: Testing court assignments...")
+        court_assignments_valid = self.test_court_assignments(matches)
+        print()
+        
+        # Summary
+        self.print_summary()
+        
+        return self.test_results
+    
+    def print_summary(self):
+        """Print test summary"""
+        print("=" * 80)
+        print("📊 TEST SUMMARY")
         print("=" * 80)
         
-        total_tests = len(self.test_results)
-        passed_tests = total_tests - len(self.failed_tests)
+        passed = sum(1 for result in self.test_results if result['success'])
+        total = len(self.test_results)
         
-        print(f"Total Tests: {total_tests}")
-        print(f"Passed: {passed_tests}")
-        print(f"Failed: {len(self.failed_tests)}")
-        print(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%" if total_tests > 0 else "No tests run")
+        print(f"Tests Passed: {passed}/{total} ({passed/total*100:.1f}%)")
+        print()
         
-        if self.failed_tests:
-            print("\n❌ FAILED TESTS:")
-            for failure in self.failed_tests:
-                print(f"  - {failure}")
+        # Critical issues
+        critical_issues = []
         
-        print("\n📋 ALL TEST RESULTS:")
         for result in self.test_results:
-            print(f"  {result}")
+            if not result['success']:
+                if 'Generate Matches' in result['test']:
+                    critical_issues.append("❌ CRITICAL: Generate Matches functionality is broken")
+                elif 'Let\'s Play' in result['test'] or 'Start Session' in result['test']:
+                    critical_issues.append("❌ CRITICAL: Let's Play button functionality is broken")
+                elif 'Get Matches' in result['test'] and 'Found 0 matches' in result['details']:
+                    critical_issues.append("❌ CRITICAL: No matches created after generate-matches")
         
-        return len(self.failed_tests) == 0
+        if critical_issues:
+            print("🚨 CRITICAL ISSUES FOUND:")
+            for issue in critical_issues:
+                print(f"   {issue}")
+            print()
+        
+        # Failed tests
+        failed_tests = [result for result in self.test_results if not result['success']]
+        if failed_tests:
+            print("❌ FAILED TESTS:")
+            for result in failed_tests:
+                print(f"   - {result['test']}: {result['details']}")
+            print()
+        
+        # Success tests
+        passed_tests = [result for result in self.test_results if result['success']]
+        if passed_tests:
+            print("✅ PASSED TESTS:")
+            for result in passed_tests:
+                print(f"   - {result['test']}")
+            print()
+        
+        print("=" * 80)
+
+def main():
+    """Main test execution"""
+    tester = BackendTester()
+    results = tester.run_comprehensive_test()
+    
+    # Exit with error code if any critical tests failed
+    critical_failures = any(
+        not result['success'] and ('Generate Matches' in result['test'] or 'Start Session' in result['test'])
+        for result in results
+    )
+    
+    if critical_failures:
+        print("🚨 CRITICAL FAILURES DETECTED - EXITING WITH ERROR CODE")
+        sys.exit(1)
+    else:
+        print("✅ ALL CRITICAL TESTS PASSED")
+        sys.exit(0)
 
 if __name__ == "__main__":
-    tester = MultiClubTester()
-    success = tester.run_all_tests()
-    sys.exit(0 if success else 1)
+    main()
