@@ -1230,12 +1230,21 @@ function AdminConsole({
         {/* Session Control Buttons */}
         <View style={styles.sessionControlButtons}>
           <TouchableOpacity 
-            style={[styles.primaryButton, (players.length < 4 || (session && session.phase !== 'idle')) && styles.buttonDisabled]}
             onPress={onGenerateMatches}
             disabled={players.length < 4 || (session && session.phase !== 'idle')}
+            style={(players.length < 4 || (session && session.phase !== 'idle')) && styles.buttonDisabled}
           >
-            <Ionicons name="calendar" size={20} color={colors.text} style={styles.buttonIcon} />
-            <Text style={styles.buttonText}>Generate Matches</Text>
+            <LinearGradient
+              colors={players.length < 4 || (session && session.phase !== 'idle') 
+                ? [colors.textMuted, colors.textLight] 
+                : colors.primaryGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.primaryButton}
+            >
+              <Ionicons name="calendar" size={20} color="#ffffff" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Generate Matches</Text>
+            </LinearGradient>
           </TouchableOpacity>
           
           <TouchableOpacity 
