@@ -1887,6 +1887,40 @@ async def start_next_round(club_name: str = "Main Club", db_session: AsyncSessio
         await db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to generate next round: {str(e)}")
 
+@api_router.post("/session/buffer")
+async def start_buffer_phase(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Start buffer phase after round completion"""
+    try:
+        # Get current session
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
+        session = result.scalar_one_or_none()
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        # Parse session config
+        config_data = json.loads(session.config) if session.config else {}
+        session_config = SessionConfig(**config_data)
+        
+        # Update session to buffer phase
+        session.phase = SessionPhase.buffer.value
+        session.time_remaining = session_config.bufferSeconds
+        session.paused = False
+        
+        await db_session.commit()
+        
+        return {
+            "message": "Buffer phase started",
+            "phase": "buffer",
+            "time_remaining": session_config.bufferSeconds
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to start buffer phase: {str(e)}")
+
 @api_router.post("/session/play")
 async def start_play():
     """Start the play phase with timer"""
