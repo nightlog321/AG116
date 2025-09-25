@@ -2140,9 +2140,9 @@ const styles = StyleSheet.create({
     marginRight: 6, // Tighter spacing like Notion
   },
   buttonText: {
-    color: colors.background, // White text on primary buttons
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
   },
   secondaryButtonText: {
     color: colors.text, // Dark text on secondary buttons
