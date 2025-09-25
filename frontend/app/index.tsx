@@ -1914,8 +1914,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   activeTabText: {
-    color: colors.text,
-    fontWeight: '600',
+    color: colors.primary,
+    fontWeight: '700',
   },
   content: {
     flex: 1,
