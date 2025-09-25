@@ -1846,17 +1846,21 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   timerText: {
-    color: colors.success,
-    fontSize: 20,
+    color: '#ffffff',
+    fontSize: 18,
     fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   timerWarning: {
-    color: colors.warning,
+    color: colors.coral,
+    textShadowColor: 'rgba(255, 107, 107, 0.5)',
   },
   timerIdle: {
-    color: colors.textSecondary,
-    opacity: 0.8,
+    color: '#ffffff',
+    opacity: 0.7,
   },
   tabContainer: {
     flexDirection: 'row',
