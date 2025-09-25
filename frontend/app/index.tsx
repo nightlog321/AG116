@@ -5,36 +5,53 @@ import * as DocumentPicker from 'expo-document-picker';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-// Notion-inspired color palette with more grey shades
+// Modern aesthetic color palette with white/grey base and vibrant accents
 const colors = {
-  // Notion's signature colors with grey focus
+  // Clean white/grey foundation
   background: '#ffffff',
-  surface: '#f7f6f3',
-  surfaceLight: '#fbfbfa',
-  border: '#e9e9e7',
-  borderLight: '#f1f1ef',
+  surface: '#f8fafc',        // Softer light grey
+  surfaceElevated: '#f1f5f9', // Elevated surfaces
+  border: '#e2e8f0',         // Subtle borders
+  borderLight: '#f1f5f9',
   
-  // Text colors (Notion style)
-  text: '#37352f',
-  textSecondary: '#787774',
-  textMuted: '#9b9a97',
+  // Modern text hierarchy
+  text: '#1e293b',           // Rich dark text
+  textSecondary: '#64748b',   // Medium grey
+  textMuted: '#94a3b8',      // Light grey
+  textLight: '#cbd5e1',      // Very light grey
   
-  // More grey-focused accent colors
-  primary: '#6b7280',      // Grey instead of blue
-  primaryLight: '#f3f4f6',
-  success: '#10b981',      // Keep green for success
-  successLight: '#ecfdf5',
-  warning: '#f59e0b',      // Keep orange for warning
+  // Vibrant gradient primary (Blue to Teal)
+  primary: '#3b82f6',        // Bright blue
+  primaryDark: '#2563eb',    // Darker blue
+  primaryLight: '#dbeafe',   // Light blue tint
+  primaryGradient: ['#3b82f6', '#06b6d4'], // Blue to Teal gradient
+  
+  // Success with modern green
+  success: '#10b981',        // Emerald green
+  successDark: '#059669',
+  successLight: '#d1fae5',
+  
+  // Warning with warm amber
+  warning: '#f59e0b',        // Amber
+  warningDark: '#d97706',
   warningLight: '#fef3c7',
-  error: '#ef4444',        // Keep red for error
-  errorLight: '#fee2e2',
   
-  // Grey accents for buttons and highlights
-  accent: '#6b7280',       // Grey accent
-  accentLight: '#f9fafb',
+  // Error with modern red
+  error: '#ef4444',          // Red
+  errorDark: '#dc2626',
+  errorLight: '#fef2f2',
   
-  // Dark mode text (for headers)
-  textDark: '#1f2937',
+  // Vibrant accent colors for variety
+  accent: '#8b5cf6',         // Purple accent
+  accentLight: '#f3f4f6',
+  coral: '#ff6b6b',          // Coral accent
+  coralLight: '#ffe0e0',
+  teal: '#14b8a6',          // Teal accent
+  tealLight: '#ccfbf1',
+  
+  // Shadow and depth colors
+  shadow: '#1e293b',
+  shadowLight: '#64748b',
 };
 
 // Types
