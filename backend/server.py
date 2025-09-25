@@ -1757,38 +1757,135 @@ async def start_session(club_name: str = "Main Club", db_session: AsyncSession =
         raise HTTPException(status_code=500, detail=f"Failed to start session: {str(e)}")
 
 @api_router.post("/session/next-round")
-async def start_next_round():
-    """Generate the next round of matches"""
+async def start_next_round(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Generate the next round of matches with player reshuffling - SQLite version"""
     try:
-        session = await db.session.find_one()
+        # Get current session
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
+        session = result.scalar_one_or_none()
+        
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        session_obj = SessionState(**session)
-        next_round = session_obj.currentRound + 1
+        # Parse session config
+        config_data = json.loads(session.config) if session.config else {}
+        session_config = SessionConfig(**config_data)
         
-        # Generate next round
-        matches = await schedule_round(next_round)
+        next_round = session.current_round + 1
         
-        # Update session state
-        await db.session.update_one(
-            {}, 
-            {"$set": {
-                "currentRound": next_round,
-                "phase": SessionPhase.play.value,
-                "timeRemaining": session_obj.config.playSeconds
-            }}
-        )
+        # Clear previous round matches
+        await db_session.execute(delete(DBMatch).where(DBMatch.club_name == club_name))
+        
+        # Get all players for reshuffling
+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == club_name))
+        players = result.scalars().all()
+        
+        if len(players) < 2:
+            raise HTTPException(status_code=400, detail="Not enough players for matches")
+        
+        # Generate new matches with reshuffled players (same algorithm as generate-matches)
+        matches_created = []
+        used_players = set()
+        court_index = 0
+        
+        # Group players by category for management
+        players_by_category = {}
+        for player in players:
+            cat = player.category
+            if cat not in players_by_category:
+                players_by_category[cat] = []
+            players_by_category[cat].append(player)
+        
+        # Shuffle players within each category for variety
+        import random
+        for category_players in players_by_category.values():
+            random.shuffle(category_players)
+        
+        # Apply same court maximization logic as generate-matches
+        if session_config.maximizeCourtUsage and session_config.numCourts > 1:
+            available_players = [p for p in players if p.id not in used_players]
+            
+            while court_index < session_config.numCourts and len(available_players) >= 2:
+                if session_config.allowDoubles and len(available_players) >= 4:
+                    # Create doubles match
+                    match_players = available_players[:4]
+                    
+                    if session_config.allowCrossCategory:
+                        categories = list(set(p.category for p in match_players))
+                        match_category = "Mixed" if len(categories) > 1 else categories[0]
+                    else:
+                        match_category = match_players[0].category
+                    
+                    doubles_match = DBMatch(
+                        round_index=next_round,
+                        court_index=court_index,
+                        category=match_category,
+                        club_name=club_name,
+                        match_type="doubles",
+                        team_a=json.dumps([match_players[0].id, match_players[1].id]),
+                        team_b=json.dumps([match_players[2].id, match_players[3].id]),
+                        status="pending"
+                    )
+                    db_session.add(doubles_match)
+                    matches_created.append(doubles_match)
+                    
+                    for p in match_players:
+                        used_players.add(p.id)
+                    
+                    available_players = [p for p in players if p.id not in used_players]
+                    court_index += 1
+                    
+                elif session_config.allowSingles and len(available_players) >= 2:
+                    # Create singles match
+                    match_players = available_players[:2]
+                    
+                    if session_config.allowCrossCategory:
+                        categories = list(set(p.category for p in match_players))
+                        match_category = "Mixed" if len(categories) > 1 else categories[0]
+                    else:
+                        match_category = match_players[0].category
+                    
+                    singles_match = DBMatch(
+                        round_index=next_round,
+                        court_index=court_index,
+                        category=match_category,
+                        club_name=club_name,
+                        match_type="singles",
+                        team_a=json.dumps([match_players[0].id]),
+                        team_b=json.dumps([match_players[1].id]),
+                        status="pending"
+                    )
+                    db_session.add(singles_match)
+                    matches_created.append(singles_match)
+                    
+                    for p in match_players:
+                        used_players.add(p.id)
+                    
+                    available_players = [p for p in players if p.id not in used_players]
+                    court_index += 1
+                else:
+                    break
+        
+        # Update session to ready phase for next round
+        session.current_round = next_round
+        session.phase = SessionPhase.ready.value  # Set to ready so Let's Play appears
+        session.time_remaining = session_config.playSeconds
+        session.paused = False
+        
+        await db_session.commit()
         
         return {
-            "message": f"Round {next_round} started successfully",
+            "message": f"Round {next_round} generated with reshuffled players",
             "round": next_round,
-            "matches_created": len(matches)
+            "matches_created": len(matches_created),
+            "phase": "ready"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error starting next round: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to start next round: {str(e)}")
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to generate next round: {str(e)}")
 
 @api_router.post("/session/play")
 async def start_play():
