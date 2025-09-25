@@ -1530,11 +1530,17 @@ function CourtsDashboard({
             ✅ Court assignments ready! Players can see their matches above.
           </Text>
           <TouchableOpacity 
-            style={styles.letsPlayButton}
             onPress={onStartSession}
           >
-            <Ionicons name="play" size={24} color={colors.text} />
-            <Text style={styles.letsPlayText}>Let's Play!</Text>
+            <LinearGradient
+              colors={[colors.success, colors.teal]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.letsPlayButton}
+            >
+              <Ionicons name="play" size={24} color="#ffffff" />
+              <Text style={styles.letsPlayText}>Let's Play!</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
