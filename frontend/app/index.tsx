@@ -294,17 +294,9 @@ export default function PickleballManager() {
     initializeApp();
   }, []);
 
-  // Timer effect - ONLY runs when explicitly started by user
+  // Optimized timer effect - minimal operations
   useEffect(() => {
-    // DO NOT auto-start timer on app load
-    // Timer should only run when:
-    // 1. Session is actively in play or buffer phase
-    // 2. Not paused
-    // 3. Has time remaining
-    // 4. User has explicitly started the session (not on app load)
-    
-    // We'll control timer start/stop through the startSession function instead
-    // This useEffect is now just for cleanup
+    // Cleanup function only
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
