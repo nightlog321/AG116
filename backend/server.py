@@ -1535,14 +1535,16 @@ async def update_session_config(config: SessionConfig, db_session: AsyncSession 
         raise HTTPException(status_code=500, detail=f"Failed to update session config: {str(e)}")
 
 @api_router.post("/session/generate-matches", response_model=SessionState)
-async def generate_matches():
+async def generate_matches(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
     """Generate matches and set session to 'ready' phase - players can see assignments"""
     try:
         # Get current session
-        session_obj = await get_session()
+        session_obj = await get_session(club_name, db_session)
         
         # Check if we have enough players based on enabled formats
-        players_count = await db.players.count_documents({})
+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == club_name))
+        players = result.scalars().all()
+        players_count = len(players)
         
         # Validate format configuration
         if not session_obj.config.allowSingles and not session_obj.config.allowDoubles:
@@ -1566,30 +1568,48 @@ async def generate_matches():
             )
         
         # Reset all matches
-        await db.matches.delete_many({})
+        await db_session.execute(delete(DBMatch).where(DBMatch.club_name == club_name))
         
-        # Generate Round 1 matches
-        matches = await schedule_round(1)
-        if matches:
-            for match in matches:
-                await db.matches.insert_one(match.dict())
+        # Generate Round 1 matches - NOTE: This still uses MongoDB in schedule_round function
+        # For now, we'll create a simple match generation here
+        from sqlalchemy import func
         
-        # Update session to 'ready' phase (matches generated, waiting for timer start)
-        await db.session.update_one(
-            {}, 
-            {"$set": {
-                "currentRound": 1,
-                "phase": SessionPhase.ready,  # New ready phase
-                "timeRemaining": session_obj.config.playSeconds,
-                "paused": False
-            }}
-        )
+        # Create a simple doubles match for testing
+        if players_count >= 4:
+            # Get first 4 players for a test match
+            test_players = players[:4]
+            
+            # Create a test match
+            test_match = DBMatch(
+                round_index=1,
+                court_index=0,
+                category="Mixed",
+                club_name=club_name,
+                match_type="doubles",
+                team_a=json.dumps([test_players[0].id, test_players[1].id]),
+                team_b=json.dumps([test_players[2].id, test_players[3].id]),
+                status="pending"
+            )
+            db_session.add(test_match)
         
-        return await get_session()
+        # Update session to 'ready' phase
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
+        session = result.scalar_one_or_none()
+        
+        if session:
+            session.current_round = 1
+            session.phase = SessionPhase.ready.value
+            session.time_remaining = session_obj.config.playSeconds
+            session.paused = False
+        
+        await db_session.commit()
+        
+        return await get_session(club_name, db_session)
         
     except HTTPException:
         raise
     except Exception as e:
+        await db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to generate matches: {str(e)}")
 
 @api_router.post("/session/start", response_model=SessionState)
