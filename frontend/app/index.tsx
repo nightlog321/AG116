@@ -423,11 +423,12 @@ export default function PickleballManager() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const computeRoundsPlanned = () => {
+  // Memoized computation to prevent unnecessary recalculations
+  const computeRoundsPlanned = useMemo(() => {
     if (!session) return 0;
     const totalSeconds = session.config.playSeconds + session.config.bufferSeconds;
     return Math.floor(7200 / Math.max(1, totalSeconds)); // 2 hours = 7200 seconds
-  };
+  }, [session]); // Only recompute when session changes
 
   // Timer countdown function that updates the top right timer
   const startTimerCountdown = () => {
