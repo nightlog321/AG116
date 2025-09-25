@@ -366,11 +366,15 @@ export default function PickleballManager() {
         method: 'POST',
       });
 
-      // Fetch all data
+      // Optimize: Fetch essential data first, then secondary data
       await Promise.all([
-        fetchPlayers(),
-        fetchCategories(), 
-        fetchSession(),
+        fetchSession(), // Most important for app state
+        fetchPlayers()  // Needed for main functionality
+      ]);
+      
+      // Fetch secondary data after main data loads
+      await Promise.all([
+        fetchCategories(),
         fetchMatches()
       ]);
     } catch (error) {
