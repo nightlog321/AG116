@@ -2073,13 +2073,18 @@ const styles = StyleSheet.create({
   primaryButton: {
     flex: 1,
     backgroundColor: colors.primary,
-    paddingVertical: 10, // Notion-style smaller padding
-    paddingHorizontal: 16,
-    borderRadius: 6, // Notion-style subtle rounding
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    minHeight: 40, // Consistent button height
+    minHeight: 48,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   warningButton: {
     flex: 1,
