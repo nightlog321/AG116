@@ -1583,27 +1583,127 @@ async def generate_matches(club_name: str = "Main Club", db_session: AsyncSessio
         # Reset all matches
         await db_session.execute(delete(DBMatch).where(DBMatch.club_name == club_name))
         
-        # Generate Round 1 matches - NOTE: This still uses MongoDB in schedule_round function
-        # For now, we'll create a simple match generation here
-        from sqlalchemy import func
+        # Proper court maximization algorithm
+        matches_created = []
+        used_players = set()
+        court_index = 0
         
-        # Create a simple doubles match for testing
-        if players_count >= 4:
-            # Get first 4 players for a test match
-            test_players = players[:4]
+        # Group players by category for easier management
+        players_by_category = {}
+        for player in players:
+            cat = player.category
+            if cat not in players_by_category:
+                players_by_category[cat] = []
+            players_by_category[cat].append(player)
+        
+        # If maximize courts is enabled, create as many matches as possible
+        if session_obj.config.maximizeCourtUsage and session_obj.config.numCourts > 1:
+            available_players = [p for p in players if p.id not in used_players]
             
-            # Create a test match
-            test_match = DBMatch(
-                round_index=1,
-                court_index=0,
-                category="Mixed",
-                club_name=club_name,
-                match_type="doubles",
-                team_a=json.dumps([test_players[0].id, test_players[1].id]),
-                team_b=json.dumps([test_players[2].id, test_players[3].id]),
-                status="pending"
-            )
-            db_session.add(test_match)
+            # Create matches until we run out of courts or players
+            while court_index < session_obj.config.numCourts and len(available_players) >= 2:
+                
+                if session_obj.config.allowDoubles and len(available_players) >= 4:
+                    # Create doubles match
+                    match_players = available_players[:4]
+                    
+                    # Determine category - use Mixed if cross-category enabled and mixed players
+                    if session_obj.config.allowCrossCategory:
+                        categories = list(set(p.category for p in match_players))
+                        match_category = "Mixed" if len(categories) > 1 else categories[0]
+                    else:
+                        match_category = match_players[0].category
+                    
+                    doubles_match = DBMatch(
+                        round_index=1,
+                        court_index=court_index,
+                        category=match_category,
+                        club_name=club_name,
+                        match_type="doubles",
+                        team_a=json.dumps([match_players[0].id, match_players[1].id]),
+                        team_b=json.dumps([match_players[2].id, match_players[3].id]),
+                        status="pending"
+                    )
+                    db_session.add(doubles_match)
+                    matches_created.append(doubles_match)
+                    
+                    # Mark players as used
+                    for p in match_players:
+                        used_players.add(p.id)
+                    
+                    available_players = [p for p in players if p.id not in used_players]
+                    court_index += 1
+                    
+                elif session_obj.config.allowSingles and len(available_players) >= 2:
+                    # Create singles match
+                    match_players = available_players[:2]
+                    
+                    # Determine category
+                    if session_obj.config.allowCrossCategory:
+                        categories = list(set(p.category for p in match_players))
+                        match_category = "Mixed" if len(categories) > 1 else categories[0]
+                    else:
+                        match_category = match_players[0].category
+                    
+                    singles_match = DBMatch(
+                        round_index=1,
+                        court_index=court_index,
+                        category=match_category,
+                        club_name=club_name,
+                        match_type="singles",
+                        team_a=json.dumps([match_players[0].id]),
+                        team_b=json.dumps([match_players[1].id]),
+                        status="pending"
+                    )
+                    db_session.add(singles_match)
+                    matches_created.append(singles_match)
+                    
+                    # Mark players as used
+                    for p in match_players:
+                        used_players.add(p.id)
+                    
+                    available_players = [p for p in players if p.id not in used_players]
+                    court_index += 1
+                else:
+                    break  # Not enough players for any match type
+        
+        else:
+            # Standard algorithm - create one match per category
+            for category, cat_players in players_by_category.items():
+                if court_index >= session_obj.config.numCourts:
+                    break
+                    
+                if len(cat_players) >= 4 and session_obj.config.allowDoubles:
+                    # Create doubles match for this category
+                    doubles_match = DBMatch(
+                        round_index=1,
+                        court_index=court_index,
+                        category=category,
+                        club_name=club_name,
+                        match_type="doubles",
+                        team_a=json.dumps([cat_players[0].id, cat_players[1].id]),
+                        team_b=json.dumps([cat_players[2].id, cat_players[3].id]),
+                        status="pending"
+                    )
+                    db_session.add(doubles_match)
+                    matches_created.append(doubles_match)
+                    court_index += 1
+                    
+                elif len(cat_players) >= 2 and session_obj.config.allowSingles:
+                    # Create singles match for this category
+                    singles_match = DBMatch(
+                        round_index=1,
+                        court_index=court_index,
+                        category=category,
+                        club_name=club_name,
+                        match_type="singles",
+                        team_a=json.dumps([cat_players[0].id]),
+                        team_b=json.dumps([cat_players[1].id]),
+                        status="pending"
+                    )
+                    db_session.add(singles_match)
+                    matches_created.append(singles_match)
+                    court_index += 1
         
         # Update session to 'ready' phase
         result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
