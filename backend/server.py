@@ -1034,8 +1034,22 @@ async def clear_all_data(db: AsyncSession = Depends(get_db_session)):
         for category in default_categories:
             db.add(category)
         
+        # Create default club if it doesn't exist
+        from database import Club as DBClub
+        result = await db.execute(select(DBClub).where(DBClub.name == "Main Club"))
+        main_club = result.scalar_one_or_none()
+        
+        if not main_club:
+            main_club = DBClub(
+                name="Main Club",
+                display_name="Main Club",
+                description="Default club for existing data migration"
+            )
+            db.add(main_club)
+        
         # Create fresh session
         session_obj = DBSession(
+            club_name="Main Club",  # Add required club_name
             config=json.dumps({
                 "numCourts": 4,
                 "playSeconds": 720,
