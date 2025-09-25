@@ -777,8 +777,13 @@ export default function PickleballManager() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={colors.primaryGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <Text style={styles.headerTitle}>CourtChime</Text>
         {session && (
           <View style={styles.sessionInfo}>
@@ -797,7 +802,7 @@ export default function PickleballManager() {
             )}
           </View>
         )}
-      </View>
+      </LinearGradient>
 
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
