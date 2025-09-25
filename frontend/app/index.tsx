@@ -1287,11 +1287,17 @@ function AdminConsole({
         </View>
         
         <TouchableOpacity 
-          style={[styles.primaryButton, { marginTop: 12 }]}
           onPress={onAddTestData}
         >
-          <Ionicons name="flask" size={20} color={colors.background} style={styles.buttonIcon} />
-          <Text style={styles.buttonText}>Add Test Data (12 Players)</Text>
+          <LinearGradient
+            colors={[colors.accent, colors.teal]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.primaryButton, { marginTop: 12 }]}
+          >
+            <Ionicons name="flask" size={20} color="#ffffff" style={styles.buttonIcon} />
+            <Text style={styles.buttonText}>Add Test Data (12 Players)</Text>
+          </LinearGradient>
         </TouchableOpacity>
         
         <Text style={styles.helpText}>
