@@ -2041,10 +2041,15 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: colors.success,
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: 16,
+    borderRadius: 14,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 12,
+    shadowColor: colors.success,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   saveButtonText: {
     color: colors.text,
