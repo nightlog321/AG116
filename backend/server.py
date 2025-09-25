@@ -1767,38 +1767,50 @@ async def horn_now():
     return {"message": "Horn activated", "horn": "manual"}
 
 @api_router.post("/session/reset")
-async def reset_session():
-    # Clear all matches
-    await db.matches.delete_many({})
-    
-    # Reset player counters and stats
-    await db.players.update_many({}, {"$set": {
-        "sitNextRound": False,
-        "sitCount": 0,
-        "missDueToCourtLimit": 0,
-        "stats.wins": 0,
-        "stats.losses": 0,
-        "stats.pointDiff": 0
-    }})
-    
-    # Get current session to preserve config
-    session = await db.session.find_one()
-    if session:
-        session_obj = SessionState(**session)
-        play_time = session_obj.config.playSeconds
-    else:
-        play_time = 720  # default 12 minutes
-    
-    # Reset session state with timer set to play time
-    await db.session.update_one({}, {"$set": {
-        "currentRound": 0,
-        "phase": SessionPhase.idle.value,
-        "timeRemaining": play_time,  # Set to play time instead of 0
-        "paused": False,
-        "histories": {}
-    }})
-    
-    return {"message": "Session reset"}
+async def reset_session(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Reset session state to idle and clear all matches - SQLite version"""
+    try:
+        # Clear all matches for this club
+        await db_session.execute(delete(DBMatch).where(DBMatch.club_name == club_name))
+        
+        # Reset player counters and stats for this club
+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == club_name))
+        players = result.scalars().all()
+        
+        for player in players:
+            player.sit_next_round = False
+            player.sit_count = 0
+            player.miss_due_to_court_limit = 0
+            player.stats_wins = 0
+            player.stats_losses = 0
+            player.stats_point_diff = 0
+        
+        # Get current session to preserve config
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
+        session = result.scalar_one_or_none()
+        
+        if session:
+            # Parse config to get play time
+            try:
+                config_data = json.loads(session.config) if session.config else {}
+                play_time = config_data.get('playSeconds', 720)
+            except:
+                play_time = 720  # default 12 minutes
+                
+            # Reset session state
+            session.current_round = 0
+            session.phase = SessionPhase.idle.value
+            session.time_remaining = play_time
+            session.paused = False
+            session.histories = json.dumps({"partnerHistory": {}, "opponentHistory": {}})
+        
+        await db_session.commit()
+        
+        return {"message": "Session reset"}
+        
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to reset session: {str(e)}")
 
 @api_router.post("/session/horn")
 async def horn_now():
