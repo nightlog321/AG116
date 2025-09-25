@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """
-CourtChime Multi-Club Architecture Backend Testing
-Tests the new multi-club functionality including club management, data isolation, and backward compatibility.
+Backend API Testing for CourtChime Match Generation and Courts Functionality
+Testing specific issues reported by user:
+1. Generate Matches not showing matches on court
+2. Missing Let's Play button functionality
 """
 
 import requests
 import json
 import sys
-from typing import Dict, List, Any
+from typing import Dict, Any, List
 
-# Backend URL from frontend environment
-BASE_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
+# Backend URL from frontend .env
+BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
 
-class MultiClubTester:
+class BackendTester:
     def __init__(self):
         self.base_url = BASE_URL
         self.test_results = []
