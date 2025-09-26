@@ -310,12 +310,12 @@ export default function PickleballManager() {
     if (session?.phase === 'play') {
       oneMinuteWarningPlayed = false;
       // Start timer countdown for play phase
-      if (!session.paused) {
+      if (!session.paused && !timerRef.current) { // Only start if not already running
         startTimerCountdown();
       }
     } else if (session?.phase === 'buffer') {
       // Start timer countdown for buffer phase  
-      if (!session.paused) {
+      if (!session.paused && !timerRef.current) { // Only start if not already running
         startTimerCountdown();
       }
     } else {
@@ -325,7 +325,7 @@ export default function PickleballManager() {
         timerRef.current = null;
       }
     }
-  }, [session?.currentRound, session?.phase, session?.paused]);
+  }, [session?.phase, session?.paused]); // Removed session?.currentRound to prevent infinite loop
 
   const handleTimeUp = async (currentSession: SessionState) => {
     try {
