@@ -1477,11 +1477,15 @@ function CourtsDashboard({
           return newInputs;
         });
 
-        // Refresh matches data to show updated scores (but not session to avoid timer reset)
-        await fetchMatches();
+        // Wait a bit then refresh matches data to show updated scores and status
+        setTimeout(async () => {
+          await fetchMatches();
+        }, 100);
+        
         Alert.alert('Success', 'Score saved successfully!');
       } else {
-        Alert.alert('Error', 'Failed to save score');
+        const errorData = await response.json();
+        Alert.alert('Error', `Failed to save score: ${errorData.detail || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error saving score:', error);
