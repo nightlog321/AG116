@@ -335,19 +335,65 @@ async def update_player_ratings(match: dict, teamA_score: int, teamB_score: int,
 
 def calculate_partner_score(player_a: str, player_b: str, histories: Dict[str, Any]) -> int:
     """Calculate how often two players have been partners"""
-    partners_history = histories.get('partners', {})
-    return partners_history.get(player_a, {}).get(player_b, 0)
+    partner_history = histories.get('partnerHistory', {})
+    return partner_history.get(player_a, {}).get(player_b, 0)
 
 def calculate_opponent_score(team_a: List[str], team_b: List[str], histories: Dict[str, Any]) -> int:
     """Calculate opponent history score between two teams"""
-    opponents_history = histories.get('opponents', {})
+    opponent_history = histories.get('opponentHistory', {})
     total_score = 0
     
     for player_a in team_a:
         for player_b in team_b:
-            total_score += opponents_history.get(player_a, {}).get(player_b, 0)
+            total_score += opponent_history.get(player_a, {}).get(player_b, 0)
     
     return total_score
+
+def calculate_team_rating_avg(team: List[str], players: List[Player]) -> float:
+    """Calculate average rating for a team"""
+    team_players = [p for p in players if p.id in team]
+    if not team_players:
+        return 3.0
+    return sum(p.rating for p in team_players) / len(team_players)
+
+def calculate_rating_variance(matches: List[Match], players: List[Player]) -> float:
+    """Calculate rating variance across all matches for better balance"""
+    if not matches:
+        return 0.0
+    
+    rating_differences = []
+    for match in matches:
+        team_a_avg = calculate_team_rating_avg(match.teamA, players)
+        team_b_avg = calculate_team_rating_avg(match.teamB, players)
+        rating_differences.append(abs(team_a_avg - team_b_avg))
+    
+    return sum(rating_differences) / len(rating_differences)
+
+def enhanced_shuffle_with_rating_balance(players: List[Player], num_iterations: int = 5) -> List[Player]:
+    """
+    Enhanced shuffling algorithm that considers rating balance
+    Tries multiple random shuffles and picks the one with best rating distribution
+    """
+    if len(players) <= 2:
+        return shuffle_list(players)
+    
+    best_shuffle = None
+    best_balance_score = float('inf')
+    
+    for _ in range(num_iterations):
+        shuffled = shuffle_list(players)
+        
+        # Calculate balance score - we want players of different ratings spread out
+        balance_score = 0
+        for i in range(len(shuffled) - 1):
+            rating_diff = abs(shuffled[i].rating - shuffled[i+1].rating)
+            balance_score += 1.0 / (rating_diff + 0.1)  # Penalty for similar ratings being adjacent
+        
+        if balance_score < best_balance_score:
+            best_balance_score = balance_score
+            best_shuffle = shuffled
+    
+    return best_shuffle or players
 
 def update_histories(match: Match, histories: Dict[str, Any]) -> Dict[str, Any]:
     """Update partner and opponent histories based on a match"""
