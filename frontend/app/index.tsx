@@ -600,10 +600,7 @@ export default function PickleballManager() {
         await fetchCategories();
         await fetchMatches();
         
-        // Start the timer countdown immediately after session starts
-        setTimeout(() => {
-          startTimerCountdown();
-        }, 500); // Small delay to ensure state is updated
+        // Timer will be started automatically by useEffect when session phase changes to 'play'
       }
     } catch (error) {
       console.error('Error starting session:', error);
