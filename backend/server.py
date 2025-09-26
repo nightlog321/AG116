@@ -2032,7 +2032,7 @@ async def start_next_round(club_name: str = "Main Club", db_session: AsyncSessio
         await db_session.commit()
         
         return {
-            "message": f"Round {next_round} generated with reshuffled players",
+            "message": f"Round {next_round} generated with enhanced reshuffled players",
             "round": next_round,
             "matches_created": len(matches_created),
             "phase": "ready"
