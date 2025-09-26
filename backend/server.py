@@ -2207,32 +2207,64 @@ async def reset_session(club_name: str = "Main Club", db_session: AsyncSession =
         await db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to reset session: {str(e)}")
 
-@api_router.post("/session/horn")
-async def horn_now():
-    # This will implement the horn logic
-    return {"message": "Horn activated"}
-
-# Initialize default categories
 @api_router.post("/init")
-async def initialize_data():
-    # Check if categories exist
-    existing_cats = await db.categories.count_documents({})
-    if existing_cats == 0:
-        default_categories = [
-            Category(name="Beginner", description="New to pickleball"),
-            Category(name="Intermediate", description="Some experience"),
-            Category(name="Advanced", description="Experienced players")
-        ]
-        for cat in default_categories:
-            await db.categories.insert_one(cat.dict())
-    
-    # Ensure session exists
-    session = await db.session.find_one()
-    if not session:
-        session_obj = SessionState()
-        await db.session.insert_one(session_obj.dict())
-    
-    return {"message": "Data initialized"}
+async def initialize_data(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Initialize default categories and session - SQLite version"""
+    try:
+        # Check if categories exist for this club
+        result = await db_session.execute(select(DBCategory).where(DBCategory.club_name == club_name))
+        existing_cats = result.scalars().all()
+        
+        if not existing_cats:
+            default_categories = [
+                {"name": "Beginner", "description": "New to pickleball"},
+                {"name": "Intermediate", "description": "Some experience"},
+                {"name": "Advanced", "description": "Experienced players"}
+            ]
+            
+            for cat_data in default_categories:
+                db_category = DBCategory(
+                    id=str(uuid.uuid4()),
+                    name=cat_data["name"],
+                    description=cat_data["description"],
+                    club_name=club_name
+                )
+                db_session.add(db_category)
+        
+        # Ensure session exists for this club
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
+        session = result.scalar_one_or_none()
+        
+        if not session:
+            # Create default session config
+            default_config = {
+                "numCourts": 6,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": False,
+                "allowDoubles": True,
+                "allowCrossCategory": True,
+                "maximizeCourtUsage": False
+            }
+            
+            session_obj = DBSession(
+                id=str(uuid.uuid4()),
+                current_round=0,
+                phase=SessionPhase.idle.value,
+                time_remaining=720,
+                paused=False,
+                config=json.dumps(default_config),
+                histories=json.dumps({"partnerHistory": {}, "opponentHistory": {}}),
+                club_name=club_name
+            )
+            db_session.add(session_obj)
+        
+        await db_session.commit()
+        return {"message": "Data initialized"}
+        
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to initialize data: {str(e)}")
 
 # Include the router in the main app
 app.include_router(api_router)
