@@ -98,7 +98,7 @@ interface Match {
   category: string;
   teamA: string[];
   teamB: string[];
-  status: 'pending' | 'active' | 'buffer' | 'done';
+  status: 'pending' | 'active' | 'buffer' | 'done' | 'saved';
   matchType: 'singles' | 'doubles';
   scoreA?: number;
   scoreB?: number;
