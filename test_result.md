@@ -496,6 +496,21 @@ backend:
           comment: "🎉 ENHANCED PLAYER RESHUFFLING ALGORITHM FULLY FIXED AND WORKING! ✅ COMPREHENSIVE TESTING COMPLETED: All 5 major tests passed with 100% success rate after fixing critical bugs. (1) CRITICAL BUG FIXES APPLIED: Fixed 'Category' object has no attribute 'club_name' error by removing club_name filter from categories query (categories are global, not club-specific). Fixed 'Player' object has no attribute 'sit_count' errors by correcting camelCase/snake_case inconsistencies (sitCount vs sit_count, missDueToCourtLimit vs miss_due_to_court_limit). (2) ENHANCED RESHUFFLING VERIFICATION: ✅ 100% reshuffling effectiveness achieved (target: 60%+) - teams are completely different across rounds. Round progression (1→2→3→4→5→6) working flawlessly with /api/session/next-round endpoint now properly calling enhanced schedule_round() function. (3) HISTORY TRACKING VERIFICATION: ✅ Partner history: 12 entries, Opponent history: 21 entries - enhanced algorithms properly populate partnerHistory and opponentHistory fields with comprehensive tracking. (4) RATING BALANCE TESTING: ✅ Perfect rating balance achieved - 0.00 average rating difference, 100% balanced matches. Enhanced algorithm creates optimal team compositions with rating variance minimization working excellently. (5) ALGORITHM PERFORMANCE: ✅ Excellent performance - average 51ms response time, maximum 54ms across multiple rounds. Enhanced algorithms (enhanced_shuffle_with_rating_balance, create_doubles_matches, create_singles_matches) all performing optimally. (6) INTEGRATION VERIFICATION: ✅ /api/session/next-round endpoint fully integrated with enhanced algorithms, all enhanced configuration fields present, next round endpoint working perfectly. SUCCESS CRITERIA MET: Teams genuinely different across rounds (100% vs 60% target), enhanced algorithms show perfect rating balance, history tracking populates properly, algorithm performance stable and fast. The Enhanced Player Reshuffling Algorithm integration with /api/session/next-round is now fully functional and production-ready!"
 
 frontend:
+  - task: "Next Round Button Manual Progression"
+    implemented: true
+    working: true
+    file: "frontend/app/index.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "NEW NEXT ROUND BUTTON FUNCTIONALITY IMPLEMENTED: Manual round progression system as requested by user. Button appears on Courts tab below round ribbon, disabled during play/buffer phases, enabled only when buffer timer reaches 0. No automatic dialogs, requires manual click to progress rounds. Integrated with enhanced reshuffling algorithms for team mixing."
+        - working: true
+          agent: "testing"
+          comment: "✅ NEXT ROUND BUTTON FUNCTIONALITY FULLY TESTED AND WORKING! Comprehensive testing completed with critical fixes applied. (1) BUTTON PLACEMENT: Correctly positioned on Courts tab below round ribbon as requested. (2) VISIBILITY LOGIC: Properly hidden during READY phase, visible during PLAY/BUFFER phases. (3) STATE MANAGEMENT: Correctly disabled during PLAY phase, enabled when buffer timer reaches 0. (4) STYLING: Touch-friendly design with 48px minimum height, proper gradient styling. (5) INTEGRATION: /api/session/next-round endpoint functional, works without score entry, enhanced reshuffling ready. (6) MOBILE RESPONSIVE: Optimized for 390x844 viewport. Fixed critical issues: missing startSession function, onRefresh errors, button visibility logic, touch-friendly styling. Manual round progression system is production-ready!"
+
   - task: "Navigation & UI Structure"
     implemented: true
     working: true
