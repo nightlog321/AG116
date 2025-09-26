@@ -102,9 +102,45 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the match generation and courts functionality to identify the issues mentioned by the user: ISSUE 1: Generate Matches not showing matches on court, ISSUE 2: Missing Let's Play button functionality. Key endpoints to test: Does /api/session/generate-matches exist and work? Are matches properly created and stored? Does session state transition correctly (idle → ready → play)? Are match assignments with court indices working? Expected Flow: 1. idle phase: No matches, users see 'Session Not Started' 2. Generate Matches → ready phase: Shows court assignments with 'Let's Play' button 3. Let's Play → play phase: Timer starts, matches begin"
+user_problem_statement: "Complete the SQLite migration for remaining MongoDB endpoints and test automatic round progression functionality. Phase 1: Complete SQLite migration for /session/play, /session/pause, /session/resume, /session/horn, /init endpoints. Phase 2: Test automatic round progression with play→buffer→next round transitions. Phase 3: Improve player reshuffling algorithm. Phase 4: Final testing and polish."
 
 backend:
+  - task: "Complete SQLite Migration for Session Endpoints"
+    implemented: true
+    working: "testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Migrated all remaining MongoDB endpoints to SQLite: /session/play, /session/pause, /session/resume, /session/horn, /init. All endpoints now use proper SQLite with dependency injection (db_session: AsyncSession = Depends(get_db_session)). Added comprehensive error handling and transaction management with commit/rollback. Removed duplicate horn endpoint. Updated schedule_round function to use SQLite operations for player updates and match saving. Fixed update_player_ratings function to use SQLite operations instead of MongoDB. Re-enabled DUPR-style rating updates in match scoring system."
+
+  - task: "SQLite Migration - Player Rating System"
+    implemented: true
+    working: "testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Successfully converted update_player_ratings function from MongoDB to SQLite. Function now properly updates player ratings, match statistics, recent form, and rating history using SQLAlchemy ORM operations. Re-enabled DUPR rating calculations in match scoring endpoint. All rating operations now use SQLite database with proper error handling."
+
+  - task: "SQLite Migration - Schedule Round Function"
+    implemented: true
+    working: "testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Successfully converted schedule_round function to use SQLite operations. Updated player sit count tracking, match creation, and session history updates to use SQLAlchemy ORM. Function now accepts db_session parameter for proper transaction management. All database operations converted from MongoDB syntax to SQLite/SQLAlchemy syntax."
+
   - task: "Initialize Default Categories"
     implemented: true
     working: true
