@@ -1497,7 +1497,7 @@ function CourtsDashboard({
   // Helper function to determine if Next Round button should be enabled
   const isNextRoundEnabled = () => {
     // Button is enabled ONLY when buffer phase ends (timeRemaining reaches 0)
-    // Button should be DISABLED during play phase and buffer phase (until timer = 0)
+    // Button should be DISABLED during play phase and buffer phase countdown
     return session.phase === 'buffer' && session.timeRemaining === 0;
   };
 
