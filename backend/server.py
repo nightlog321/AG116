@@ -47,6 +47,7 @@ class MatchStatus(str, Enum):
     active = "active" 
     buffer = "buffer"
     done = "done"
+    saved = "saved"  # Add saved status for completed matches
 
 class MatchType(str, Enum):
     singles = "singles"
