@@ -1465,6 +1465,30 @@ async def update_match_score(match_id: str, score_update: MatchScoreUpdate, db_s
         await db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to update match score: {str(e)}")
 
+@api_router.put("/matches/{match_id}/incomplete")
+async def mark_match_incomplete(match_id: str, db_session: AsyncSession = Depends(get_db_session)):
+    """Mark a match as incomplete when round ends without score entry"""
+    try:
+        # Get match from SQLite
+        result = await db_session.execute(select(DBMatch).where(DBMatch.id == match_id))
+        db_match = result.scalar_one_or_none()
+        
+        if not db_match:
+            raise HTTPException(status_code=404, detail="Match not found")
+        
+        # Mark match as incomplete
+        db_match.status = "incomplete"
+        
+        await db_session.commit()
+        
+        return {"message": f"Match {match_id} marked as incomplete"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to mark match as incomplete: {str(e)}")
+
 # Session Management
 @api_router.get("/session", response_model=SessionState)
 async def get_session(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
