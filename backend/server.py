@@ -1511,8 +1511,13 @@ async def update_match_score(match_id: str, score_update: MatchScoreUpdate, db_s
                 player.stats_losses += 1
                 player.stats_point_diff -= point_diff
         
-        # TODO: Update DUPR-style ratings (function needs SQLite conversion)
-        # Note: Removed call to update_player_ratings as it still uses MongoDB
+        # Update DUPR-style ratings - SQLite version
+        match_dict = {
+            'id': db_match.id,
+            'teamA': team_a,
+            'teamB': team_b
+        }
+        await update_player_ratings(match_dict, score_update.scoreA, score_update.scoreB, db_session)
         
         await db_session.commit()
         await db_session.refresh(db_match)
