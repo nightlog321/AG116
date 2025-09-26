@@ -353,61 +353,8 @@ export default function PickleballManager() {
   };
 
   const handleBufferEnd = async (currentSession: SessionState) => {
-    try {
-      // Check for incomplete matches
-      const incompleteMatches = matches.filter(match => 
-        match.status === 'pending' || (!match.scoreA && !match.scoreB)
-      );
-      
-      let alertMessage = `Ready to start Round ${currentSession.currentRound + 1}?`;
-      
-      if (incompleteMatches.length > 0) {
-        const incompleteCourts = incompleteMatches.map(match => `Court ${match.courtIndex + 1}`).join(', ');
-        alertMessage = `⚠️ Scores not entered for: ${incompleteCourts}\n\nThese matches will be marked as incomplete.\n\nStart Round ${currentSession.currentRound + 1}?`;
-      }
-      
-      Alert.alert(
-        '🏓 Buffer Time Complete', 
-        alertMessage,
-        [
-          { text: 'Wait', style: 'cancel' },
-          { 
-            text: 'Start Next Round', 
-            onPress: async () => {
-              try {
-                // Show preparing message
-                Alert.alert('🔄 Preparing...', `Generating Round ${currentSession.currentRound + 1} with reshuffled teams`);
-                
-                // Mark incomplete matches as incomplete
-                for (const match of incompleteMatches) {
-                  await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/matches/${match.id}/incomplete`, { 
-                    method: 'PUT' 
-                  });
-                }
-                
-                // Generate next round with reshuffled teams
-                await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/next-round`, { method: 'POST' });
-                
-                // Refresh data
-                await fetchSession();
-                await fetchMatches();
-                
-                // Switch to Courts tab to show new assignments
-                setActiveTab('dashboard');
-                
-                Alert.alert('✅ Round Ready', `Round ${currentSession.currentRound + 1} is ready! Check courts and click "Let's Play" when ready.`);
-                
-              } catch (error) {
-                console.error('Error starting next round:', error);
-                Alert.alert('Error', 'Failed to start next round. Please try Generate Matches manually.');
-              }
-            }
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Error handling buffer end:', error);
-    }
+    // Buffer ended - no automatic progression, wait for manual "Next Round" button click
+    console.log('Buffer phase completed. Waiting for manual Next Round button click.');
   };
 
   const initializeApp = async () => {
