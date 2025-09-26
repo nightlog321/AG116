@@ -122,15 +122,18 @@ backend:
 
   - task: "SQLite Migration - Player Rating System"
     implemented: true
-    working: "testing"
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Successfully converted update_player_ratings function from MongoDB to SQLite. Function now properly updates player ratings, match statistics, recent form, and rating history using SQLAlchemy ORM operations. Re-enabled DUPR rating calculations in match scoring endpoint. All rating operations now use SQLite database with proper error handling."
+        - working: true
+          agent: "testing"
+          comment: "✅ DUPR RATING SYSTEM SQLITE MIGRATION VERIFIED! Comprehensive testing confirms the player rating system is fully functional in SQLite. ✅ MATCH SCORING: PUT /api/matches/{id}/score successfully updates match scores (tested 11-7 result). ✅ RATING UPDATES: Player ratings automatically updated in SQLite after match scoring - confirmed rating changes from initial values. ✅ STATISTICS TRACKING: Player match statistics (matchesPlayed, wins, losses) properly updated in SQLite database. ✅ RATING HISTORY: Rating history and recent form tracking working correctly in SQLite. ✅ BACKEND LOGS: Confirmed SQLite operations for rating updates - saw UPDATE players SET rating=?, matches_played=?, wins=?, recent_form=?, rating_history=? queries. ✅ DATA PERSISTENCE: All rating data persists correctly across API calls. The DUPR-style rating system has been successfully migrated from MongoDB to SQLite with full functionality preserved."
 
   - task: "SQLite Migration - Schedule Round Function"
     implemented: true
