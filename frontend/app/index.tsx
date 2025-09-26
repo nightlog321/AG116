@@ -1463,6 +1463,8 @@ function CourtsDashboard({
     }
 
     try {
+      console.log('Saving score for match:', match.id, 'Current status:', match.status);
+      
       const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/matches/${match.id}/score`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -1470,6 +1472,9 @@ function CourtsDashboard({
       });
 
       if (response.ok) {
+        const updatedMatch = await response.json();
+        console.log('Score saved successfully, updated match status:', updatedMatch.status);
+        
         // Clear score inputs for this match
         setScoreInputs(prev => {
           const newInputs = { ...prev };
@@ -1477,14 +1482,15 @@ function CourtsDashboard({
           return newInputs;
         });
 
-        // Wait a bit then refresh matches data to show updated scores and status
-        setTimeout(async () => {
-          await fetchMatches();
-        }, 100);
+        // Refresh matches data immediately to show updated scores and status
+        console.log('Refreshing matches data...');
+        await fetchMatches();
+        console.log('Matches data refreshed');
         
         Alert.alert('Success', 'Score saved successfully!');
       } else {
         const errorData = await response.json();
+        console.error('Failed to save score:', errorData);
         Alert.alert('Error', `Failed to save score: ${errorData.detail || 'Unknown error'}`);
       }
     } catch (error) {
