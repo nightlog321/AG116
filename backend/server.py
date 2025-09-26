@@ -831,15 +831,20 @@ async def create_doubles_matches(
     start_court_index: int,
     histories: Dict[str, Any]
 ) -> List[Match]:
-    """Create doubles matches with fair partner pairing"""
+    """Create doubles matches with enhanced partner pairing and rating balance"""
     matches = []
-    shuffled_players = shuffle_list(players)
     
-    # Create teams (pairs)
+    # Use enhanced shuffling for better rating distribution
+    shuffled_players = enhanced_shuffle_with_rating_balance(players, num_iterations=8)
+    
+    # Create teams (pairs) with improved partner selection
     teams = []
     used_indices = set()
     
-    for i, player_a in enumerate(shuffled_players):
+    # Sort players by combination of sit count and rating for better fairness
+    priority_players = sorted(shuffled_players, key=lambda p: (p.sit_count, -p.rating))
+    
+    for i, player_a in enumerate(priority_players):
         if i in used_indices:
             continue
         
@@ -847,16 +852,21 @@ async def create_doubles_matches(
         best_score = float('inf')
         best_index = -1
         
-        # Find best partner (lowest partner history score)
-        for j, player_b in enumerate(shuffled_players[i+1:], i+1):
+        # Find best partner considering both history and rating compatibility
+        for j, player_b in enumerate(priority_players[i+1:], i+1):
             if j in used_indices:
                 continue
             
-            partner_score = calculate_partner_score(player_a.id, player_b.id, histories)
+            # Calculate composite score: partner history + rating difference penalty
+            partner_history_score = calculate_partner_score(player_a.id, player_b.id, histories)
+            rating_diff_penalty = abs(player_a.rating - player_b.rating) * 0.5  # Prefer similar ratings
             
-            if partner_score < best_score or (partner_score == best_score and player_b.name < (best_partner.name if best_partner else "zzz")):
+            composite_score = partner_history_score + rating_diff_penalty
+            
+            # Tie-breaking with name for consistency
+            if composite_score < best_score or (composite_score == best_score and player_b.name < (best_partner.name if best_partner else "zzz")):
                 best_partner = player_b
-                best_score = partner_score
+                best_score = composite_score
                 best_index = j
         
         if best_partner:
@@ -867,49 +877,77 @@ async def create_doubles_matches(
             if len(teams) >= num_matches * 2:
                 break
     
-    # Pair teams into matches
+    # Pair teams into matches with enhanced opponent selection
     used_team_indices = set()
     
-    for i, team_a in enumerate(teams):
-        # Check if we've created enough matches
-        if len(matches) >= num_matches:
-            break
-            
-        # Skip if this team is already used
-        if i in used_team_indices:
-            continue  # Continue to next team instead of breaking
+    # Try multiple team pairing combinations for better balance
+    best_matches = []
+    best_rating_variance = float('inf')
+    
+    for attempt in range(3):  # Try 3 different pairing approaches
+        current_matches = []
+        current_used = set()
         
-        best_opponent_team = None
-        best_opponent_score = float('inf')
-        best_opponent_index = -1
+        team_order = list(range(len(teams)))
+        if attempt > 0:
+            random.shuffle(team_order)
         
-        # Find best opponent team (lowest opponent history score)
-        for j, team_b in enumerate(teams[i+1:], i+1):
-            if j in used_team_indices:
+        for idx in team_order:
+            if len(current_matches) >= num_matches:
+                break
+                
+            if idx in current_used:
                 continue
             
-            opponent_score = calculate_opponent_score(team_a, team_b, histories)
+            team_a = teams[idx]
+            best_opponent_team = None
+            best_opponent_score = float('inf')
+            best_opponent_index = -1
             
-            if opponent_score < best_opponent_score:
-                best_opponent_team = team_b
-                best_opponent_score = opponent_score
-                best_opponent_index = j
+            # Find best opponent team considering history and rating balance
+            for j_idx in team_order[idx+1:]:
+                if j_idx in current_used:
+                    continue
+                
+                team_b = teams[j_idx]
+                
+                # Calculate composite opponent score
+                opponent_history_score = calculate_opponent_score(team_a, team_b, histories)
+                
+                # Rating balance factor - prefer closer team average ratings
+                team_a_avg = calculate_team_rating_avg(team_a, players)
+                team_b_avg = calculate_team_rating_avg(team_b, players)
+                rating_balance_penalty = abs(team_a_avg - team_b_avg) * 0.3
+                
+                composite_opponent_score = opponent_history_score + rating_balance_penalty
+                
+                if composite_opponent_score < best_opponent_score:
+                    best_opponent_team = team_b
+                    best_opponent_score = composite_opponent_score
+                    best_opponent_index = j_idx
+            
+            if best_opponent_team:
+                match = Match(
+                    roundIndex=round_index,
+                    courtIndex=start_court_index + len(current_matches),
+                    category=category,
+                    teamA=team_a,
+                    teamB=best_opponent_team,
+                    matchType=MatchType.doubles,
+                    status=MatchStatus.pending
+                )
+                current_matches.append(match)
+                current_used.add(idx)
+                current_used.add(best_opponent_index)
         
-        if best_opponent_team:
-            match = Match(
-                roundIndex=round_index,
-                courtIndex=start_court_index + len(matches),
-                category=category,
-                teamA=team_a,
-                teamB=best_opponent_team,
-                matchType=MatchType.doubles,
-                status=MatchStatus.pending
-            )
-            matches.append(match)
-            used_team_indices.add(i)
-            used_team_indices.add(best_opponent_index)
+        # Evaluate this pairing attempt
+        if current_matches:
+            rating_variance = calculate_rating_variance(current_matches, players)
+            if rating_variance < best_rating_variance:
+                best_rating_variance = rating_variance
+                best_matches = current_matches
     
-    return matches
+    return best_matches or matches
 
 async def create_singles_matches(
     players: List[Player], 
