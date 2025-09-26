@@ -137,15 +137,18 @@ backend:
 
   - task: "SQLite Migration - Schedule Round Function"
     implemented: true
-    working: "testing"
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Successfully converted schedule_round function to use SQLite operations. Updated player sit count tracking, match creation, and session history updates to use SQLAlchemy ORM. Function now accepts db_session parameter for proper transaction management. All database operations converted from MongoDB syntax to SQLite/SQLAlchemy syntax."
+        - working: true
+          agent: "testing"
+          comment: "✅ SCHEDULE ROUND FUNCTION SQLITE MIGRATION VERIFIED! Comprehensive testing confirms the scheduling algorithm is fully functional in SQLite. ✅ MATCH GENERATION: POST /api/session/generate-matches successfully creates matches using SQLite operations. ✅ PLAYER RESHUFFLING: POST /api/session/next-round generates Round 2 with different team compositions using SQLite. ✅ DATABASE OPERATIONS: Confirmed SQLite operations in logs - INSERT INTO matches, UPDATE session, SELECT players queries working correctly. ✅ TRANSACTION MANAGEMENT: Proper commit/rollback operations observed in SQLite transactions. ✅ PLAYER TRACKING: Sit count tracking, match creation, and session history updates all working in SQLite. ✅ COURT ALLOCATION: Court assignments (0, 1, 2) working correctly with SQLite storage. ✅ CATEGORY HANDLING: Mixed category matches created successfully in SQLite. The schedule_round function has been successfully migrated from MongoDB to SQLite with all functionality preserved including fair matchmaking, player rotation, and court allocation."
 
   - task: "Initialize Default Categories"
     implemented: true
