@@ -1470,13 +1470,15 @@ function CourtsDashboard({
   matches, 
   players, 
   onRefresh,
-  onStartSession
+  onStartSession,
+  onNextRound
 }: { 
   session: SessionState | null;
   matches: Match[];
   players: Player[];
   onRefresh: () => void;
   onStartSession: () => void;
+  onNextRound: () => void;
 }) {
   const [scoreInputs, setScoreInputs] = useState<{[matchId: string]: {scoreA: string, scoreB: string}}>({});
 
