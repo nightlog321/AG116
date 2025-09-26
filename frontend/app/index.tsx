@@ -1520,7 +1520,7 @@ function CourtsDashboard({
           ]}
         >
           <LinearGradient
-            colors={isNextRoundEnabled() ? [colors.primary, colors.primaryDark] : ['#cccccc', '#999999']}
+            colors={isNextRoundEnabled() ? [colors.success, colors.success] : ['#cccccc', '#999999']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.nextRoundButtonGradient}
