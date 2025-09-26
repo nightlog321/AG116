@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
+    "@babel/plugin-syntax-export-default-from": "^7.27.1",
     "@types/react": "~18.2.79",
     "eslint": "^8.57.0",
     "eslint-config-expo": "~7.1.2",
