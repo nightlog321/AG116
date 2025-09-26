@@ -842,7 +842,7 @@ async def create_doubles_matches(
     used_indices = set()
     
     # Sort players by combination of sit count and rating for better fairness
-    priority_players = sorted(shuffled_players, key=lambda p: (p.sit_count, -p.rating))
+    priority_players = sorted(shuffled_players, key=lambda p: (p.sitCount, -p.rating))
     
     for i, player_a in enumerate(priority_players):
         if i in used_indices:
