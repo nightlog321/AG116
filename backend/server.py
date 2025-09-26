@@ -1388,63 +1388,81 @@ async def get_matches_by_round(round_index: int, db_session: AsyncSession = Depe
         raise HTTPException(status_code=500, detail=f"Failed to get matches by round: {str(e)}")
 
 @api_router.put("/matches/{match_id}/score", response_model=Match)
-async def update_match_score(match_id: str, score_update: MatchScoreUpdate):
-    match = await db.matches.find_one({"id": match_id})
-    if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
-    
-    # Update match with scores and mark as done
-    await db.matches.update_one(
-        {"id": match_id}, 
-        {"$set": {
-            "scoreA": score_update.scoreA,
-            "scoreB": score_update.scoreB,
-            "status": MatchStatus.done.value
-        }}
-    )
-    
-    # Update player stats
-    match_obj = Match(**match)
-    
-    # Determine winner and loser
-    if score_update.scoreA > score_update.scoreB:
-        winner_team = match_obj.teamA
-        loser_team = match_obj.teamB
-        winner_score = score_update.scoreA
-        loser_score = score_update.scoreB
-    else:
-        winner_team = match_obj.teamB
-        loser_team = match_obj.teamA
-        winner_score = score_update.scoreB
-        loser_score = score_update.scoreA
-    
-    point_diff = winner_score - loser_score
-    
-    # Update winner stats
-    for player_id in winner_team:
-        await db.players.update_one(
-            {"id": player_id},
-            {"$inc": {
-                "stats.wins": 1,
-                "stats.pointDiff": point_diff
-            }}
-        )
-    
-    # Update loser stats
-    for player_id in loser_team:
-        await db.players.update_one(
-            {"id": player_id},
-            {"$inc": {
-                "stats.losses": 1,
-                "stats.pointDiff": -point_diff
-            }}
-        )
-    
-    # Update DUPR-style ratings
-    await update_player_ratings(match, score_update.scoreA, score_update.scoreB)
-    
-    updated_match = await db.matches.find_one({"id": match_id})
-    return Match(**updated_match)
+async def update_match_score(match_id: str, score_update: MatchScoreUpdate, db_session: AsyncSession = Depends(get_db_session)):
+    """Update match score and player stats - SQLite version"""
+    try:
+        # Get match from SQLite
+        result = await db_session.execute(select(DBMatch).where(DBMatch.id == match_id))
+        db_match = result.scalar_one_or_none()
+        
+        if not db_match:
+            raise HTTPException(status_code=404, detail="Match not found")
+        
+        # Update match with scores and mark as done
+        db_match.score_a = score_update.scoreA
+        db_match.score_b = score_update.scoreB
+        db_match.status = MatchStatus.done.value
+        
+        # Parse team data
+        team_a = json.loads(db_match.team_a) if db_match.team_a else []
+        team_b = json.loads(db_match.team_b) if db_match.team_b else []
+        
+        # Determine winner and loser
+        if score_update.scoreA > score_update.scoreB:
+            winner_team = team_a
+            loser_team = team_b
+            winner_score = score_update.scoreA
+            loser_score = score_update.scoreB
+        else:
+            winner_team = team_b
+            loser_team = team_a
+            winner_score = score_update.scoreB
+            loser_score = score_update.scoreA
+        
+        point_diff = winner_score - loser_score
+        
+        # Update winner stats
+        for player_id in winner_team:
+            result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id))
+            player = result.scalar_one_or_none()
+            if player:
+                player.stats_wins += 1
+                player.stats_point_diff += point_diff
+        
+        # Update loser stats
+        for player_id in loser_team:
+            result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id))
+            player = result.scalar_one_or_none()
+            if player:
+                player.stats_losses += 1
+                player.stats_point_diff -= point_diff
+        
+        # TODO: Update DUPR-style ratings (update_player_ratings function needs SQLite conversion)
+        
+        await db_session.commit()
+        await db_session.refresh(db_match)
+        
+        # Convert back to Pydantic model for response
+        match_dict = {
+            "id": db_match.id,
+            "roundIndex": db_match.round_index,
+            "courtIndex": db_match.court_index,
+            "category": db_match.category,
+            "teamA": team_a,
+            "teamB": team_b,
+            "status": db_match.status,
+            "matchType": db_match.match_type,
+            "scoreA": db_match.score_a,
+            "scoreB": db_match.score_b
+        }
+        
+        return Match(**match_dict)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update match score: {str(e)}")
 
 # Session Management
 @api_router.get("/session", response_model=SessionState)
