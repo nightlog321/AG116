@@ -1476,7 +1476,8 @@ function CourtsDashboard({
         return newInputs;
       });
 
-      onRefresh();
+      // Refresh only matches data (not session to avoid timer reset)
+      await fetchMatches();
       Alert.alert('Success', 'Score saved successfully!');
     } catch (error) {
       Alert.alert('Error', 'Failed to save score');
