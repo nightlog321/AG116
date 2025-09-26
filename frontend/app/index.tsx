@@ -918,6 +918,7 @@ export default function PickleballManager() {
               }}
               onStartSession={startSession}
               onNextRound={nextRound}
+              setMatches={setMatches}
             />
           )}
           
