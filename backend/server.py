@@ -2038,80 +2038,128 @@ async def start_buffer_phase(club_name: str = "Main Club", db_session: AsyncSess
         raise HTTPException(status_code=500, detail=f"Failed to start buffer phase: {str(e)}")
 
 @api_router.post("/session/play")
-async def start_play():
+async def start_play(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
     """Start the play phase with timer"""
-    session = await db.session.find_one()
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    session_obj = SessionState(**session)
-    
-    await db.session.update_one({}, {"$set": {
-        "phase": SessionPhase.play.value,
-        "timeRemaining": session_obj.config.playSeconds,
-        "paused": False
-    }})
-    
-    return {"message": "Play started", "phase": "play", "timeRemaining": session_obj.config.playSeconds}
+    try:
+        # Get current session - SQLite version
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
+        session = result.scalar_one_or_none()
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        # Parse session config
+        config_data = json.loads(session.config) if session.config else {}
+        session_config = SessionConfig(**config_data)
+        
+        # Update session to play phase
+        session.phase = SessionPhase.play.value
+        session.time_remaining = session_config.playSeconds
+        session.paused = False
+        
+        await db_session.commit()
+        
+        return {"message": "Play started", "phase": "play", "timeRemaining": session_config.playSeconds}
+        
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to start play: {str(e)}")
 
 @api_router.post("/session/pause")
-async def pause_session():
-    await db.session.update_one({}, {"$set": {"paused": True}})
-    return {"message": "Session paused"}
+async def pause_session(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Pause the session"""
+    try:
+        # Get current session - SQLite version
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
+        session = result.scalar_one_or_none()
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session.paused = True
+        await db_session.commit()
+        
+        return {"message": "Session paused"}
+        
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to pause session: {str(e)}")
 
 @api_router.post("/session/resume")
-async def resume_session():
-    await db.session.update_one({}, {"$set": {"paused": False}})
-    return {"message": "Session resumed"}
+async def resume_session(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Resume the session"""
+    try:
+        # Get current session - SQLite version
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
+        session = result.scalar_one_or_none()
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session.paused = False
+        await db_session.commit()
+        
+        return {"message": "Session resumed"}
+        
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to resume session: {str(e)}")
 
 @api_router.post("/session/horn")
-async def horn_now():
+async def horn_now(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
     """Manual horn activation and phase transition"""
-    session = await db.session.find_one()
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    session_obj = SessionState(**session)
-    
-    if session_obj.phase == SessionPhase.play:
-        # Transition to buffer
-        await db.session.update_one({}, {"$set": {
-            "phase": SessionPhase.buffer.value,
-            "timeRemaining": session_obj.config.bufferSeconds
-        }})
-        return {"message": "Horn activated - Buffer phase", "phase": "buffer", "horn": "end"}
-    
-    elif session_obj.phase == SessionPhase.buffer:
-        # Transition to next round or end session
-        total_rounds = math.floor(7200 / max(1, session_obj.config.playSeconds + session_obj.config.bufferSeconds))
+    try:
+        # Get current session - SQLite version
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
+        session = result.scalar_one_or_none()
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
         
-        if session_obj.currentRound >= total_rounds:
-            # End session
-            await db.session.update_one({}, {"$set": {
-                "phase": SessionPhase.ended.value,
-                "timeRemaining": 0
-            }})
-            return {"message": "Session ended", "phase": "ended", "horn": "end"}
-        else:
-            # Start next round
-            try:
-                matches = await schedule_round(session_obj.currentRound + 1)
-                await db.session.update_one({}, {"$set": {
-                    "currentRound": session_obj.currentRound + 1,
-                    "phase": SessionPhase.play.value,
-                    "timeRemaining": session_obj.config.playSeconds
-                }})
-                return {
-                    "message": f"Round {session_obj.currentRound + 1} started", 
-                    "phase": "play", 
-                    "horn": "start",
-                    "round": session_obj.currentRound + 1,
-                    "matches_created": len(matches)
-                }
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Failed to start next round: {str(e)}")
-    
-    return {"message": "Horn activated", "horn": "manual"}
+        # Parse session data
+        config_data = json.loads(session.config) if session.config else {}
+        session_config = SessionConfig(**config_data)
+        
+        if session.phase == SessionPhase.play.value:
+            # Transition to buffer
+            session.phase = SessionPhase.buffer.value
+            session.time_remaining = session_config.bufferSeconds
+            
+            await db_session.commit()
+            return {"message": "Horn activated - Buffer phase", "phase": "buffer", "horn": "end"}
+        
+        elif session.phase == SessionPhase.buffer.value:
+            # Transition to next round or end session
+            total_rounds = math.floor(7200 / max(1, session_config.playSeconds + session_config.bufferSeconds))
+            
+            if session.current_round >= total_rounds:
+                # End session
+                session.phase = SessionPhase.ended.value
+                session.time_remaining = 0
+                
+                await db_session.commit()
+                return {"message": "Session ended", "phase": "ended", "horn": "end"}
+            else:
+                # Start next round
+                try:
+                    matches = await schedule_round(session.current_round + 1, db_session)
+                    session.current_round = session.current_round + 1
+                    session.phase = SessionPhase.play.value
+                    session.time_remaining = session_config.playSeconds
+                    
+                    await db_session.commit()
+                    return {
+                        "message": f"Round {session.current_round} started", 
+                        "phase": "play", 
+                        "horn": "start",
+                        "round": session.current_round,
+                        "matches_created": len(matches)
+                    }
+                except Exception as e:
+                    await db_session.rollback()
+                    raise HTTPException(status_code=500, detail=f"Failed to start next round: {str(e)}")
+        
+        return {"message": "Horn activated", "horn": "manual"}
+        
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to activate horn: {str(e)}")
 
 @api_router.post("/session/reset")
 async def reset_session(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
