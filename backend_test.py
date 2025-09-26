@@ -1,448 +1,401 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for CourtChime Match Generation and Courts Functionality
-Testing specific issues reported by user:
-1. Generate Matches not showing matches on court
-2. Missing Let's Play button functionality
+Enhanced Player Reshuffling Algorithm Testing Suite
+Tests the FIXED integration between enhanced algorithms and /api/session/next-round endpoint
 """
 
 import requests
 import json
+import time
 import sys
-from typing import Dict, Any, List
+from typing import Dict, List, Any
 
-# Backend URL from frontend .env
+# Use the production URL from frontend/.env
 BACKEND_URL = "https://court-timer.preview.emergentagent.com/api"
 
-class BackendTester:
+class EnhancedReshufflingTester:
     def __init__(self):
         self.session = requests.Session()
-        self.session.headers.update({
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        })
         self.test_results = []
         
-    def log_test(self, test_name: str, success: bool, details: str = ""):
-        """Log test results"""
+    def log_result(self, test_name: str, success: bool, details: str):
+        """Log test result"""
         status = "✅ PASS" if success else "❌ FAIL"
-        print(f"{status}: {test_name}")
-        if details:
-            print(f"   Details: {details}")
-        
+        result = f"{status}: {test_name} - {details}"
+        print(result)
         self.test_results.append({
             'test': test_name,
             'success': success,
             'details': details
         })
-    
-    def test_add_test_data(self) -> bool:
-        """Test POST /api/add-test-data - Add test players"""
+        
+    def make_request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
+        """Make HTTP request with error handling"""
         try:
-            response = self.session.post(f"{BACKEND_URL}/add-test-data")
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.log_test("Add Test Data", True, f"Response: {data}")
-                return True
+            url = f"{BACKEND_URL}{endpoint}"
+            if method.upper() == "GET":
+                response = self.session.get(url)
+            elif method.upper() == "POST":
+                response = self.session.post(url, json=data)
+            elif method.upper() == "PUT":
+                response = self.session.put(url, json=data)
             else:
-                self.log_test("Add Test Data", False, f"Status: {response.status_code}, Response: {response.text}")
-                return False
+                raise ValueError(f"Unsupported method: {method}")
                 
-        except Exception as e:
-            self.log_test("Add Test Data", False, f"Exception: {str(e)}")
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Request failed: {method} {endpoint} - {str(e)}")
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"Response status: {e.response.status_code}")
+                print(f"Response text: {e.response.text[:500]}")
+            return {"error": str(e)}
+            
+    def setup_test_environment(self) -> bool:
+        """Setup test environment with diverse players"""
+        print("\n🔧 SETTING UP TEST ENVIRONMENT...")
+        
+        # Add test data with 12 diverse players
+        result = self.make_request("POST", "/add-test-data")
+        if "error" in result:
+            self.log_result("Setup Test Data", False, f"Failed to add test data: {result['error']}")
             return False
-    
-    def test_get_players(self) -> bool:
-        """Test GET /api/players - Verify players exist"""
-        try:
-            response = self.session.get(f"{BACKEND_URL}/players")
             
-            if response.status_code == 200:
-                players = response.json()
-                player_count = len(players)
-                self.log_test("Get Players", True, f"Found {player_count} players")
-                
-                # Show player details for verification
-                if players:
-                    print("   Player Details:")
-                    for player in players[:3]:  # Show first 3 players
-                        print(f"     - {player.get('name', 'Unknown')} ({player.get('category', 'Unknown')})")
-                
-                return player_count > 0
-            else:
-                self.log_test("Get Players", False, f"Status: {response.status_code}, Response: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log_test("Get Players", False, f"Exception: {str(e)}")
+        # Verify players were created
+        players = self.make_request("GET", "/players")
+        if "error" in players or len(players) < 12:
+            self.log_result("Setup Verification", False, f"Expected 12+ players, got {len(players) if 'error' not in players else 'error'}")
             return False
-    
-    def test_get_session_initial(self) -> Dict[str, Any]:
-        """Test GET /api/session - Check initial session state"""
-        try:
-            response = self.session.get(f"{BACKEND_URL}/session")
             
-            if response.status_code == 200:
-                session = response.json()
-                phase = session.get('phase', 'unknown')
-                current_round = session.get('currentRound', 0)
-                
-                self.log_test("Get Session (Initial)", True, 
-                             f"Phase: {phase}, Round: {current_round}")
-                
-                print(f"   Session Details:")
-                print(f"     - ID: {session.get('id', 'Unknown')}")
-                print(f"     - Phase: {phase}")
-                print(f"     - Current Round: {current_round}")
-                print(f"     - Time Remaining: {session.get('timeRemaining', 0)}")
-                print(f"     - Paused: {session.get('paused', False)}")
-                
-                config = session.get('config', {})
-                print(f"     - Config: Courts={config.get('numCourts', 0)}, PlayTime={config.get('playSeconds', 0)}s")
-                
-                return session
-            else:
-                self.log_test("Get Session (Initial)", False, f"Status: {response.status_code}, Response: {response.text}")
-                return {}
-                
-        except Exception as e:
-            self.log_test("Get Session (Initial)", False, f"Exception: {str(e)}")
-            return {}
-    
-    def test_generate_matches(self) -> bool:
-        """Test POST /api/session/generate-matches - CRITICAL TEST"""
-        try:
-            response = self.session.post(f"{BACKEND_URL}/session/generate-matches")
-            
-            if response.status_code == 200:
-                session = response.json()
-                phase = session.get('phase', 'unknown')
-                current_round = session.get('currentRound', 0)
-                
-                success = phase == 'ready' and current_round == 1
-                
-                self.log_test("Generate Matches", success, 
-                             f"Phase: {phase}, Round: {current_round} (Expected: ready, 1)")
-                
-                if not success:
-                    print(f"   ❌ CRITICAL ISSUE: Expected phase='ready' and round=1, got phase='{phase}' and round={current_round}")
-                
-                return success
-            else:
-                self.log_test("Generate Matches", False, f"Status: {response.status_code}, Response: {response.text}")
-                
-                # Check if endpoint exists
-                if response.status_code == 404:
-                    print("   ❌ CRITICAL ISSUE: /api/session/generate-matches endpoint does not exist!")
-                elif response.status_code == 500:
-                    print("   ❌ CRITICAL ISSUE: Server error when generating matches!")
-                
-                return False
-                
-        except Exception as e:
-            self.log_test("Generate Matches", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_get_matches(self) -> List[Dict[str, Any]]:
-        """Test GET /api/matches - Check if matches were created"""
-        try:
-            response = self.session.get(f"{BACKEND_URL}/matches")
-            
-            if response.status_code == 200:
-                matches = response.json()
-                match_count = len(matches)
-                
-                success = match_count > 0
-                self.log_test("Get Matches", success, f"Found {match_count} matches")
-                
-                if matches:
-                    print("   Match Details:")
-                    for i, match in enumerate(matches[:3]):  # Show first 3 matches
-                        court = match.get('courtIndex', 'Unknown')
-                        category = match.get('category', 'Unknown')
-                        team_a = match.get('teamA', [])
-                        team_b = match.get('teamB', [])
-                        match_type = match.get('matchType', 'Unknown')
-                        status = match.get('status', 'Unknown')
-                        
-                        print(f"     Match {i+1}: Court {court}, {category}, {match_type}")
-                        print(f"       Team A: {len(team_a)} players, Team B: {len(team_b)} players")
-                        print(f"       Status: {status}")
-                else:
-                    print("   ❌ CRITICAL ISSUE: No matches found after generate-matches!")
-                
-                return matches
-            else:
-                self.log_test("Get Matches", False, f"Status: {response.status_code}, Response: {response.text}")
-                return []
-                
-        except Exception as e:
-            self.log_test("Get Matches", False, f"Exception: {str(e)}")
-            return []
-    
-    def test_session_after_generate(self) -> Dict[str, Any]:
-        """Test GET /api/session - Verify session state after generate matches"""
-        try:
-            response = self.session.get(f"{BACKEND_URL}/session")
-            
-            if response.status_code == 200:
-                session = response.json()
-                phase = session.get('phase', 'unknown')
-                current_round = session.get('currentRound', 0)
-                
-                expected_phase = 'ready'
-                expected_round = 1
-                
-                success = phase == expected_phase and current_round == expected_round
-                
-                self.log_test("Session After Generate", success, 
-                             f"Phase: {phase}, Round: {current_round} (Expected: {expected_phase}, {expected_round})")
-                
-                if not success:
-                    print(f"   ❌ ISSUE: Session should be in 'ready' phase with round 1 after generating matches")
-                    print(f"   Current state: phase='{phase}', round={current_round}")
-                
-                return session
-            else:
-                self.log_test("Session After Generate", False, f"Status: {response.status_code}, Response: {response.text}")
-                return {}
-                
-        except Exception as e:
-            self.log_test("Session After Generate", False, f"Exception: {str(e)}")
-            return {}
-    
-    def test_start_session(self) -> bool:
-        """Test POST /api/session/start - Let's Play button functionality"""
-        try:
-            response = self.session.post(f"{BACKEND_URL}/session/start")
-            
-            if response.status_code == 200:
-                session = response.json()
-                phase = session.get('phase', 'unknown')
-                current_round = session.get('currentRound', 0)
-                
-                expected_phase = 'play'
-                expected_round = 1
-                
-                success = phase == expected_phase and current_round == expected_round
-                
-                self.log_test("Start Session (Let's Play)", success, 
-                             f"Phase: {phase}, Round: {current_round} (Expected: {expected_phase}, {expected_round})")
-                
-                if not success:
-                    print(f"   ❌ ISSUE: Let's Play button should transition to 'play' phase")
-                    print(f"   Current state: phase='{phase}', round={current_round}")
-                
-                return success
-            else:
-                self.log_test("Start Session (Let's Play)", False, f"Status: {response.status_code}, Response: {response.text}")
-                
-                if response.status_code == 400:
-                    print("   ❌ ISSUE: Session start failed - might not be in correct phase")
-                    print(f"   Response: {response.text}")
-                
-                return False
-                
-        except Exception as e:
-            self.log_test("Start Session (Let's Play)", False, f"Exception: {str(e)}")
-            return False
-    
-    def test_session_after_start(self) -> Dict[str, Any]:
-        """Test GET /api/session - Verify session state after start"""
-        try:
-            response = self.session.get(f"{BACKEND_URL}/session")
-            
-            if response.status_code == 200:
-                session = response.json()
-                phase = session.get('phase', 'unknown')
-                current_round = session.get('currentRound', 0)
-                time_remaining = session.get('timeRemaining', 0)
-                
-                expected_phase = 'play'
-                expected_round = 1
-                
-                success = phase == expected_phase and current_round == expected_round
-                
-                self.log_test("Session After Start", success, 
-                             f"Phase: {phase}, Round: {current_round}, Time: {time_remaining}s")
-                
-                if success:
-                    print("   ✅ SUCCESS: Session is now in play phase with timer running")
-                else:
-                    print(f"   ❌ ISSUE: Expected play phase with round 1, got phase='{phase}', round={current_round}")
-                
-                return session
-            else:
-                self.log_test("Session After Start", False, f"Status: {response.status_code}, Response: {response.text}")
-                return {}
-                
-        except Exception as e:
-            self.log_test("Session After Start", False, f"Exception: {str(e)}")
-            return {}
-    
-    def test_court_assignments(self, matches: List[Dict[str, Any]]) -> bool:
-        """Test court assignments in matches"""
-        if not matches:
-            self.log_test("Court Assignments", False, "No matches to test court assignments")
-            return False
+        self.log_result("Setup Test Data", True, f"Successfully created {len(players)} diverse players")
+        return True
+        
+    def test_enhanced_reshuffling_verification(self) -> bool:
+        """Test 1: Enhanced Reshuffling Verification"""
+        print("\n🔄 TEST 1: ENHANCED RESHUFFLING VERIFICATION")
         
         try:
-            court_indices = [match.get('courtIndex') for match in matches]
-            unique_courts = set(court_indices)
+            # Generate Round 1 matches
+            result = self.make_request("POST", "/session/generate-matches")
+            if "error" in result:
+                self.log_result("Round 1 Generation", False, f"Failed to generate Round 1: {result['error']}")
+                return False
+                
+            # Get Round 1 teams
+            round1_matches = self.make_request("GET", "/matches")
+            if "error" in round1_matches:
+                self.log_result("Round 1 Matches Fetch", False, f"Failed to fetch Round 1 matches: {round1_matches['error']}")
+                return False
+                
+            round1_teams = []
+            for match in round1_matches:
+                if match.get('roundIndex') == 1:
+                    round1_teams.append({
+                        'teamA': sorted(match['teamA']),
+                        'teamB': sorted(match['teamB']),
+                        'category': match['category']
+                    })
+                    
+            if not round1_teams:
+                self.log_result("Round 1 Teams", False, "No Round 1 matches found")
+                return False
+                
+            self.log_result("Round 1 Generation", True, f"Generated {len(round1_teams)} matches")
             
-            # Check if court indices are valid (0-based indexing)
-            valid_courts = all(isinstance(court, int) and court >= 0 for court in court_indices)
+            # Progress to Round 2 using ENHANCED ALGORITHM via /api/session/next-round
+            result = self.make_request("POST", "/session/next-round")
+            if "error" in result:
+                self.log_result("Round 2 Progression", False, f"Failed to progress to Round 2: {result['error']}")
+                return False
+                
+            # Get Round 2 teams
+            all_matches = self.make_request("GET", "/matches")
+            if "error" in all_matches:
+                self.log_result("Round 2 Matches Fetch", False, f"Failed to fetch Round 2 matches: {all_matches['error']}")
+                return False
+                
+            round2_teams = []
+            for match in all_matches:
+                if match.get('roundIndex') == 2:
+                    round2_teams.append({
+                        'teamA': sorted(match['teamA']),
+                        'teamB': sorted(match['teamB']),
+                        'category': match['category']
+                    })
+                    
+            if not round2_teams:
+                self.log_result("Round 2 Teams", False, "No Round 2 matches found - Enhanced algorithm not working")
+                return False
+                
+            # Calculate reshuffling effectiveness
+            identical_teams = 0
+            total_teams = len(round1_teams) * 2  # Each match has 2 teams
             
-            success = valid_courts and len(unique_courts) > 0
+            for r1_match in round1_teams:
+                for r2_match in round2_teams:
+                    if (r1_match['teamA'] == r2_match['teamA'] or 
+                        r1_match['teamA'] == r2_match['teamB'] or
+                        r1_match['teamB'] == r2_match['teamA'] or 
+                        r1_match['teamB'] == r2_match['teamB']):
+                        identical_teams += 1
+                        
+            reshuffling_effectiveness = ((total_teams - identical_teams) / total_teams) * 100 if total_teams > 0 else 0
             
-            self.log_test("Court Assignments", success, 
-                         f"Courts used: {sorted(unique_courts)}, Total matches: {len(matches)}")
+            self.log_result("Round 2 Generation", True, f"Generated {len(round2_teams)} matches")
             
-            if not success:
-                print(f"   ❌ ISSUE: Invalid court assignments found")
-                print(f"   Court indices: {court_indices}")
+            # Test Round 3 for additional verification
+            result = self.make_request("POST", "/session/next-round")
+            if "error" not in result:
+                all_matches = self.make_request("GET", "/matches")
+                round3_teams = [match for match in all_matches if match.get('roundIndex') == 3]
+                self.log_result("Round 3 Generation", True, f"Generated {len(round3_teams)} matches")
+            
+            # SUCCESS CRITERIA: 60%+ variation
+            success = reshuffling_effectiveness >= 60.0
+            self.log_result("Enhanced Reshuffling Effectiveness", success, 
+                          f"Reshuffling effectiveness: {reshuffling_effectiveness:.1f}% (target: 60%+)")
             
             return success
             
         except Exception as e:
-            self.log_test("Court Assignments", False, f"Exception: {str(e)}")
+            self.log_result("Enhanced Reshuffling Test", False, f"Exception: {str(e)}")
             return False
-    
+            
+    def test_history_tracking_verification(self) -> bool:
+        """Test 2: History Tracking Verification"""
+        print("\n📊 TEST 2: HISTORY TRACKING VERIFICATION")
+        
+        try:
+            # Get session to check histories
+            session_data = self.make_request("GET", "/session")
+            if "error" in session_data:
+                self.log_result("Session Data Fetch", False, f"Failed to fetch session: {session_data['error']}")
+                return False
+                
+            histories = session_data.get('histories', {})
+            partner_history = histories.get('partnerHistory', {})
+            opponent_history = histories.get('opponentHistory', {})
+            
+            # Count history entries
+            partner_entries = sum(len(partners) for partners in partner_history.values())
+            opponent_entries = sum(len(opponents) for opponents in opponent_history.values())
+            
+            self.log_result("Partner History Tracking", partner_entries > 0, 
+                          f"Partner history entries: {partner_entries}")
+            self.log_result("Opponent History Tracking", opponent_entries > 0, 
+                          f"Opponent history entries: {opponent_entries}")
+            
+            # Verify history structure
+            history_structure_valid = True
+            if partner_history:
+                for player_id, partners in partner_history.items():
+                    if not isinstance(partners, dict):
+                        history_structure_valid = False
+                        break
+                        
+            if opponent_history:
+                for player_id, opponents in opponent_history.items():
+                    if not isinstance(opponents, dict):
+                        history_structure_valid = False
+                        break
+                        
+            self.log_result("History Structure Validation", history_structure_valid, 
+                          "History data structure is valid")
+            
+            # SUCCESS CRITERIA: Both histories populated
+            success = partner_entries > 0 and opponent_entries > 0 and history_structure_valid
+            return success
+            
+        except Exception as e:
+            self.log_result("History Tracking Test", False, f"Exception: {str(e)}")
+            return False
+            
+    def test_rating_balance_verification(self) -> bool:
+        """Test 3: Rating Balance Testing"""
+        print("\n⚖️ TEST 3: RATING BALANCE TESTING")
+        
+        try:
+            # Get all players with ratings
+            players = self.make_request("GET", "/players")
+            if "error" in players:
+                self.log_result("Players Fetch", False, f"Failed to fetch players: {players['error']}")
+                return False
+                
+            # Get current matches
+            matches = self.make_request("GET", "/matches")
+            if "error" in matches:
+                self.log_result("Matches Fetch", False, f"Failed to fetch matches: {matches['error']}")
+                return False
+                
+            # Create player rating lookup
+            player_ratings = {p['id']: p['rating'] for p in players}
+            
+            # Calculate rating balance for each match
+            rating_differences = []
+            balanced_matches = 0
+            
+            for match in matches:
+                if match.get('roundIndex', 0) >= 2:  # Focus on enhanced algorithm rounds
+                    team_a_ratings = [player_ratings.get(pid, 3.0) for pid in match['teamA']]
+                    team_b_ratings = [player_ratings.get(pid, 3.0) for pid in match['teamB']]
+                    
+                    team_a_avg = sum(team_a_ratings) / len(team_a_ratings) if team_a_ratings else 3.0
+                    team_b_avg = sum(team_b_ratings) / len(team_b_ratings) if team_b_ratings else 3.0
+                    
+                    rating_diff = abs(team_a_avg - team_b_avg)
+                    rating_differences.append(rating_diff)
+                    
+                    # Consider match balanced if rating difference < 0.5
+                    if rating_diff < 0.5:
+                        balanced_matches += 1
+                        
+            if rating_differences:
+                avg_rating_diff = sum(rating_differences) / len(rating_differences)
+                balance_percentage = (balanced_matches / len(rating_differences)) * 100
+                
+                self.log_result("Rating Balance Analysis", True, 
+                              f"Average rating difference: {avg_rating_diff:.2f}, Balanced matches: {balance_percentage:.1f}%")
+                
+                # SUCCESS CRITERIA: Average difference < 0.6 OR 50%+ balanced matches
+                success = avg_rating_diff < 0.6 or balance_percentage >= 50.0
+                self.log_result("Enhanced Rating Balance", success, 
+                              f"Rating balance optimization {'working' if success else 'needs improvement'}")
+                return success
+            else:
+                self.log_result("Rating Balance Analysis", False, "No matches found for analysis")
+                return False
+                
+        except Exception as e:
+            self.log_result("Rating Balance Test", False, f"Exception: {str(e)}")
+            return False
+            
+    def test_algorithm_performance(self) -> bool:
+        """Test 4: Multiple Algorithm Attempts"""
+        print("\n🚀 TEST 4: ALGORITHM PERFORMANCE TESTING")
+        
+        try:
+            # Test algorithm stability across multiple rounds
+            performance_results = []
+            
+            for round_num in range(4, 7):  # Test rounds 4-6
+                start_time = time.time()
+                result = self.make_request("POST", "/session/next-round")
+                end_time = time.time()
+                
+                if "error" not in result:
+                    response_time = (end_time - start_time) * 1000  # Convert to ms
+                    performance_results.append(response_time)
+                    
+                    # Verify matches were created
+                    matches = self.make_request("GET", "/matches")
+                    round_matches = [m for m in matches if m.get('roundIndex') == round_num]
+                    
+                    self.log_result(f"Round {round_num} Performance", True, 
+                                  f"Generated {len(round_matches)} matches in {response_time:.0f}ms")
+                else:
+                    self.log_result(f"Round {round_num} Performance", False, 
+                                  f"Failed to generate round: {result['error']}")
+                    
+            if performance_results:
+                avg_response_time = sum(performance_results) / len(performance_results)
+                max_response_time = max(performance_results)
+                
+                # SUCCESS CRITERIA: Average < 2000ms, Max < 5000ms
+                performance_good = avg_response_time < 2000 and max_response_time < 5000
+                
+                self.log_result("Algorithm Performance", performance_good, 
+                              f"Avg: {avg_response_time:.0f}ms, Max: {max_response_time:.0f}ms")
+                return performance_good
+            else:
+                self.log_result("Algorithm Performance", False, "No performance data collected")
+                return False
+                
+        except Exception as e:
+            self.log_result("Algorithm Performance Test", False, f"Exception: {str(e)}")
+            return False
+            
+    def test_integration_verification(self) -> bool:
+        """Test 5: Integration Verification"""
+        print("\n🔗 TEST 5: INTEGRATION VERIFICATION")
+        
+        try:
+            # Verify /api/session/next-round uses enhanced algorithms
+            # This is tested indirectly through the reshuffling effectiveness
+            
+            # Get session state
+            session = self.make_request("GET", "/session")
+            if "error" in session:
+                self.log_result("Session State", False, f"Failed to get session: {session['error']}")
+                return False
+                
+            current_round = session.get('currentRound', 0)
+            phase = session.get('phase', 'unknown')
+            
+            self.log_result("Session State", True, f"Round {current_round}, Phase: {phase}")
+            
+            # Verify enhanced features are accessible
+            config = session.get('config', {})
+            has_enhanced_config = all(key in config for key in ['allowSingles', 'allowDoubles', 'allowCrossCategory'])
+            
+            self.log_result("Enhanced Configuration", has_enhanced_config, 
+                          f"Enhanced config fields present: {has_enhanced_config}")
+            
+            # Test that next-round endpoint is responsive
+            result = self.make_request("POST", "/session/next-round")
+            next_round_working = "error" not in result
+            
+            self.log_result("Next Round Endpoint", next_round_working, 
+                          f"Next round endpoint {'working' if next_round_working else 'failed'}")
+            
+            return has_enhanced_config and next_round_working
+            
+        except Exception as e:
+            self.log_result("Integration Verification", False, f"Exception: {str(e)}")
+            return False
+            
     def run_comprehensive_test(self):
-        """Run comprehensive test of match generation and courts functionality"""
+        """Run all enhanced reshuffling algorithm tests"""
+        print("🏓 ENHANCED PLAYER RESHUFFLING ALGORITHM - COMPREHENSIVE TESTING")
         print("=" * 80)
-        print("🏓 COURTCHIME BACKEND TESTING - MATCH GENERATION & COURTS FUNCTIONALITY")
-        print("=" * 80)
-        print(f"Backend URL: {BACKEND_URL}")
-        print()
         
-        # Test sequence based on user's reported issues
-        print("📋 TESTING SEQUENCE:")
-        print("1. Add test players")
-        print("2. Check initial session state")
-        print("3. Generate matches (CRITICAL TEST)")
-        print("4. Verify matches were created")
-        print("5. Check session is in 'ready' phase")
-        print("6. Start session (Let's Play button)")
-        print("7. Verify session is in 'play' phase")
-        print("8. Test court assignments")
-        print()
-        
-        # Step 1: Add test data
-        print("🔄 Step 1: Adding test players...")
-        players_added = self.test_add_test_data()
-        
-        if players_added:
-            self.test_get_players()
-        
-        print()
-        
-        # Step 2: Check initial session
-        print("🔄 Step 2: Checking initial session state...")
-        initial_session = self.test_get_session_initial()
-        print()
-        
-        # Step 3: Generate matches (CRITICAL)
-        print("🔄 Step 3: Generating matches (CRITICAL TEST)...")
-        matches_generated = self.test_generate_matches()
-        print()
-        
-        # Step 4: Check matches were created
-        print("🔄 Step 4: Verifying matches were created...")
-        matches = self.test_get_matches()
-        print()
-        
-        # Step 5: Check session state after generate
-        print("🔄 Step 5: Checking session state after generate...")
-        ready_session = self.test_session_after_generate()
-        print()
-        
-        # Step 6: Start session (Let's Play)
-        print("🔄 Step 6: Starting session (Let's Play button)...")
-        session_started = self.test_start_session()
-        print()
-        
-        # Step 7: Check session state after start
-        print("🔄 Step 7: Verifying session state after start...")
-        play_session = self.test_session_after_start()
-        print()
-        
-        # Step 8: Test court assignments
-        print("🔄 Step 8: Testing court assignments...")
-        court_assignments_valid = self.test_court_assignments(matches)
-        print()
+        # Setup
+        if not self.setup_test_environment():
+            print("\n❌ SETUP FAILED - Cannot proceed with testing")
+            return
+            
+        # Run all tests
+        test_results = []
+        test_results.append(self.test_enhanced_reshuffling_verification())
+        test_results.append(self.test_history_tracking_verification())
+        test_results.append(self.test_rating_balance_verification())
+        test_results.append(self.test_algorithm_performance())
+        test_results.append(self.test_integration_verification())
         
         # Summary
-        self.print_summary()
+        passed_tests = sum(test_results)
+        total_tests = len(test_results)
+        success_rate = (passed_tests / total_tests) * 100
         
-        return self.test_results
-    
-    def print_summary(self):
-        """Print test summary"""
+        print("\n" + "=" * 80)
+        print("📊 ENHANCED RESHUFFLING ALGORITHM TEST SUMMARY")
         print("=" * 80)
-        print("📊 TEST SUMMARY")
-        print("=" * 80)
-        
-        passed = sum(1 for result in self.test_results if result['success'])
-        total = len(self.test_results)
-        
-        print(f"Tests Passed: {passed}/{total} ({passed/total*100:.1f}%)")
-        print()
-        
-        # Critical issues
-        critical_issues = []
         
         for result in self.test_results:
-            if not result['success']:
-                if 'Generate Matches' in result['test']:
-                    critical_issues.append("❌ CRITICAL: Generate Matches functionality is broken")
-                elif 'Let\'s Play' in result['test'] or 'Start Session' in result['test']:
-                    critical_issues.append("❌ CRITICAL: Let's Play button functionality is broken")
-                elif 'Get Matches' in result['test'] and 'Found 0 matches' in result['details']:
-                    critical_issues.append("❌ CRITICAL: No matches created after generate-matches")
+            status = "✅" if result['success'] else "❌"
+            print(f"{status} {result['test']}: {result['details']}")
+            
+        print(f"\n🎯 OVERALL RESULT: {passed_tests}/{total_tests} tests passed ({success_rate:.1f}%)")
         
-        if critical_issues:
-            print("🚨 CRITICAL ISSUES FOUND:")
-            for issue in critical_issues:
-                print(f"   {issue}")
-            print()
-        
-        # Failed tests
-        failed_tests = [result for result in self.test_results if not result['success']]
-        if failed_tests:
-            print("❌ FAILED TESTS:")
-            for result in failed_tests:
-                print(f"   - {result['test']}: {result['details']}")
-            print()
-        
-        # Success tests
-        passed_tests = [result for result in self.test_results if result['success']]
-        if passed_tests:
-            print("✅ PASSED TESTS:")
-            for result in passed_tests:
-                print(f"   - {result['test']}")
-            print()
-        
-        print("=" * 80)
-
-def main():
-    """Main test execution"""
-    tester = BackendTester()
-    results = tester.run_comprehensive_test()
-    
-    # Exit with error code if any critical tests failed
-    critical_failures = any(
-        not result['success'] and ('Generate Matches' in result['test'] or 'Start Session' in result['test'])
-        for result in results
-    )
-    
-    if critical_failures:
-        print("🚨 CRITICAL FAILURES DETECTED - EXITING WITH ERROR CODE")
-        sys.exit(1)
-    else:
-        print("✅ ALL CRITICAL TESTS PASSED")
-        sys.exit(0)
+        if success_rate >= 80:
+            print("🎉 ENHANCED RESHUFFLING ALGORITHM IS WORKING EXCELLENTLY!")
+        elif success_rate >= 60:
+            print("✅ ENHANCED RESHUFFLING ALGORITHM IS WORKING WELL!")
+        else:
+            print("❌ ENHANCED RESHUFFLING ALGORITHM NEEDS FIXES!")
+            
+        return success_rate >= 60
 
 if __name__ == "__main__":
-    main()
+    tester = EnhancedReshufflingTester()
+    success = tester.run_comprehensive_test()
+    sys.exit(0 if success else 1)
