@@ -387,22 +387,77 @@ def update_histories(match: Match, histories: Dict[str, Any]) -> Dict[str, Any]:
     
     return histories
 
-async def schedule_round(round_index: int) -> List[Match]:
+async def schedule_round(round_index: int, db_session: AsyncSession = None) -> List[Match]:
     """
     Core scheduling algorithm for round-robin matchmaking
     Implements category-based fair pairing with singles/doubles/auto-mix support
     """
-    # Get current session and configuration
-    session = await db.session.find_one()
-    if not session:
+    # Get a database session if not provided
+    if db_session is None:
+        async with AsyncSession(engine) as db_session:
+            return await schedule_round(round_index, db_session)
+    
+    # Get current session and configuration - SQLite version
+    result = await db_session.execute(select(DBSession).where(DBSession.club_name == "Main Club"))
+    db_session_obj = result.scalar_one_or_none()
+    if not db_session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
     
-    session_obj = SessionState(**session)
+    # Parse session data
+    session_data = {
+        'id': db_session_obj.id,
+        'currentRound': db_session_obj.current_round,
+        'phase': db_session_obj.phase,
+        'timeRemaining': db_session_obj.time_remaining,
+        'paused': db_session_obj.paused,
+        'config': json.loads(db_session_obj.config) if db_session_obj.config else {},
+        'histories': json.loads(db_session_obj.histories) if db_session_obj.histories else {"partnerHistory": {}, "opponentHistory": {}}
+    }
+    
+    session_obj = SessionState(**session_data)
     config = session_obj.config
     
-    # Get all players and categories
-    players_data = await db.players.find().to_list(1000)
-    categories_data = await db.categories.find().to_list(1000)
+    # Get all players and categories - SQLite version
+    result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == "Main Club"))
+    db_players = result.scalars().all()
+    
+    result = await db_session.execute(select(DBCategory).where(DBCategory.club_name == "Main Club"))
+    db_categories = result.scalars().all()
+    
+    # Convert to pydantic models
+    players_data = []
+    for db_player in db_players:
+        player_data = {
+            'id': db_player.id,
+            'name': db_player.name,
+            'category': db_player.category,
+            'sitNextRound': db_player.sit_next_round,
+            'sitCount': db_player.sit_count,
+            'missCourtLimit': db_player.miss_due_to_court_limit,
+            'stats': {
+                'wins': db_player.stats_wins,
+                'losses': db_player.stats_losses,
+                'pointDiff': db_player.stats_point_diff
+            },
+            'rating': db_player.rating,
+            'matchesPlayed': db_player.matches_played,
+            'recentForm': json.loads(db_player.recent_form) if db_player.recent_form else [],
+            'ratingHistory': json.loads(db_player.rating_history) if db_player.rating_history else [],
+            'lastUpdated': db_player.last_updated.isoformat() if db_player.last_updated else None
+        }
+        players_data.append(player_data)
+    
+    categories_data = []
+    for db_category in db_categories:
+        category_data = {
+            'id': db_category.id,
+            'name': db_category.name,
+            'description': db_category.description
+        }
+        categories_data.append(category_data)
+    
+    players = [Player(**p) for p in players_data]
+    categories = [Category(**c) for c in categories_data]
     
     players = [Player(**p) for p in players_data]
     categories = [Category(**c) for c in categories_data]
