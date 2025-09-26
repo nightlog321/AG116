@@ -531,11 +531,10 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Complete SQLite Migration for Session Endpoints"
-    - "SQLite Migration - Player Rating System"
-    - "SQLite Migration - Schedule Round Function"
+    - "Automatic Round Progression System"
+    - "Category Stickers in DUPR Standings"
   stuck_tasks: 
-    []
+    - "Automatic Round Progression System"
   test_all: false
   test_priority: "high_first"
 
