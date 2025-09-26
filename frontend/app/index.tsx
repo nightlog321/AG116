@@ -305,12 +305,27 @@ export default function PickleballManager() {
     };
   }, []);
 
-  // Reset warning flag when new round starts
+  // Reset warning flag when new round starts and manage timer
   useEffect(() => {
     if (session?.phase === 'play') {
       oneMinuteWarningPlayed = false;
+      // Start timer countdown for play phase
+      if (!session.paused) {
+        startTimerCountdown();
+      }
+    } else if (session?.phase === 'buffer') {
+      // Start timer countdown for buffer phase  
+      if (!session.paused) {
+        startTimerCountdown();
+      }
+    } else {
+      // Stop timer for idle/ended/ready phases
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     }
-  }, [session?.currentRound, session?.phase]);
+  }, [session?.currentRound, session?.phase, session?.paused]);
 
   const handleTimeUp = async (currentSession: SessionState) => {
     try {
