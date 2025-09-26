@@ -2812,13 +2812,14 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   nextRoundButtonGradient: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 20,
+    paddingVertical: 16,  // Increased from 12 to 16 for better touch target
+    paddingHorizontal: 32, // Increased from 24 to 32 for better touch target
+    borderRadius: 25,     // Increased from 20 to 25 for better appearance
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 140,
+    minWidth: 160,        // Increased from 140 to 160
+    minHeight: 48,        // Added minimum height for touch-friendly button
   },
   nextRoundButtonText: {
     color: '#ffffff',
