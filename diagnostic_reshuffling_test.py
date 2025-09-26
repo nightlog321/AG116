@@ -94,7 +94,7 @@ def test_detailed_reshuffling():
     response = session.post(f"{BACKEND_URL}/session/next-round")
     if response.status_code == 200:
         session_data = response.json()
-        print(f"✅ Round 2 generated - Phase: {session_data['phase']}, Round: {session_data['currentRound']}")
+        print(f"✅ Round 2 generated - Phase: {session_data.get('phase', 'unknown')}, Round: {session_data.get('currentRound', 'unknown')}")
     else:
         print(f"❌ Failed to generate Round 2: {response.status_code}")
         print(f"   Response: {response.text}")
