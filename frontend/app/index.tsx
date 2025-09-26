@@ -1483,6 +1483,15 @@ function CourtsDashboard({
         const updatedMatch = await response.json();
         console.log('Score saved successfully, updated match status:', updatedMatch.status);
         
+        // Immediately update the specific match in state
+        setMatches(prevMatches => 
+          prevMatches.map(m => 
+            m.id === match.id 
+              ? { ...m, status: updatedMatch.status, scoreA: updatedMatch.scoreA, scoreB: updatedMatch.scoreB }
+              : m
+          )
+        );
+        
         // Clear score inputs for this match
         setScoreInputs(prev => {
           const newInputs = { ...prev };
@@ -1490,7 +1499,7 @@ function CourtsDashboard({
           return newInputs;
         });
 
-        // Refresh matches data immediately to show updated scores and status
+        // Also refresh matches data as backup
         console.log('Refreshing matches data...');
         await fetchMatches();
         console.log('Matches data refreshed');
