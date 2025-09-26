@@ -2253,8 +2253,8 @@ async def reset_session(club_name: str = "Main Club", db_session: AsyncSession =
 async def initialize_data(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
     """Initialize default categories and session - SQLite version"""
     try:
-        # Check if categories exist for this club
-        result = await db_session.execute(select(DBCategory).where(DBCategory.club_name == club_name))
+        # Check if categories exist (categories are global, not club-specific)
+        result = await db_session.execute(select(DBCategory))
         existing_cats = result.scalars().all()
         
         if not existing_cats:
@@ -2268,8 +2268,7 @@ async def initialize_data(club_name: str = "Main Club", db_session: AsyncSession
                 db_category = DBCategory(
                     id=str(uuid.uuid4()),
                     name=cat_data["name"],
-                    description=cat_data["description"],
-                    club_name=club_name
+                    description=cat_data["description"]
                 )
                 db_session.add(db_category)
         
