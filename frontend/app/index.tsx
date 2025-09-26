@@ -315,37 +315,83 @@ export default function PickleballManager() {
   const handleTimeUp = async (currentSession: SessionState) => {
     try {
       if (currentSession.phase === 'play') {
-        // Play phase ended, transition to buffer automatically
+        // Play phase ended - start buffer phase automatically
         playHorn('end');
         
-        // Update session to buffer phase
-        await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/horn`, { method: 'POST' });
+        // Show notification
+        Alert.alert('⏰ Round Complete', 'Starting buffer time - preparing next round...', [{ text: 'OK' }]);
         
-        // Fetch updated session and matches
+        // Start buffer phase
+        await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/buffer`, { method: 'POST' });
+        
+        // Fetch updated session
         await fetchSession();
-        await fetchMatches();
         
       } else if (currentSession.phase === 'buffer') {
-        // Buffer phase ended, start next round automatically
-        playHorn('start');
-        
-        // Check if we should end the session or continue to next round
-        const totalRounds = computeRoundsPlanned();
-        
-        if (currentSession.currentRound >= totalRounds) {
-          // Session should end
-          Alert.alert('🏆 Session Complete!', 'All planned rounds have been completed.', [{ text: 'OK' }]);
-        } else {
-          // Continue to next round
-          await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/horn`, { method: 'POST' });
-        }
-        
-        // Fetch updated session and matches
-        await fetchSession();
-        await fetchMatches();
+        // Buffer phase ended - prompt for next round
+        await handleBufferEnd(currentSession);
       }
     } catch (error) {
       console.error('Error handling time up:', error);
+      Alert.alert('Error', 'Failed to progress to next phase. Please try manually.');
+    }
+  };
+
+  const handleBufferEnd = async (currentSession: SessionState) => {
+    try {
+      // Check for incomplete matches
+      const incompleteMatches = matches.filter(match => 
+        match.status === 'pending' || (!match.scoreA && !match.scoreB)
+      );
+      
+      let alertMessage = `Ready to start Round ${currentSession.currentRound + 1}?`;
+      
+      if (incompleteMatches.length > 0) {
+        const incompleteCourts = incompleteMatches.map(match => `Court ${match.courtIndex + 1}`).join(', ');
+        alertMessage = `⚠️ Scores not entered for: ${incompleteCourts}\n\nThese matches will be marked as incomplete.\n\nStart Round ${currentSession.currentRound + 1}?`;
+      }
+      
+      Alert.alert(
+        '🏓 Buffer Time Complete', 
+        alertMessage,
+        [
+          { text: 'Wait', style: 'cancel' },
+          { 
+            text: 'Start Next Round', 
+            onPress: async () => {
+              try {
+                // Show preparing message
+                Alert.alert('🔄 Preparing...', `Generating Round ${currentSession.currentRound + 1} with reshuffled teams`);
+                
+                // Mark incomplete matches as incomplete
+                for (const match of incompleteMatches) {
+                  await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/matches/${match.id}/incomplete`, { 
+                    method: 'PUT' 
+                  });
+                }
+                
+                // Generate next round with reshuffled teams
+                await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/next-round`, { method: 'POST' });
+                
+                // Refresh data
+                await fetchSession();
+                await fetchMatches();
+                
+                // Switch to Courts tab to show new assignments
+                setActiveTab('dashboard');
+                
+                Alert.alert('✅ Round Ready', `Round ${currentSession.currentRound + 1} is ready! Check courts and click "Let's Play" when ready.`);
+                
+              } catch (error) {
+                console.error('Error starting next round:', error);
+                Alert.alert('Error', 'Failed to start next round. Please try Generate Matches manually.');
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error handling buffer end:', error);
     }
   };
 
