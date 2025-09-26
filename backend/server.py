@@ -725,36 +725,54 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None) -> L
             for match in singles_matches:
                 used_player_ids.update(match.teamA + match.teamB)
     
-    # Update sit counts and missDueToCourtLimit
+    # Update sit counts and missDueToCourtLimit - SQLite version
     for player in players:
         if player.id not in used_player_ids and not player.sitNextRound:
             # Player is sitting due to court limitations
-            await db.players.update_one(
-                {"id": player.id},
-                {"$inc": {"missDueToCourtLimit": 1}}
-            )
+            result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player.id))
+            db_player = result.scalar_one_or_none()
+            if db_player:
+                db_player.miss_due_to_court_limit += 1
         
         if player.id not in used_player_ids:
             # Player is sitting (either forced or due to limitations)
-            await db.players.update_one(
-                {"id": player.id},
-                {"$inc": {"sitCount": 1}}
-            )
+            result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player.id))
+            db_player = result.scalar_one_or_none()
+            if db_player:
+                db_player.sit_count += 1
         
         # Reset sitNextRound flag
-        await db.players.update_one(
-            {"id": player.id},
-            {"$set": {"sitNextRound": False}}
-        )
+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player.id))
+        db_player = result.scalar_one_or_none()
+        if db_player:
+            db_player.sit_next_round = False
     
-    # Save matches to database
+    # Save matches to database - SQLite version
     for match in created_matches:
-        await db.matches.insert_one(match.dict())
+        db_match = DBMatch(
+            id=match.id,
+            round_index=match.roundIndex,
+            court_index=match.courtIndex,
+            category=match.category,
+            team_a=json.dumps(match.teamA),
+            team_b=json.dumps(match.teamB),
+            status=match.status.value,
+            match_type=match.matchType.value,
+            score_a=match.scoreA,
+            score_b=match.scoreB,
+            club_name="Main Club"
+        )
+        db_session.add(db_match)
         # Update histories
         session_obj.histories = update_histories(match, session_obj.histories)
     
-    # Update session histories
-    await db.session.update_one({}, {"$set": {"histories": session_obj.histories}})
+    # Update session histories - SQLite version
+    result = await db_session.execute(select(DBSession).where(DBSession.club_name == "Main Club"))
+    db_session_obj = result.scalar_one_or_none()
+    if db_session_obj:
+        db_session_obj.histories = json.dumps(session_obj.histories)
+    
+    await db_session.commit()
     
     return created_matches
 
