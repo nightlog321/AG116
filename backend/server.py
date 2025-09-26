@@ -961,7 +961,7 @@ async def create_singles_matches(
     matches = []
     
     # Prioritize players with fewer sits and better rating distribution
-    sorted_players = sorted(players, key=lambda p: (p.sit_count, p.miss_due_to_court_limit, -p.rating))
+    sorted_players = sorted(players, key=lambda p: (p.sitCount, p.missDueToCourtLimit, -p.rating))
     
     # Take players for singles matches with enhanced selection
     players_for_singles = sorted_players[:num_matches * 2]
