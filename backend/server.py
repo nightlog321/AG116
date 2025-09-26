@@ -957,53 +957,84 @@ async def create_singles_matches(
     start_court_index: int,
     histories: Dict[str, Any]
 ) -> List[Match]:
-    """Create singles matches with fair opponent pairing"""
+    """Create singles matches with enhanced opponent pairing and rating balance"""
     matches = []
     
-    # Sort players by sit priority (least sits first)
-    sorted_players = sorted(players, key=lambda p: (p.sitCount, p.missDueToCourtLimit, p.name))
+    # Prioritize players with fewer sits and better rating distribution
+    sorted_players = sorted(players, key=lambda p: (p.sit_count, p.miss_due_to_court_limit, -p.rating))
     
-    # Take players for singles matches
+    # Take players for singles matches with enhanced selection
     players_for_singles = sorted_players[:num_matches * 2]
-    shuffled_singles = shuffle_list(players_for_singles)
     
-    used_indices = set()
+    # Use enhanced shuffling for better distribution
+    shuffled_singles = enhanced_shuffle_with_rating_balance(players_for_singles, num_iterations=5)
     
-    for i, player_a in enumerate(shuffled_singles):
-        if i in used_indices or len(matches) >= num_matches:
-            break
+    # Try multiple pairing combinations for optimal balance
+    best_matches = []
+    best_rating_variance = float('inf')
+    
+    for attempt in range(3):  # Try different pairing approaches
+        current_matches = []
+        used_indices = set()
         
-        best_opponent = None
-        best_score = float('inf')
-        best_index = -1
+        player_order = list(range(len(shuffled_singles)))
+        if attempt > 0:
+            random.shuffle(player_order)
         
-        # Find best opponent (lowest opponent history)
-        for j, player_b in enumerate(shuffled_singles[i+1:], i+1):
-            if j in used_indices:
+        for idx in player_order:
+            if len(current_matches) >= num_matches:
+                break
+                
+            if idx in used_indices:
                 continue
             
-            opponent_score = calculate_opponent_score([player_a.id], [player_b.id], histories)
+            player_a = shuffled_singles[idx]
+            best_opponent = None
+            best_score = float('inf')
+            best_index = -1
             
-            if opponent_score < best_score or (opponent_score == best_score and player_b.name < (best_opponent.name if best_opponent else "zzz")):
-                best_opponent = player_b
-                best_score = opponent_score
-                best_index = j
+            # Find best opponent considering history and rating compatibility
+            for j_idx in player_order[idx+1:]:
+                if j_idx in used_indices:
+                    continue
+                
+                player_b = shuffled_singles[j_idx]
+                
+                # Calculate composite score: opponent history + rating difference
+                opponent_history_score = calculate_opponent_score([player_a.id], [player_b.id], histories)
+                rating_diff_penalty = abs(player_a.rating - player_b.rating) * 0.4  # Prefer closer ratings
+                sit_count_penalty = abs(player_a.sit_count - player_b.sit_count) * 2  # Balance sit counts
+                
+                composite_score = opponent_history_score + rating_diff_penalty + sit_count_penalty
+                
+                # Tie-breaking with name for consistency
+                if composite_score < best_score or (composite_score == best_score and player_b.name < (best_opponent.name if best_opponent else "zzz")):
+                    best_opponent = player_b
+                    best_score = composite_score
+                    best_index = j_idx
+            
+            if best_opponent:
+                match = Match(
+                    roundIndex=round_index,
+                    courtIndex=start_court_index + len(current_matches),
+                    category=category,
+                    teamA=[player_a.id],
+                    teamB=[best_opponent.id],
+                    matchType=MatchType.singles,
+                    status=MatchStatus.pending
+                )
+                current_matches.append(match)
+                used_indices.add(idx)
+                used_indices.add(best_index)
         
-        if best_opponent:
-            match = Match(
-                roundIndex=round_index,
-                courtIndex=start_court_index + len(matches),
-                category=category,
-                teamA=[player_a.id],
-                teamB=[best_opponent.id],
-                matchType=MatchType.singles,
-                status=MatchStatus.pending
-            )
-            matches.append(match)
-            used_indices.add(i)
-            used_indices.add(best_index)
+        # Evaluate this pairing attempt
+        if current_matches:
+            rating_variance = calculate_rating_variance(current_matches, players)
+            if rating_variance < best_rating_variance:
+                best_rating_variance = rating_variance
+                best_matches = current_matches
     
-    return matches
+    return best_matches
 
 # API Routes
 
