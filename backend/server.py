@@ -468,7 +468,7 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None) -> L
     result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == "Main Club"))
     db_players = result.scalars().all()
     
-    result = await db_session.execute(select(DBCategory).where(DBCategory.club_name == "Main Club"))
+    result = await db_session.execute(select(DBCategory))
     db_categories = result.scalars().all()
     
     # Convert to pydantic models
