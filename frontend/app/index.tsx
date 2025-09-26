@@ -1501,31 +1501,42 @@ function CourtsDashboard({
     return session.phase === 'buffer' && session.timeRemaining === 0;
   };
 
-  // Next Round Button Component (appears during play and buffer phases only)
+  // Next Round Button Component (visible during play and buffer phases)
   const NextRoundButton = () => {
-    // Only show button during play and buffer phases (not ready or idle)
+    // Show button during play and buffer phases (when rounds are in progress)
     if (session.phase !== 'play' && session.phase !== 'buffer') {
       return null;
     }
+    
+    const enabled = isNextRoundEnabled();
     
     return (
       <View style={styles.nextRoundContainer}>
         <TouchableOpacity 
           onPress={onNextRound}
-          disabled={!isNextRoundEnabled()}
-          style={[
-            styles.nextRoundButton,
-            !isNextRoundEnabled() && styles.nextRoundButtonDisabled
-          ]}
+          disabled={!enabled}
+          style={styles.nextRoundButton}
         >
           <LinearGradient
-            colors={isNextRoundEnabled() ? [colors.success, colors.success] : ['#cccccc', '#999999']}
+            colors={enabled ? [colors.success, colors.success] : ['#e0e0e0', '#bdbdbd']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={styles.nextRoundButtonGradient}
+            style={[
+              styles.nextRoundButtonGradient,
+              !enabled && styles.nextRoundButtonDisabledGradient
+            ]}
           >
-            <Ionicons name="arrow-forward" size={20} color="#ffffff" />
-            <Text style={styles.nextRoundButtonText}>Next Round</Text>
+            <Ionicons 
+              name="arrow-forward" 
+              size={20} 
+              color={enabled ? "#ffffff" : "#888888"} 
+            />
+            <Text style={[
+              styles.nextRoundButtonText,
+              !enabled && styles.nextRoundButtonTextDisabled
+            ]}>
+              Next Round
+            </Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
