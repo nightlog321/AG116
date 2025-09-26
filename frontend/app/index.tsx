@@ -582,7 +582,27 @@ export default function PickleballManager() {
   };
 
   // Start session function (just starts timer)
-  const startSession = async () => {
+  const nextRound = async () => {
+    if (!session) return;
+    
+    try {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/next-round`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (response.ok) {
+        Alert.alert('✅ Round Ready', `Round ${session.currentRound + 1} is ready! Check courts and click "Let's Play" when ready.`);
+        // Refresh all data
+        await Promise.all([fetchSession(), fetchPlayers(), fetchMatches()]);
+      } else {
+        Alert.alert('Error', 'Failed to generate next round');
+      }
+    } catch (error) {
+      console.error('Error generating next round:', error);
+      Alert.alert('Error', 'Failed to generate next round');
+    }
+  };
     try {
       // Initialize audio on user interaction
       initializeAudio();
