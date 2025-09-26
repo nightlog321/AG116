@@ -2328,4 +2328,4 @@ async def startup_event():
 async def shutdown_event():
     print("🔄 Shutting down...")
 
-# Removed MongoDB cleanup as we're using SQLite now
+# Initialize database on startup
