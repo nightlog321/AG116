@@ -752,7 +752,7 @@ export default function PickleballManager() {
           `Imported ${successCount} players successfully.\n${errorCount} failed.\n\nErrors:\n${errors.slice(0, 3).join('\n')}`,
           [{ text: 'OK' }]
         );
-        onRefresh();
+        await Promise.all([fetchSession(), fetchPlayers(), fetchCategories()]);
       } else {
         Alert.alert(
           '❌ Import Failed', 
