@@ -1714,7 +1714,7 @@ function CourtsDashboard({
                   </View>
                 </View>
 
-                {match.status === 'done' ? (
+                {match.status === 'saved' ? (
                   <View style={styles.finalScore}>
                     <Text style={styles.finalScoreText}>
                       Final Score: {match.scoreA} - {match.scoreB}
