@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 # Import SQLAlchemy components
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, update, and_, or_
-from database import (
+from .database import (
     get_db_session, init_database, engine,
     Player as DBPlayer, Category as DBCategory, 
     Match as DBMatch, Session as DBSession, Club as DBClub
