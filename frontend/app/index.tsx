@@ -1551,7 +1551,6 @@ function CourtsDashboard({
     const currentMatches = getCurrentMatches();
     return (
       <View style={styles.dashboardContainer}>
-        <NextRoundButton />
         {/* Show court assignments */}
         <ScrollView style={styles.courtsScroll}>
           {Array.from({ length: session.config.numCourts }, (_, i) => i).map((courtIndex) => {
