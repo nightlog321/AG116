@@ -1463,21 +1463,28 @@ function CourtsDashboard({
     }
 
     try {
-      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/matches/${match.id}/score`, {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/matches/${match.id}/score`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scoreA, scoreB })
       });
 
-      // Clear score inputs for this match
-      setScoreInputs(prev => {
-        const newInputs = { ...prev };
-        delete newInputs[match.id];
-        return newInputs;
-      });
+      if (response.ok) {
+        // Clear score inputs for this match
+        setScoreInputs(prev => {
+          const newInputs = { ...prev };
+          delete newInputs[match.id];
+          return newInputs;
+        });
 
-      Alert.alert('Success', 'Score saved successfully!');
+        // Refresh matches data to show updated scores (but not session to avoid timer reset)
+        await fetchMatches();
+        Alert.alert('Success', 'Score saved successfully!');
+      } else {
+        Alert.alert('Error', 'Failed to save score');
+      }
     } catch (error) {
+      console.error('Error saving score:', error);
       Alert.alert('Error', 'Failed to save score');
     }
   };
