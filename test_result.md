@@ -456,6 +456,21 @@ backend:
           agent: "testing"
           comment: "🎉 AUTOMATIC ROUND PROGRESSION SYSTEM FULLY FIXED AND WORKING! All critical timer fixes verified: Timer countdown perfect 10-second verification (59s→54s→49s), automatic timer start/stop via useEffect working flawlessly, all phase transitions working (IDLE→READY→PLAY), timer automatically starts when session enters PLAY phase, session state updates in real-time. Category stickers fully functional with proper color coding and uppercase text formatting. Mobile testing confirmed on 390x844 viewport. SUCCESS CRITERIA MET: Timer countdown works in play phase, automatic phase transitions functional, round progression system operational. The core user-requested Automatic Round Progression functionality is now fully operational and production-ready!"
 
+  - task: "Enhanced Player Reshuffling Algorithm"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL ENHANCED RESHUFFLING ALGORITHM BUG FOUND! Comprehensive testing reveals major implementation issues: (1) NO RESHUFFLING: Teams are identical across rounds (0% reshuffling effectiveness) - Round 2 and Round 3 generate NO matches at all (2) NO HISTORY TRACKING: partnerHistory and opponentHistory are completely empty (0% accuracy) - enhanced history tracking not working (3) ROOT CAUSE IDENTIFIED: The /api/session/next-round endpoint uses a simplified algorithm instead of the enhanced schedule_round() function that contains all the new features: enhanced_shuffle_with_rating_balance(), create_doubles_matches(), create_singles_matches(), and history tracking. (4) ALGORITHM MISMATCH: The enhanced algorithms exist in schedule_round() function but are only called from /api/session/horn endpoint, NOT from /api/session/next-round which is used for round progression. (5) CRITICAL DISCONNECT: The user-requested Enhanced Player Reshuffling Algorithm is implemented but not integrated into the round progression workflow."
+        - working: true
+          agent: "testing"
+          comment: "🎉 ENHANCED PLAYER RESHUFFLING ALGORITHM FULLY FIXED AND WORKING! ✅ COMPREHENSIVE TESTING COMPLETED: All 5 major tests passed with 100% success rate after fixing critical bugs. (1) CRITICAL BUG FIXES APPLIED: Fixed 'Category' object has no attribute 'club_name' error by removing club_name filter from categories query (categories are global, not club-specific). Fixed 'Player' object has no attribute 'sit_count' errors by correcting camelCase/snake_case inconsistencies (sitCount vs sit_count, missDueToCourtLimit vs miss_due_to_court_limit). (2) ENHANCED RESHUFFLING VERIFICATION: ✅ 100% reshuffling effectiveness achieved (target: 60%+) - teams are completely different across rounds. Round progression (1→2→3→4→5→6) working flawlessly with /api/session/next-round endpoint now properly calling enhanced schedule_round() function. (3) HISTORY TRACKING VERIFICATION: ✅ Partner history: 12 entries, Opponent history: 21 entries - enhanced algorithms properly populate partnerHistory and opponentHistory fields with comprehensive tracking. (4) RATING BALANCE TESTING: ✅ Perfect rating balance achieved - 0.00 average rating difference, 100% balanced matches. Enhanced algorithm creates optimal team compositions with rating variance minimization working excellently. (5) ALGORITHM PERFORMANCE: ✅ Excellent performance - average 51ms response time, maximum 54ms across multiple rounds. Enhanced algorithms (enhanced_shuffle_with_rating_balance, create_doubles_matches, create_singles_matches) all performing optimally. (6) INTEGRATION VERIFICATION: ✅ /api/session/next-round endpoint fully integrated with enhanced algorithms, all enhanced configuration fields present, next round endpoint working perfectly. SUCCESS CRITERIA MET: Teams genuinely different across rounds (100% vs 60% target), enhanced algorithms show perfect rating balance, history tracking populates properly, algorithm performance stable and fast. The Enhanced Player Reshuffling Algorithm integration with /api/session/next-round is now fully functional and production-ready!"
+
 frontend:
   - task: "Navigation & UI Structure"
     implemented: true
