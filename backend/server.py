@@ -397,40 +397,40 @@ def enhanced_shuffle_with_rating_balance(players: List[Player], num_iterations: 
 
 def update_histories(match: Match, histories: Dict[str, Any]) -> Dict[str, Any]:
     """Update partner and opponent histories based on a match"""
-    if 'partners' not in histories:
-        histories['partners'] = {}
-    if 'opponents' not in histories:
-        histories['opponents'] = {}
+    if 'partnerHistory' not in histories:
+        histories['partnerHistory'] = {}
+    if 'opponentHistory' not in histories:
+        histories['opponentHistory'] = {}
     
     # Update partner histories (for doubles)
     if match.matchType == MatchType.doubles:
         if len(match.teamA) == 2:
             a1, a2 = match.teamA[0], match.teamA[1]
-            if a1 not in histories['partners']:
-                histories['partners'][a1] = {}
-            if a2 not in histories['partners']:
-                histories['partners'][a2] = {}
-            histories['partners'][a1][a2] = histories['partners'][a1].get(a2, 0) + 1
-            histories['partners'][a2][a1] = histories['partners'][a2].get(a1, 0) + 1
+            if a1 not in histories['partnerHistory']:
+                histories['partnerHistory'][a1] = {}
+            if a2 not in histories['partnerHistory']:
+                histories['partnerHistory'][a2] = {}
+            histories['partnerHistory'][a1][a2] = histories['partnerHistory'][a1].get(a2, 0) + 1
+            histories['partnerHistory'][a2][a1] = histories['partnerHistory'][a2].get(a1, 0) + 1
         
         if len(match.teamB) == 2:
             b1, b2 = match.teamB[0], match.teamB[1]
-            if b1 not in histories['partners']:
-                histories['partners'][b1] = {}
-            if b2 not in histories['partners']:
-                histories['partners'][b2] = {}
-            histories['partners'][b1][b2] = histories['partners'][b1].get(b2, 0) + 1
-            histories['partners'][b2][b1] = histories['partners'][b2].get(b1, 0) + 1
+            if b1 not in histories['partnerHistory']:
+                histories['partnerHistory'][b1] = {}
+            if b2 not in histories['partnerHistory']:
+                histories['partnerHistory'][b2] = {}
+            histories['partnerHistory'][b1][b2] = histories['partnerHistory'][b1].get(b2, 0) + 1
+            histories['partnerHistory'][b2][b1] = histories['partnerHistory'][b2].get(b1, 0) + 1
     
     # Update opponent histories
     for player_a in match.teamA:
-        if player_a not in histories['opponents']:
-            histories['opponents'][player_a] = {}
         for player_b in match.teamB:
-            if player_b not in histories['opponents']:
-                histories['opponents'][player_b] = {}
-            histories['opponents'][player_a][player_b] = histories['opponents'][player_a].get(player_b, 0) + 1
-            histories['opponents'][player_b][player_a] = histories['opponents'][player_b].get(player_a, 0) + 1
+            if player_a not in histories['opponentHistory']:
+                histories['opponentHistory'][player_a] = {}
+            if player_b not in histories['opponentHistory']:
+                histories['opponentHistory'][player_b] = {}
+            histories['opponentHistory'][player_a][player_b] = histories['opponentHistory'][player_a].get(player_b, 0) + 1
+            histories['opponentHistory'][player_b][player_a] = histories['opponentHistory'][player_b].get(player_a, 0) + 1
     
     return histories
 
