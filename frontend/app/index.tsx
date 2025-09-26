@@ -959,6 +959,7 @@ export default function PickleballManager() {
                 fetchSession();
               }}
               onStartSession={startSession}
+              onNextRound={nextRound}
             />
           )}
           
