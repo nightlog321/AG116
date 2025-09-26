@@ -1430,7 +1430,8 @@ function CourtsDashboard({
   players, 
   onRefresh,
   onStartSession,
-  onNextRound
+  onNextRound,
+  setMatches
 }: { 
   session: SessionState | null;
   matches: Match[];
@@ -1438,6 +1439,7 @@ function CourtsDashboard({
   onRefresh: () => void;
   onStartSession: () => void;
   onNextRound: () => void;
+  setMatches: (matches: Match[]) => void;
 }) {
   const [scoreInputs, setScoreInputs] = useState<{[matchId: string]: {scoreA: string, scoreB: string}}>({});
 
