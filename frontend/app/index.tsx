@@ -785,7 +785,7 @@ export default function PickleballManager() {
         {session && (
           <View style={styles.sessionInfo}>
             <Text style={styles.sessionText}>
-              Round {session.currentRound}/{computeRoundsPlanned()} | {session.phase.toUpperCase()}
+              Round {session.currentRound}/{computeRoundsPlanned} | {session.phase.toUpperCase()}
               {session.paused && ' (PAUSED)'}
             </Text>
             {session.timeRemaining > 0 && (
