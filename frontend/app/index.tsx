@@ -666,7 +666,7 @@ export default function PickleballManager() {
       if (response.ok) {
         const result = await response.json();
         Alert.alert('✅ Test Data Added!', result.message + '\n\nRefreshing data...');
-        onRefresh();
+        await Promise.all([fetchSession(), fetchPlayers(), fetchCategories()]);
       } else {
         const errorText = await response.text();
         Alert.alert('❌ Failed to Add Test Data', errorText);
