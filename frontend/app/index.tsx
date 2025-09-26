@@ -1502,29 +1502,36 @@ function CourtsDashboard({
     return session.phase === 'buffer' && session.timeRemaining === 0;
   };
 
-  // Next Round Button Component (appears on all phases except idle)
-  const NextRoundButton = () => (
-    <View style={styles.nextRoundContainer}>
-      <TouchableOpacity 
-        onPress={onNextRound}
-        disabled={!isNextRoundEnabled()}
-        style={[
-          styles.nextRoundButton,
-          !isNextRoundEnabled() && styles.nextRoundButtonDisabled
-        ]}
-      >
-        <LinearGradient
-          colors={isNextRoundEnabled() ? [colors.primary, colors.secondary] : ['#cccccc', '#999999']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.nextRoundButtonGradient}
+  // Next Round Button Component (appears during play and buffer phases only)
+  const NextRoundButton = () => {
+    // Only show button during play and buffer phases (not ready or idle)
+    if (session.phase !== 'play' && session.phase !== 'buffer') {
+      return null;
+    }
+    
+    return (
+      <View style={styles.nextRoundContainer}>
+        <TouchableOpacity 
+          onPress={onNextRound}
+          disabled={!isNextRoundEnabled()}
+          style={[
+            styles.nextRoundButton,
+            !isNextRoundEnabled() && styles.nextRoundButtonDisabled
+          ]}
         >
-          <Ionicons name="arrow-forward" size={20} color="#ffffff" />
-          <Text style={styles.nextRoundButtonText}>Next Round</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
-  );
+          <LinearGradient
+            colors={isNextRoundEnabled() ? [colors.primary, colors.primaryDark] : ['#cccccc', '#999999']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.nextRoundButtonGradient}
+          >
+            <Ionicons name="arrow-forward" size={20} color="#ffffff" />
+            <Text style={styles.nextRoundButtonText}>Next Round</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    );
+  };
   
   if (session.phase === 'idle') {
     return (
