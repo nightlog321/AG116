@@ -1661,6 +1661,7 @@ function CourtsDashboard({
   
   return (
     <View style={styles.dashboardContainer}>
+      <NextRoundButton />
       {courts.map((courtIndex) => {
         const match = currentMatches.find(m => m.courtIndex === courtIndex);
         
