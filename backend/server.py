@@ -1003,7 +1003,7 @@ async def create_singles_matches(
                 # Calculate composite score: opponent history + rating difference
                 opponent_history_score = calculate_opponent_score([player_a.id], [player_b.id], histories)
                 rating_diff_penalty = abs(player_a.rating - player_b.rating) * 0.4  # Prefer closer ratings
-                sit_count_penalty = abs(player_a.sit_count - player_b.sit_count) * 2  # Balance sit counts
+                sit_count_penalty = abs(player_a.sitCount - player_b.sitCount) * 2  # Balance sit counts
                 
                 composite_score = opponent_history_score + rating_diff_penalty + sit_count_penalty
                 
