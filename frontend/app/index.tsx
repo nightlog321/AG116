@@ -550,6 +550,9 @@ export default function PickleballManager() {
       Alert.alert('Error', 'Failed to generate next round');
     }
   };
+
+  // Start session function (just starts timer)
+  const startSession = async () => {
     try {
       // Initialize audio on user interaction
       initializeAudio();
