@@ -510,14 +510,14 @@ metadata:
 
 test_plan:
   current_focus: 
-    []
+    - "Complete SQLite Migration for Session Endpoints"
+    - "SQLite Migration - Player Rating System"
+    - "SQLite Migration - Schedule Round Function"
   stuck_tasks: 
     []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
-    - agent: "testing"
-      message: "🚨 CRITICAL MATCH GENERATION ISSUES IDENTIFIED AND FIXED! ✅ PROBLEM IDENTIFICATION: Found that /api/session/generate-matches and /api/session/start endpoints were broken with 500 errors due to MongoDB dependencies not migrated to SQLite. Root cause: endpoints were calling get_session() without required db_session parameter and using MongoDB operations (db.players.count_documents, db.matches.delete_many, db.session.update_one). ✅ COMPREHENSIVE FIX IMPLEMENTED: (1) Updated generate_matches() endpoint to use SQLite with proper dependency injection (2) Updated start_session() endpoint to use SQLite operations (3) Fixed session state transitions (idle→ready→play) (4) Implemented basic match creation for testing. ✅ VERIFICATION COMPLETED: All 9 comprehensive tests now pass (100% success rate) including Add Test Data, Generate Matches, Get Matches, Session State Transitions, Let's Play Button, and Court Assignments. The complete flow now works: idle phase → generate matches → ready phase → start session → play phase. Both user-reported issues (Generate Matches not showing matches on court, Missing Let's Play button functionality) are completely resolved!"
-    - agent: "testing"
-      message: "🎉 FINAL VERIFICATION COMPLETE - ALL USER-REPORTED ISSUES RESOLVED! ✅ COMPREHENSIVE RE-TESTING: Conducted step-by-step testing of the exact user flow that was reported as broken. All critical endpoints are working perfectly: POST /api/add-test-data ✅, GET /api/session ✅, POST /api/session/generate-matches ✅, GET /api/matches ✅, POST /api/session/start ✅. ✅ USER ISSUES RESOLVED: Issue 1 'Generate Matches not showing matches on court' - COMPLETELY FIXED ✅. Generate Matches API creates matches properly and assigns them to courts (Court 0, Mixed doubles, pending status). Issue 2 'Missing Let's Play button functionality' - COMPLETELY FIXED ✅. Let's Play button (POST /api/session/start) transitions session from ready→play phase with 720s timer correctly. ✅ SESSION STATE TRANSITIONS: Complete flow verified working: idle→ready→play phases transition correctly. ✅ BACKEND TESTING COMPLETE: All 9 backend tests passed (100% success rate). The match generation and courts functionality is fully operational. Minor note: Session reset endpoint has MongoDB references causing 500 errors, but this doesn't affect core user flow. RECOMMENDATION: Main agent can now summarize and finish as all critical backend functionality is working correctly."
+    - agent: "main"
+      message: "✅ COMPLETE SQLITE MIGRATION IMPLEMENTED! Successfully migrated all remaining MongoDB endpoints to SQLite: (1) Session Management: /session/play, /session/pause, /session/resume, /session/horn all converted with proper dependency injection and error handling (2) Initialization: /init endpoint converted to create categories and sessions in SQLite (3) Schedule Round Function: Fully converted to use SQLite operations for player updates, match creation, and history tracking (4) Player Rating System: update_player_ratings function completely converted from MongoDB to SQLite with proper DUPR calculations (5) Removed duplicate endpoints and cleaned up code structure. Backend successfully restarted and SQLite database initialized. All endpoints now ready for comprehensive testing to verify migration success."
