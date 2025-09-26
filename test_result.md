@@ -104,6 +104,27 @@
 
 user_problem_statement: "Complete the SQLite migration for remaining MongoDB endpoints and test automatic round progression functionality. Phase 1: Complete SQLite migration for /session/play, /session/pause, /session/resume, /session/horn, /init endpoints. Phase 2: Test automatic round progression with play→buffer→next round transitions. Phase 3: Improve player reshuffling algorithm. Phase 4: Final testing and polish."
 
+  - task: "Enhanced Player Reshuffling Algorithm"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "ENHANCED PLAYER RESHUFFLING ALGORITHM IMPLEMENTED: (1) Enhanced shuffling with rating balance optimization across multiple iterations (2) Advanced doubles match creation with composite scoring (partner history + rating penalties) and rating variance minimization (3) Advanced singles match creation with rating compatibility and sit count balancing (4) Corrected history tracking with proper partnerHistory/opponentHistory field names (5) Multiple pairing attempts for optimal team balance (6) Integration with /api/session/next-round endpoint to use enhanced algorithms"
+        - working: false
+          agent: "testing"
+          comment: "CRITICAL INTEGRATION BUG: The /api/session/next-round endpoint uses simplified algorithm instead of enhanced schedule_round() function. Enhanced algorithms exist but not connected to round progression system. Teams identical across rounds (0% effectiveness), no history tracking (partnerHistory/opponentHistory empty), algorithm disconnect from actual round progression workflow."
+        - working: "NA"
+          agent: "main"
+          comment: "CRITICAL INTEGRATION FIX APPLIED: Updated /api/session/next-round endpoint to call enhanced schedule_round() function instead of simplified algorithm. All enhanced features now properly connected to round progression: enhanced_shuffle_with_rating_balance(), advanced create_doubles_matches(), advanced create_singles_matches(), and proper history tracking with partnerHistory/opponentHistory."
+        - working: true
+          agent: "testing"
+          comment: "✅ ENHANCED PLAYER RESHUFFLING ALGORITHM FULLY FIXED AND WORKING! 100% test success rate achieved. Enhanced Reshuffling Verification: 100% reshuffling effectiveness (exceeded 60% target). History Tracking: Partner history 12 entries, Opponent history 21 entries working perfectly. Rating Balance: Perfect 0.00 average rating difference, 100% balanced matches. Algorithm Performance: Excellent 51ms average response time. Integration verified: /api/session/next-round fully integrated with enhanced algorithms. Fixed critical bugs: Category object club_name error and Player object attribute inconsistencies (sitCount vs sit_count). All SUCCESS CRITERIA exceeded, user-requested Enhanced Player Reshuffling Algorithm integration complete and working excellently."
+
 backend:
   - task: "Complete SQLite Migration for Session Endpoints"
     implemented: true
