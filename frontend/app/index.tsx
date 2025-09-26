@@ -2818,9 +2818,6 @@ const styles = StyleSheet.create({
   nextRoundButton: {
     alignSelf: 'center',
   },
-  nextRoundButtonDisabled: {
-    opacity: 0.5,
-  },
   nextRoundButtonGradient: {
     paddingVertical: 16,  // Increased from 12 to 16 for better touch target
     paddingHorizontal: 32, // Increased from 24 to 32 for better touch target
@@ -2831,10 +2828,16 @@ const styles = StyleSheet.create({
     minWidth: 160,        // Increased from 140 to 160
     minHeight: 48,        // Added minimum height for touch-friendly button
   },
+  nextRoundButtonDisabledGradient: {
+    opacity: 1, // Keep full opacity for the gradient itself
+  },
   nextRoundButtonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  nextRoundButtonTextDisabled: {
+    color: '#888888', // Darker text for disabled state
   },
 });
