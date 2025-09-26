@@ -207,9 +207,9 @@ def calculate_rating_change(player_rating: float, opponent_avg_rating: float, ga
     
     return final_change
 
-async def update_player_ratings(match: dict, teamA_score: int, teamB_score: int):
+async def update_player_ratings(match: dict, teamA_score: int, teamB_score: int, db_session: AsyncSession):
     """
-    Update player ratings based on match result (DUPR-style)
+    Update player ratings based on match result (DUPR-style) - SQLite version
     """
     try:
         # Get all players in the match
@@ -217,49 +217,60 @@ async def update_player_ratings(match: dict, teamA_score: int, teamB_score: int)
         players = []
         
         for player_id in all_player_ids:
-            player = await db.players.find_one({"id": player_id})
-            if player:
-                players.append(player)
+            result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id))
+            db_player = result.scalar_one_or_none()
+            if db_player:
+                # Convert to dict format for compatibility
+                player_dict = {
+                    'id': db_player.id,
+                    'rating': db_player.rating,
+                    'matchesPlayed': db_player.matches_played,
+                    'wins': db_player.wins,
+                    'losses': db_player.losses,
+                    'recentForm': json.loads(db_player.recent_form) if db_player.recent_form else [],
+                    'ratingHistory': json.loads(db_player.rating_history) if db_player.rating_history else []
+                }
+                players.append((db_player, player_dict))
         
         if len(players) != len(all_player_ids):
             return  # Some players not found
         
         # Split into teams
-        teamA_players = [p for p in players if p['id'] in match['teamA']]
-        teamB_players = [p for p in players if p['id'] in match['teamB']]
+        teamA_players = [(db_p, p_dict) for db_p, p_dict in players if p_dict['id'] in match['teamA']]
+        teamB_players = [(db_p, p_dict) for db_p, p_dict in players if p_dict['id'] in match['teamB']]
         
         # Calculate average ratings for each team
-        teamA_avg = sum(p['rating'] for p in teamA_players) / len(teamA_players)
-        teamB_avg = sum(p['rating'] for p in teamB_players) / len(teamB_players)
+        teamA_avg = sum(p_dict['rating'] for _, p_dict in teamA_players) / len(teamA_players)
+        teamB_avg = sum(p_dict['rating'] for _, p_dict in teamB_players) / len(teamB_players)
         
         # Determine winner and score margin
         teamA_won = teamA_score > teamB_score
         score_margin = abs(teamA_score - teamB_score)
         
         # Update ratings for all players
-        for player in teamA_players:
+        for db_player, player_dict in teamA_players:
             result = 'W' if teamA_won else 'L'
             margin = score_margin if teamA_won else -score_margin
             rating_change = calculate_rating_change(
-                player['rating'], teamB_avg, result, margin
+                player_dict['rating'], teamB_avg, result, margin
             )
             
-            new_rating = round(player['rating'] + rating_change, 2)
-            new_matches = player.get('matchesPlayed', 0) + 1
-            new_wins = player.get('wins', 0) + (1 if teamA_won else 0)
-            new_losses = player.get('losses', 0) + (0 if teamA_won else 1)
+            new_rating = round(player_dict['rating'] + rating_change, 2)
+            new_matches = player_dict['matchesPlayed'] + 1
+            new_wins = player_dict['wins'] + (1 if teamA_won else 0)
+            new_losses = player_dict['losses'] + (0 if teamA_won else 1)
             
             # Update recent form (last 10 games)
-            recent_form = player.get('recentForm', [])
+            recent_form = player_dict['recentForm'].copy()
             recent_form.append(result)
             if len(recent_form) > 10:
                 recent_form = recent_form[-10:]
             
             # Add to rating history
-            rating_history = player.get('ratingHistory', [])
+            rating_history = player_dict['ratingHistory'].copy()
             rating_history.append({
                 'date': datetime.now().isoformat(),
-                'oldRating': player['rating'],
+                'oldRating': player_dict['rating'],
                 'newRating': new_rating,
                 'change': rating_change,
                 'matchId': match['id'],
@@ -268,44 +279,39 @@ async def update_player_ratings(match: dict, teamA_score: int, teamB_score: int)
             if len(rating_history) > 50:
                 rating_history = rating_history[-50:]  # Keep last 50 rating changes
             
-            # Update player in database
-            await db.players.update_one(
-                {"id": player['id']},
-                {"$set": {
-                    "rating": new_rating,
-                    "matchesPlayed": new_matches,
-                    "wins": new_wins,
-                    "losses": new_losses,
-                    "recentForm": recent_form,
-                    "ratingHistory": rating_history,
-                    "lastUpdated": datetime.now().isoformat()
-                }}
-            )
+            # Update player in SQLite database
+            db_player.rating = new_rating
+            db_player.matches_played = new_matches
+            db_player.wins = new_wins
+            db_player.losses = new_losses
+            db_player.recent_form = json.dumps(recent_form)
+            db_player.rating_history = json.dumps(rating_history)
+            db_player.last_updated = datetime.now()
         
         # Update ratings for Team B
-        for player in teamB_players:
+        for db_player, player_dict in teamB_players:
             result = 'L' if teamA_won else 'W'
             margin = -score_margin if teamA_won else score_margin
             rating_change = calculate_rating_change(
-                player['rating'], teamA_avg, result, margin
+                player_dict['rating'], teamA_avg, result, margin
             )
             
-            new_rating = round(player['rating'] + rating_change, 2)
-            new_matches = player.get('matchesPlayed', 0) + 1
-            new_wins = player.get('wins', 0) + (0 if teamA_won else 1)
-            new_losses = player.get('losses', 0) + (1 if teamA_won else 0)
+            new_rating = round(player_dict['rating'] + rating_change, 2)
+            new_matches = player_dict['matchesPlayed'] + 1
+            new_wins = player_dict['wins'] + (0 if teamA_won else 1)
+            new_losses = player_dict['losses'] + (1 if teamA_won else 0)
             
             # Update recent form
-            recent_form = player.get('recentForm', [])
+            recent_form = player_dict['recentForm'].copy()
             recent_form.append(result)
             if len(recent_form) > 10:
                 recent_form = recent_form[-10:]
             
             # Add to rating history
-            rating_history = player.get('ratingHistory', [])
+            rating_history = player_dict['ratingHistory'].copy()
             rating_history.append({
                 'date': datetime.now().isoformat(),
-                'oldRating': player['rating'],
+                'oldRating': player_dict['rating'],
                 'newRating': new_rating,
                 'change': rating_change,
                 'matchId': match['id'],
@@ -314,19 +320,14 @@ async def update_player_ratings(match: dict, teamA_score: int, teamB_score: int)
             if len(rating_history) > 50:
                 rating_history = rating_history[-50:]
             
-            # Update player in database
-            await db.players.update_one(
-                {"id": player['id']},
-                {"$set": {
-                    "rating": new_rating,
-                    "matchesPlayed": new_matches,
-                    "wins": new_wins,
-                    "losses": new_losses,
-                    "recentForm": recent_form,
-                    "ratingHistory": rating_history,
-                    "lastUpdated": datetime.now().isoformat()
-                }}
-            )
+            # Update player in SQLite database
+            db_player.rating = new_rating
+            db_player.matches_played = new_matches
+            db_player.wins = new_wins
+            db_player.losses = new_losses
+            db_player.recent_form = json.dumps(recent_form)
+            db_player.rating_history = json.dumps(rating_history)
+            db_player.last_updated = datetime.now()
             
     except Exception as e:
         print(f"Error updating player ratings: {e}")
