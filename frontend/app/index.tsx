@@ -745,7 +745,7 @@ export default function PickleballManager() {
           `Successfully imported ${successCount} players!\n\nRefreshing data...`,
           [{ text: 'OK' }]
         );
-        onRefresh();
+        await Promise.all([fetchSession(), fetchPlayers(), fetchCategories()]);
       } else if (successCount > 0 && errorCount > 0) {
         Alert.alert(
           '⚠️ Partial Import', 
