@@ -7,7 +7,7 @@ Tests scenarios that properly demonstrate the optimization working
 import requests
 import json
 
-BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
+BACKEND_URL = "https://court-timer.preview.emergentagent.com/api"
 
 def test_optimization_comprehensive():
     session = requests.Session()

@@ -6,7 +6,7 @@ Debug script to investigate Court Allocation Optimization issue
 import requests
 import json
 
-BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
+BACKEND_URL = "https://court-timer.preview.emergentagent.com/api"
 
 def debug_optimization():
     session = requests.Session()

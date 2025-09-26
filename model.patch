@@ -668,7 +668,7 @@ index 5ab3a91..507d015 100644
 ---------------+import json
 ---------------+
 ---------------+# Get backend URL from environment
----------------+BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
+---------------+BACKEND_URL = "https://court-timer.preview.emergentagent.com/api"
 ---------------+
 ---------------+class FocusedMigrationTester:
 ---------------+    def __init__(self):
@@ -1273,7 +1273,7 @@ index 5ab3a91..507d015 100644
 ---------------+import time
 ---------------+
 ---------------+# Get backend URL from environment
----------------+BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
+---------------+BACKEND_URL = "https://court-timer.preview.emergentagent.com/api"
 ---------------+
 ---------------+class SQLiteMigrationTester:
 ---------------+    def __init__(self):
@@ -1788,7 +1788,7 @@ index 5ab3a91..507d015 100644
 --------------+from typing import Dict, List, Any
 --------------+
 --------------+# Get backend URL from environment
---------------+BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
+--------------+BACKEND_URL = "https://court-timer.preview.emergentagent.com/api"
 --------------+
 --------------+class SessionMigrationTester:
 --------------+    def __init__(self):
@@ -2194,7 +2194,7 @@ index 5ab3a91..507d015 100644
 ------     - agent: "testing"
 -------      message: "Comprehensive backend API testing completed successfully. All 22 tests passed with 100% success rate. Created backend_test.py for comprehensive testing of all CRUD operations and session management. All core functionality working as expected: initialization, categories, players, session state, configuration updates, and session controls. Backend APIs are fully functional and ready for production use."
 -------    - agent: "main"
--------      message: "Frontend implementation completed with React Native Expo app. All 6 frontend tasks implemented including navigation, admin console, courts dashboard, players board, core functionality integration, and mobile UX. Ready for comprehensive frontend testing on mobile device (390x844) at https://match-scheduler-11.preview.emergentagent.com"
+-------      message: "Frontend implementation completed with React Native Expo app. All 6 frontend tasks implemented including navigation, admin console, courts dashboard, players board, core functionality integration, and mobile UX. Ready for comprehensive frontend testing on mobile device (390x844) at https://court-timer.preview.emergentagent.com"
 -------    - agent: "testing"
 -------      message: "✅ COMPREHENSIVE FRONTEND TESTING COMPLETED SUCCESSFULLY! All 6 frontend tasks tested and working perfectly on mobile (390x844). Key findings: (1) Navigation & UI: All 3 tabs work, header displays session info correctly, tab switching smooth (2) Admin Console: Session controls work, Start Session functional, player management works, 6 players organized by categories (3) Courts Dashboard: Shows proper idle state, updates to show 6 courts after session start (4) Players Board: Displays all 6 players in cards with stats and assignment status (5) Core Integration: API integration excellent, data persistence works, session state management perfect (6) Mobile UX: Responsive design, dark theme, smooth scrolling, good performance. App loads with expected 6 test players, session starts successfully (IDLE→PLAY), all expected behavior verified. Ready for production use!"
 -------    - agent: "testing"

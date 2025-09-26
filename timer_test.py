@@ -9,7 +9,7 @@ import json
 import time
 
 # Get backend URL from environment
-BACKEND_URL = "https://match-scheduler-11.preview.emergentagent.com/api"
+BACKEND_URL = "https://court-timer.preview.emergentagent.com/api"
 
 class TimerFixTester:
     def __init__(self):
