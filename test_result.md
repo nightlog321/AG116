@@ -498,9 +498,9 @@ backend:
 frontend:
   - task: "Next Round Button Manual Progression"
     implemented: true
-    working: true
+    working: false
     file: "frontend/app/index.tsx"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -510,6 +510,9 @@ frontend:
         - working: true
           agent: "testing"
           comment: "✅ NEXT ROUND BUTTON FUNCTIONALITY FULLY TESTED AND WORKING! Comprehensive testing completed with critical fixes applied. (1) BUTTON PLACEMENT: Correctly positioned on Courts tab below round ribbon as requested. (2) VISIBILITY LOGIC: Properly hidden during READY phase, visible during PLAY/BUFFER phases. (3) STATE MANAGEMENT: Correctly disabled during PLAY phase, enabled when buffer timer reaches 0. (4) STYLING: Touch-friendly design with 48px minimum height, proper gradient styling. (5) INTEGRATION: /api/session/next-round endpoint functional, works without score entry, enhanced reshuffling ready. (6) MOBILE RESPONSIVE: Optimized for 390x844 viewport. Fixed critical issues: missing startSession function, onRefresh errors, button visibility logic, touch-friendly styling. Manual round progression system is production-ready!"
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL BUG FOUND: Next Round Button State Logic is BROKEN! Comprehensive testing reveals the button behavior violates expected requirements: ✅ VISIBILITY: Button IS visible during buffer phase (correct). ❌ STATE LOGIC: Button is ENABLED during buffer countdown when it should be DISABLED. EXPECTED BEHAVIOR: (1) VISIBLE and DISABLED during play phase countdown, (2) VISIBLE and DISABLED during buffer phase countdown, (3) VISIBLE and ACTIVE only when buffer timer reaches 0. ACTUAL BEHAVIOR: Button is enabled during entire buffer phase countdown (tested with 25s, 23s, 21s, 19s, 17s remaining). ROOT CAUSE: The isNextRoundEnabled() function logic is incorrect - it should return false when session.phase === 'buffer' AND session.timeRemaining > 0. Current implementation allows button to be enabled during buffer countdown. IMPACT: Users can click Next Round before buffer time completes, breaking the intended workflow. MOBILE TESTING: Confirmed on 390x844 viewport as requested."
 
   - task: "Navigation & UI Structure"
     implemented: true
