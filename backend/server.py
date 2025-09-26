@@ -1588,10 +1588,10 @@ async def update_match_score(match_id: str, score_update: MatchScoreUpdate, db_s
         if not db_match:
             raise HTTPException(status_code=404, detail="Match not found")
         
-        # Update match with scores and mark as done
+        # Update match with scores and mark as saved
         db_match.score_a = score_update.scoreA
         db_match.score_b = score_update.scoreB
-        db_match.status = MatchStatus.done.value
+        db_match.status = MatchStatus.saved.value
         
         # Parse team data
         team_a = json.loads(db_match.team_a) if db_match.team_a else []
