@@ -1545,6 +1545,36 @@ function CourtsDashboard({
 
   if (!session) return <Text style={styles.loadingText}>Loading courts...</Text>;
   
+  // Helper function to determine if Next Round button should be enabled
+  const isNextRoundEnabled = () => {
+    // Button is enabled when buffer phase ends (timeRemaining reaches 0)
+    return session.phase === 'buffer' && session.timeRemaining === 0;
+  };
+
+  // Next Round Button Component (appears on all phases except idle)
+  const NextRoundButton = () => (
+    <View style={styles.nextRoundContainer}>
+      <TouchableOpacity 
+        onPress={onNextRound}
+        disabled={!isNextRoundEnabled()}
+        style={[
+          styles.nextRoundButton,
+          !isNextRoundEnabled() && styles.nextRoundButtonDisabled
+        ]}
+      >
+        <LinearGradient
+          colors={isNextRoundEnabled() ? [colors.primary, colors.secondary] : ['#cccccc', '#999999']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.nextRoundButtonGradient}
+        >
+          <Ionicons name="arrow-forward" size={20} color="#ffffff" />
+          <Text style={styles.nextRoundButtonText}>Next Round</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
+  );
+  
   if (session.phase === 'idle') {
     return (
       <View style={styles.dashboardContainer}>
@@ -1563,6 +1593,7 @@ function CourtsDashboard({
     const currentMatches = getCurrentMatches();
     return (
       <View style={styles.dashboardContainer}>
+        <NextRoundButton />
         {/* Show court assignments */}
         <ScrollView style={styles.courtsScroll}>
           {Array.from({ length: session.config.numCourts }, (_, i) => i).map((courtIndex) => {
