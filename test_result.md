@@ -402,6 +402,18 @@ backend:
           agent: "testing"
           comment: "🏓 CATEGORY STICKERS TESTING COMPLETED - PARTIALLY WORKING WITH STYLING ISSUES! ✅ IMPLEMENTATION CONFIRMED: Category stickers are successfully implemented and visible in the Standings tab with 26 total stickers found (18 BEGINNER, 4 INTERMEDIATE, 4 ADVANCED). ✅ BACKGROUND COLORS CORRECT: All background colors match specifications perfectly - BEGINNER: rgb(232, 245, 232), INTERMEDIATE: rgb(255, 243, 224), ADVANCED: rgb(252, 228, 236). ✅ BORDER RADIUS CORRECT: 8px border radius applied correctly. ✅ LAYOUT POSITIONING: Stickers properly positioned below player names as intended. ❌ CRITICAL STYLING ISSUES: (1) Font size is 16px instead of required 9px, (2) Font weight is 400 instead of 600 (bold), (3) Text colors are black instead of specified colors (BEGINNER should be #2E7D32, INTERMEDIATE should be #F57C00, ADVANCED should be #C2185B), (4) Text transform is 'none' instead of 'uppercase', (5) Layout uniformity issues with varying row heights. 🔍 ROOT CAUSE: The categoryStickerText styles are not being applied properly to the Text elements inside the category stickers. The container styles (categorySticker) work correctly, but the text-specific styles need to be fixed. The feature is 70% complete - stickers are visible with correct backgrounds and positioning, but text styling needs correction."
 
+  - task: "Automatic Round Progression System"
+    implemented: true
+    working: false
+    file: "frontend/app/index.tsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL AUTOMATIC ROUND PROGRESSION SYSTEM FAILURE! Comprehensive testing reveals the core user-requested feature is completely broken: (1) TIMER STUCK BUG: Buffer phase timer displays 00:30 but does not count down - timer is completely frozen and not updating (2) NO CONFIRMATION DIALOG: After buffer phase should complete (30 seconds), no '🏓 Buffer Time Complete' confirmation dialog appears with 'Wait' vs 'Start Next Round' options (3) NO AUTOMATIC TRANSITIONS: The critical play→buffer→next round transitions are not working automatically as designed (4) handleTimeUp() FUNCTION BROKEN: Function that should trigger when timer reaches 0 is not executing (5) handleBufferEnd() FUNCTION BROKEN: Function that should show confirmation dialog is not executing (6) API INTEGRATION ISSUES: Backend APIs returning HTML instead of JSON when called from frontend, indicating routing/integration problems. ✅ WORKING ASPECTS: Reset functionality works (returns to IDLE), Generate Matches works (creates READY state), Let's Play works (starts PLAY phase), UI state management works correctly, session info displays properly. 🔍 ROOT CAUSE: The automatic round progression system that should handle timer countdown and phase transitions is completely non-functional. The startTimerCountdown() function appears to not be running or the timer state is not updating properly. This is the PRIMARY feature requested by the user and blocks the entire automatic session management workflow."
+
   - task: "Match Generation and Courts Functionality Fix"
     implemented: true
     working: true
