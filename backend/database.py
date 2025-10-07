@@ -128,11 +128,12 @@ async def init_database():
         clubs = result.scalars().all()
         
         if not clubs:
-            # Create default "Main Club"
+            # Create default "Main Club" with access code
             default_club = Club(
                 name="Main Club",
                 display_name="Main Club",
-                description="Default club for existing data migration"
+                description="Default club for existing data migration",
+                access_code="demo123"  # Default access code for Main Club
             )
             session.add(default_club)
         
