@@ -1550,7 +1550,7 @@ function AdminConsole({
                                   style: 'destructive',
                                   onPress: async () => {
                                     try {
-                                      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${player.id}`, {
+                                      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${player.id}?club_name=${clubSession?.club_name || 'Main Club'}`, {
                                         method: 'DELETE'
                                       });
                                       
