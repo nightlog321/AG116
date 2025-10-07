@@ -93,6 +93,7 @@ class Player(BaseModel):
     sitNextRound: bool = False
     sitCount: int = 0
     missDueToCourtLimit: int = 0
+    isActive: bool = True  # Can be toggled for daily sessions
     # DUPR-style rating fields
     rating: float = 3.0  # Starting rating (typical DUPR range 2.0-8.0)
     matchesPlayed: int = 0
