@@ -1547,7 +1547,7 @@ async def get_active_players(club_name: str = "Main Club", db_session: AsyncSess
     """Get only active players for today's session"""
     try:
         result = await db_session.execute(
-            select(DBPlayer).where(DBPlayer.club_name == club_name, DBPlayer.is_active == True)
+            select(DBPlayer).where(DBPlayer.club_name == club_name, DBPlayer.is_active)
         )
         db_players = result.scalars().all()
         
