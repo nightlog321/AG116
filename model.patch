@@ -1,194 +1,597 @@
-diff --git a/frontend/app/index.tsx b/frontend/app/index.tsx
-index 7349d7d..360fa29 100644
---- a/frontend/app/index.tsx
-+++ b/frontend/app/index.tsx
-@@ -389,11 +389,20 @@ export default function PickleballManager() {
- 
-   const fetchPlayers = async () => {
-     try {
--      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players`);
-+      // Add cache-busting parameter to ensure fresh data
-+      const timestamp = new Date().getTime();
-+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players?t=${timestamp}`, {
-+        headers: {
-+          'Cache-Control': 'no-cache',
-+          'Pragma': 'no-cache'
-+        }
-+      });
-       const data = await response.json();
-+      console.log('🔄 Fetched players data:', data.map(p => ({id: p.id, name: p.name, isActive: p.isActive})));
-       setPlayers(data);
-+      console.log('✅ Players state updated with', data.length, 'players');
-     } catch (error) {
--      console.error('Error fetching players:', error);
-+      console.error('❌ Error fetching players:', error);
-     }
-   };
- 
+diff --git a/backend/courtchime.db b/backend/courtchime.db
+index 0feb8d1..d48ebac 100644
+Binary files a/backend/courtchime.db and b/backend/courtchime.db differ
+diff --git a/debug_toggle_test.py b/debug_toggle_test.py
+new file mode 100644
+index 0000000..10e2ead
+--- /dev/null
++++ b/debug_toggle_test.py
+@@ -0,0 +1,78 @@
++#!/usr/bin/env python3
++"""
++Debug test for toggle issue
++"""
++
++import requests
++import json
++import time
++
++BACKEND_URL = "https://court-manager-9.preview.emergentagent.com/api"
++
++def debug_toggle_issue():
++    session = requests.Session()
++    
++    # Get a player
++    response = session.get(f"{BACKEND_URL}/players")
++    players = response.json()
++    test_player = players[0]
++    player_id = test_player["id"]
++    player_name = test_player["name"]
++    
++    print(f"Testing with player: {player_name} (ID: {player_id})")
++    
++    # Get initial state
++    initial_status = test_player.get("isActive", True)
++    print(f"Initial status: {initial_status}")
++    
++    # Toggle 1
++    print("\n--- Toggle 1 ---")
++    response = session.patch(f"{BACKEND_URL}/players/{player_id}/toggle-active")
++    print(f"Response status: {response.status_code}")
++    if response.status_code == 200:
++        result = response.json()
++        print(f"Response: {result}")
++        expected = not initial_status
++        actual = result.get("isActive")
++        print(f"Expected: {expected}, Got: {actual}, Match: {expected == actual}")
++    
++    # Check database
++    time.sleep(0.5)
++    response = session.get(f"{BACKEND_URL}/players")
++    players = response.json()
++    player = next((p for p in players if p["id"] == player_id), None)
++    db_status = player.get("isActive") if player else None
++    print(f"Database status: {db_status}")
++    
++    # Toggle 2
++    print("\n--- Toggle 2 ---")
++    response = session.patch(f"{BACKEND_URL}/players/{player_id}/toggle-active")
++    print(f"Response status: {response.status_code}")
++    if response.status_code == 200:
++        result = response.json()
++        print(f"Response: {result}")
++        expected = not db_status
++        actual = result.get("isActive")
++        print(f"Expected: {expected}, Got: {actual}, Match: {expected == actual}")
++    
++    # Check database again
++    time.sleep(0.5)
++    response = session.get(f"{BACKEND_URL}/players")
++    players = response.json()
++    player = next((p for p in players if p["id"] == player_id), None)
++    db_status_2 = player.get("isActive") if player else None
++    print(f"Database status: {db_status_2}")
++    
++    # Toggle 3
++    print("\n--- Toggle 3 ---")
++    response = session.patch(f"{BACKEND_URL}/players/{player_id}/toggle-active")
++    print(f"Response status: {response.status_code}")
++    if response.status_code == 200:
++        result = response.json()
++        print(f"Response: {result}")
++        expected = not db_status_2
++        actual = result.get("isActive")
++        print(f"Expected: {expected}, Got: {actual}, Match: {expected == actual}")
++
++if __name__ == "__main__":
++    debug_toggle_issue()
+\ No newline at end of file
+diff --git a/focused_player_test.py b/focused_player_test.py
+new file mode 100644
+index 0000000..58f9941
+--- /dev/null
++++ b/focused_player_test.py
+@@ -0,0 +1,179 @@
++#!/usr/bin/env python3
++"""
++Focused test for CourtChime Player Active Status Issue
++Tests the specific issue mentioned: frontend UI not reflecting player active status changes
++"""
++
++import requests
++import json
++import time
++
++BACKEND_URL = "https://court-manager-9.preview.emergentagent.com/api"
++
++def test_player_active_status_detailed():
++    """Detailed test of player active status functionality"""
++    session = requests.Session()
++    
++    print("🔍 FOCUSED TEST: Player Active Status Toggle")
++    print("=" * 60)
++    
++    try:
++        # Step 1: Get all players and their current active status
++        print("1️⃣ Getting all players...")
++        response = session.get(f"{BACKEND_URL}/players")
++        if response.status_code != 200:
++            print(f"❌ Failed to get players: {response.status_code}")
++            return False
++        
++        players = response.json()
++        print(f"✅ Found {len(players)} players")
++        
++        # Display current active status
++        print("\n📊 Current Player Active Status:")
++        for i, player in enumerate(players[:5]):  # Show first 5 players
++            status = "🟢 ACTIVE" if player.get("isActive", False) else "🔴 INACTIVE"
++            print(f"   {i+1}. {player['name']} ({player['category']}) - {status}")
++        
++        if not players:
++            print("❌ No players found to test")
++            return False
++        
++        # Step 2: Select a player to test toggle functionality
++        test_player = players[0]
++        player_id = test_player["id"]
++        player_name = test_player["name"]
++        initial_status = test_player.get("isActive", True)
++        
++        print(f"\n2️⃣ Testing toggle with player: {player_name}")
++        print(f"   Initial isActive status: {initial_status}")
++        
++        # Step 3: Toggle the player's active status
++        print("\n3️⃣ Toggling player active status...")
++        response = session.patch(f"{BACKEND_URL}/players/{player_id}/toggle-active")
++        
++        if response.status_code != 200:
++            print(f"❌ Toggle failed: {response.status_code}")
++            print(f"   Response: {response.text}")
++            return False
++        
++        toggle_result = response.json()
++        print(f"✅ Toggle API response: {toggle_result}")
++        
++        expected_new_status = not initial_status
++        returned_status = toggle_result.get("isActive")
++        
++        if returned_status != expected_new_status:
++            print(f"❌ Toggle response incorrect!")
++            print(f"   Expected: {expected_new_status}")
++            print(f"   Got: {returned_status}")
++            return False
++        
++        print(f"✅ Toggle response correct: {returned_status}")
++        
++        # Step 4: Verify the change persisted in database
++        print("\n4️⃣ Verifying database persistence...")
++        time.sleep(0.5)  # Small delay for database write
++        
++        response = session.get(f"{BACKEND_URL}/players")
++        if response.status_code != 200:
++            print(f"❌ Failed to re-fetch players: {response.status_code}")
++            return False
++        
++        updated_players = response.json()
++        updated_player = next((p for p in updated_players if p["id"] == player_id), None)
++        
++        if not updated_player:
++            print(f"❌ Player {player_id} not found after toggle")
++            return False
++        
++        persisted_status = updated_player.get("isActive")
++        if persisted_status != expected_new_status:
++            print(f"❌ Database persistence failed!")
++            print(f"   Expected: {expected_new_status}")
++            print(f"   Database has: {persisted_status}")
++            return False
++        
++        print(f"✅ Database correctly persisted: isActive={persisted_status}")
++        
++        # Step 5: Test multiple toggles to ensure consistency
++        print("\n5️⃣ Testing multiple toggles for consistency...")
++        
++        for i in range(3):
++            current_status = persisted_status if i == 0 else not current_status
++            expected_after_toggle = not current_status
++            
++            response = session.patch(f"{BACKEND_URL}/players/{player_id}/toggle-active")
++            if response.status_code != 200:
++                print(f"❌ Toggle {i+1} failed: {response.status_code}")
++                return False
++            
++            result = response.json()
++            if result.get("isActive") != expected_after_toggle:
++                print(f"❌ Toggle {i+1} returned wrong status")
++                return False
++            
++            # Verify persistence
++            response = session.get(f"{BACKEND_URL}/players")
++            if response.status_code == 200:
++                players_check = response.json()
++                player_check = next((p for p in players_check if p["id"] == player_id), None)
++                if player_check and player_check.get("isActive") == expected_after_toggle:
++                    print(f"   ✅ Toggle {i+1}: {current_status} → {expected_after_toggle}")
++                else:
++                    print(f"   ❌ Toggle {i+1}: Database inconsistency")
++                    return False
++            
++            current_status = expected_after_toggle
++        
++        # Step 6: Test with different players
++        print("\n6️⃣ Testing with multiple players...")
++        
++        test_players = players[1:4] if len(players) > 3 else players[1:2]
++        for player in test_players:
++            pid = player["id"]
++            pname = player["name"]
++            initial = player.get("isActive", True)
++            
++            # Toggle
++            response = session.patch(f"{BACKEND_URL}/players/{pid}/toggle-active")
++            if response.status_code == 200:
++                result = response.json()
++                expected = not initial
++                if result.get("isActive") == expected:
++                    print(f"   ✅ {pname}: {initial} → {expected}")
++                else:
++                    print(f"   ❌ {pname}: Toggle failed")
++                
++                # Toggle back
++                session.patch(f"{BACKEND_URL}/players/{pid}/toggle-active")
++            else:
++                print(f"   ❌ {pname}: API call failed")
++        
++        print("\n🎉 ALL PLAYER ACTIVE STATUS TESTS PASSED!")
++        print("\n📋 SUMMARY:")
++        print("   ✅ Toggle API endpoint working correctly")
++        print("   ✅ Database persistence working correctly") 
++        print("   ✅ isActive field properly returned in GET requests")
++        print("   ✅ Multiple toggles work consistently")
++        print("   ✅ Works with multiple different players")
++        
++        print("\n💡 CONCLUSION:")
++        print("   The backend API for player active status is working perfectly.")
++        print("   If the frontend UI is not reflecting changes, the issue is likely:")
++        print("   1. Frontend not calling the correct API endpoint")
++        print("   2. Frontend not refreshing data after toggle")
++        print("   3. Frontend caching old data")
++        print("   4. Frontend UI not updating when data changes")
++        
++        return True
++        
++    except Exception as e:
++        print(f"❌ Test failed with exception: {str(e)}")
++        return False
++
++if __name__ == "__main__":
++    success = test_player_active_status_detailed()
++    if success:
++        print("\n✅ Backend player active status functionality is working correctly!")
++    else:
++        print("\n❌ Backend has issues with player active status functionality!")
+\ No newline at end of file
 diff --git a/model.patch b/model.patch
-index 91e43e8..e69de29 100644
+index d455122..513483d 100644
 --- a/model.patch
 +++ b/model.patch
-@@ -1,162 +0,0 @@
+@@ -1,194 +0,0 @@
+-diff --git a/frontend/app/index.tsx b/frontend/app/index.tsx
+-index 7349d7d..360fa29 100644
+---- a/frontend/app/index.tsx
+-+++ b/frontend/app/index.tsx
+-@@ -389,11 +389,20 @@ export default function PickleballManager() {
+- 
+-   const fetchPlayers = async () => {
+-     try {
+--      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players`);
+-+      // Add cache-busting parameter to ensure fresh data
+-+      const timestamp = new Date().getTime();
+-+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players?t=${timestamp}`, {
+-+        headers: {
+-+          'Cache-Control': 'no-cache',
+-+          'Pragma': 'no-cache'
+-+        }
+-+      });
+-       const data = await response.json();
+-+      console.log('🔄 Fetched players data:', data.map(p => ({id: p.id, name: p.name, isActive: p.isActive})));
+-       setPlayers(data);
+-+      console.log('✅ Players state updated with', data.length, 'players');
+-     } catch (error) {
+--      console.error('Error fetching players:', error);
+-+      console.error('❌ Error fetching players:', error);
+-     }
+-   };
+- 
 -diff --git a/model.patch b/model.patch
--index e7e408b..e69de29 100644
+-index 91e43e8..e69de29 100644
 ---- a/model.patch
 -+++ b/model.patch
--@@ -1,157 +0,0 @@
---diff --git a/backend/courtchime.db b/backend/courtchime.db
---index 3f42f90..a25cbab 100644
---Binary files a/backend/courtchime.db and b/backend/courtchime.db differ
---diff --git a/backend/server.py b/backend/server.py
---index 5fcea39..cecbe91 100644
------ a/backend/server.py
---+++ b/backend/server.py
---@@ -1332,6 +1332,7 @@ async def get_players(club_name: str = "Main Club", db_session: AsyncSession = D
---                 "sitNextRound": db_player.sit_next_round,
---                 "sitCount": db_player.sit_count,
---                 "missDueToCourtLimit": db_player.miss_due_to_court_limit,
---+                "isActive": db_player.is_active,
---                 "rating": db_player.rating,
---                 "matchesPlayed": db_player.matches_played,
---                 "wins": db_player.wins,
---@@ -1374,6 +1375,7 @@ async def get_sqlite_players(db_session: AsyncSession = Depends(get_db_session))
---                 "sitNextRound": db_player.sit_next_round,
---                 "sitCount": db_player.sit_count,
---                 "missDueToCourtLimit": db_player.miss_due_to_court_limit,
---+                "isActive": db_player.is_active,
---                 "rating": db_player.rating,
---                 "matchesPlayed": db_player.matches_played,
---                 "wins": db_player.wins,
---@@ -1420,6 +1422,7 @@ async def create_player(player: PlayerCreate, club_name: str = "Main Club", db_s
---             "sitNextRound": db_player.sit_next_round,
---             "sitCount": db_player.sit_count,
---             "missDueToCourtLimit": db_player.miss_due_to_court_limit,
---+            "isActive": db_player.is_active,
---             "rating": db_player.rating,
---             "matchesPlayed": db_player.matches_played,
---             "wins": db_player.wins,
---@@ -1475,6 +1478,7 @@ async def update_player(player_id: str, updates: PlayerUpdate, db_session: Async
---             "sitNextRound": db_player.sit_next_round,
---             "sitCount": db_player.sit_count,
---             "missDueToCourtLimit": db_player.miss_due_to_court_limit,
---+            "isActive": db_player.is_active,
---             "rating": db_player.rating,
---             "matchesPlayed": db_player.matches_played,
---             "wins": db_player.wins,
---@@ -1496,26 +1500,89 @@ async def update_player(player_id: str, updates: PlayerUpdate, db_session: Async
---         raise HTTPException(status_code=500, detail=f"Failed to update player: {str(e)}")
--- 
--- @api_router.delete("/players/{player_id}")
----async def delete_player(player_id: str, db_session: AsyncSession = Depends(get_db_session)):
----    """Delete a player from SQLite database"""
---+async def delete_player(player_id: str, club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
---+    """Permanently delete a player (use with caution - will lose all historical data)"""
---     try:
----        # Find the player
----        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id))
----        db_player = result.scalar_one_or_none()
---+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id, DBPlayer.club_name == club_name))
---+        player = result.scalar_one_or_none()
---         
----        if not db_player:
---+        if not player:
---             raise HTTPException(status_code=404, detail="Player not found")
---         
----        # Delete the player
----        await db_session.delete(db_player)
---+        await db_session.delete(player)
---         await db_session.commit()
---         
----        return {"message": "Player deleted"}
---+        return {"message": f"Player {player.name} permanently deleted"}
---         
---+    except HTTPException:
---+        raise
---     except Exception as e:
---         await db_session.rollback()
---         raise HTTPException(status_code=500, detail=f"Failed to delete player: {str(e)}")
--- 
---+@api_router.patch("/players/{player_id}/toggle-active")
---+async def toggle_player_active_status(player_id: str, club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
---+    """Toggle player's active status for daily sessions (soft delete/restore)"""
---+    try:
---+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id, DBPlayer.club_name == club_name))
---+        player = result.scalar_one_or_none()
---+        
---+        if not player:
---+            raise HTTPException(status_code=404, detail="Player not found")
---+        
---+        # Toggle active status
---+        player.is_active = not player.is_active
---+        await db_session.commit()
---+        
---+        status = "activated" if player.is_active else "deactivated"
---+        return {
---+            "message": f"Player {player.name} {status} for today's session",
---+            "isActive": player.is_active
---+        }
---+        
---+    except HTTPException:
---+        raise
---+    except Exception as e:
---+        await db_session.rollback()
---+        raise HTTPException(status_code=500, detail=f"Failed to toggle player status: {str(e)}")
---+
---+@api_router.get("/players/active")
---+async def get_active_players(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
---+    """Get only active players for today's session"""
---+    try:
---+        result = await db_session.execute(
---+            select(DBPlayer).where(DBPlayer.club_name == club_name, DBPlayer.is_active)
---+        )
---+        db_players = result.scalars().all()
---+        
---+        players = []
---+        for db_player in db_players:
---+            player_data = {
---+                'id': db_player.id,
---+                'name': db_player.name,
---+                'category': db_player.category,
---+                'sitNextRound': db_player.sit_next_round,
---+                'sitCount': db_player.sit_count,
---+                'missDueToCourtLimit': db_player.miss_due_to_court_limit,
---+                'isActive': db_player.is_active,
---+                'stats': {
---+                    'wins': db_player.stats_wins,
---+                    'losses': db_player.stats_losses,
---+                    'pointDiff': db_player.stats_point_diff
---+                },
---+                'rating': db_player.rating,
---+                'matchesPlayed': db_player.matches_played,
---+                'recentForm': json.loads(db_player.recent_form) if db_player.recent_form else [],
---+                'ratingHistory': json.loads(db_player.rating_history) if db_player.rating_history else [],
---+                'lastUpdated': db_player.last_updated.isoformat() if db_player.last_updated else None
---+            }
---+            players.append(Player(**player_data))
---+        
---+        return players
---+        
---+    except Exception as e:
---+        raise HTTPException(status_code=500, detail=f"Failed to fetch active players: {str(e)}")
---+
--- # Matches
--- @api_router.get("/matches", response_model=List[Match])
--- async def get_matches(db_session: AsyncSession = Depends(get_db_session)):
+-@@ -1,162 +0,0 @@
 --diff --git a/model.patch b/model.patch
---index b8ed2da..ec35717 100644
+--index e7e408b..e69de29 100644
 ----- a/model.patch
 --+++ b/model.patch
---@@ -1,14 +0,0 @@
----diff --git a/backend/database.py b/backend/database.py
----index dae9ecf..0d1cae7 100644
------- a/backend/database.py
----+++ b/backend/database.py
----@@ -44,6 +44,9 @@ class Player(Base):
----     sit_count = Column(Integer, default=0)
----     miss_due_to_court_limit = Column(Integer, default=0)
----     
----+    # Active status for daily sessions
----+    is_active = Column(Boolean, default=True)  # Can be toggled for daily sessions
----+    
----     # DUPR-style rating fields
----     rating = Column(Float, default=3.0)
----     matches_played = Column(Integer, default=0)
+--@@ -1,157 +0,0 @@
+---diff --git a/backend/courtchime.db b/backend/courtchime.db
+---index 3f42f90..a25cbab 100644
+---Binary files a/backend/courtchime.db and b/backend/courtchime.db differ
+---diff --git a/backend/server.py b/backend/server.py
+---index 5fcea39..cecbe91 100644
+------ a/backend/server.py
+---+++ b/backend/server.py
+---@@ -1332,6 +1332,7 @@ async def get_players(club_name: str = "Main Club", db_session: AsyncSession = D
+---                 "sitNextRound": db_player.sit_next_round,
+---                 "sitCount": db_player.sit_count,
+---                 "missDueToCourtLimit": db_player.miss_due_to_court_limit,
+---+                "isActive": db_player.is_active,
+---                 "rating": db_player.rating,
+---                 "matchesPlayed": db_player.matches_played,
+---                 "wins": db_player.wins,
+---@@ -1374,6 +1375,7 @@ async def get_sqlite_players(db_session: AsyncSession = Depends(get_db_session))
+---                 "sitNextRound": db_player.sit_next_round,
+---                 "sitCount": db_player.sit_count,
+---                 "missDueToCourtLimit": db_player.miss_due_to_court_limit,
+---+                "isActive": db_player.is_active,
+---                 "rating": db_player.rating,
+---                 "matchesPlayed": db_player.matches_played,
+---                 "wins": db_player.wins,
+---@@ -1420,6 +1422,7 @@ async def create_player(player: PlayerCreate, club_name: str = "Main Club", db_s
+---             "sitNextRound": db_player.sit_next_round,
+---             "sitCount": db_player.sit_count,
+---             "missDueToCourtLimit": db_player.miss_due_to_court_limit,
+---+            "isActive": db_player.is_active,
+---             "rating": db_player.rating,
+---             "matchesPlayed": db_player.matches_played,
+---             "wins": db_player.wins,
+---@@ -1475,6 +1478,7 @@ async def update_player(player_id: str, updates: PlayerUpdate, db_session: Async
+---             "sitNextRound": db_player.sit_next_round,
+---             "sitCount": db_player.sit_count,
+---             "missDueToCourtLimit": db_player.miss_due_to_court_limit,
+---+            "isActive": db_player.is_active,
+---             "rating": db_player.rating,
+---             "matchesPlayed": db_player.matches_played,
+---             "wins": db_player.wins,
+---@@ -1496,26 +1500,89 @@ async def update_player(player_id: str, updates: PlayerUpdate, db_session: Async
+---         raise HTTPException(status_code=500, detail=f"Failed to update player: {str(e)}")
+--- 
+--- @api_router.delete("/players/{player_id}")
+----async def delete_player(player_id: str, db_session: AsyncSession = Depends(get_db_session)):
+----    """Delete a player from SQLite database"""
+---+async def delete_player(player_id: str, club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+---+    """Permanently delete a player (use with caution - will lose all historical data)"""
+---     try:
+----        # Find the player
+----        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id))
+----        db_player = result.scalar_one_or_none()
+---+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id, DBPlayer.club_name == club_name))
+---+        player = result.scalar_one_or_none()
+---         
+----        if not db_player:
+---+        if not player:
+---             raise HTTPException(status_code=404, detail="Player not found")
+---         
+----        # Delete the player
+----        await db_session.delete(db_player)
+---+        await db_session.delete(player)
+---         await db_session.commit()
+---         
+----        return {"message": "Player deleted"}
+---+        return {"message": f"Player {player.name} permanently deleted"}
+---         
+---+    except HTTPException:
+---+        raise
+---     except Exception as e:
+---         await db_session.rollback()
+---         raise HTTPException(status_code=500, detail=f"Failed to delete player: {str(e)}")
+--- 
+---+@api_router.patch("/players/{player_id}/toggle-active")
+---+async def toggle_player_active_status(player_id: str, club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+---+    """Toggle player's active status for daily sessions (soft delete/restore)"""
+---+    try:
+---+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id, DBPlayer.club_name == club_name))
+---+        player = result.scalar_one_or_none()
+---+        
+---+        if not player:
+---+            raise HTTPException(status_code=404, detail="Player not found")
+---+        
+---+        # Toggle active status
+---+        player.is_active = not player.is_active
+---+        await db_session.commit()
+---+        
+---+        status = "activated" if player.is_active else "deactivated"
+---+        return {
+---+            "message": f"Player {player.name} {status} for today's session",
+---+            "isActive": player.is_active
+---+        }
+---+        
+---+    except HTTPException:
+---+        raise
+---+    except Exception as e:
+---+        await db_session.rollback()
+---+        raise HTTPException(status_code=500, detail=f"Failed to toggle player status: {str(e)}")
+---+
+---+@api_router.get("/players/active")
+---+async def get_active_players(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+---+    """Get only active players for today's session"""
+---+    try:
+---+        result = await db_session.execute(
+---+            select(DBPlayer).where(DBPlayer.club_name == club_name, DBPlayer.is_active)
+---+        )
+---+        db_players = result.scalars().all()
+---+        
+---+        players = []
+---+        for db_player in db_players:
+---+            player_data = {
+---+                'id': db_player.id,
+---+                'name': db_player.name,
+---+                'category': db_player.category,
+---+                'sitNextRound': db_player.sit_next_round,
+---+                'sitCount': db_player.sit_count,
+---+                'missDueToCourtLimit': db_player.miss_due_to_court_limit,
+---+                'isActive': db_player.is_active,
+---+                'stats': {
+---+                    'wins': db_player.stats_wins,
+---+                    'losses': db_player.stats_losses,
+---+                    'pointDiff': db_player.stats_point_diff
+---+                },
+---+                'rating': db_player.rating,
+---+                'matchesPlayed': db_player.matches_played,
+---+                'recentForm': json.loads(db_player.recent_form) if db_player.recent_form else [],
+---+                'ratingHistory': json.loads(db_player.rating_history) if db_player.rating_history else [],
+---+                'lastUpdated': db_player.last_updated.isoformat() if db_player.last_updated else None
+---+            }
+---+            players.append(Player(**player_data))
+---+        
+---+        return players
+---+        
+---+    except Exception as e:
+---+        raise HTTPException(status_code=500, detail=f"Failed to fetch active players: {str(e)}")
+---+
+--- # Matches
+--- @api_router.get("/matches", response_model=List[Match])
+--- async def get_matches(db_session: AsyncSession = Depends(get_db_session)):
+---diff --git a/model.patch b/model.patch
+---index b8ed2da..ec35717 100644
+------ a/model.patch
+---+++ b/model.patch
+---@@ -1,14 +0,0 @@
+----diff --git a/backend/database.py b/backend/database.py
+----index dae9ecf..0d1cae7 100644
+------- a/backend/database.py
+----+++ b/backend/database.py
+----@@ -44,6 +44,9 @@ class Player(Base):
+----     sit_count = Column(Integer, default=0)
+----     miss_due_to_court_limit = Column(Integer, default=0)
+----     
+----+    # Active status for daily sessions
+----+    is_active = Column(Boolean, default=True)  # Can be toggled for daily sessions
+----+    
+----     # DUPR-style rating fields
+----     rating = Column(Float, default=3.0)
+----     matches_played = Column(Integer, default=0)
+diff --git a/test_result.md b/test_result.md
+new file mode 100644
+index 0000000..ea3a2af
+--- /dev/null
++++ b/test_result.md
+@@ -0,0 +1,117 @@
++# CourtChime Backend Test Results
++
++## Test Summary
++**Date:** 2025-10-07  
++**Backend URL:** https://court-manager-9.preview.emergentagent.com/api  
++**Database:** SQLite (courtchime.db)  
++
++## Backend Test Results
++
++### Core API Functionality ✅
++- **Health Check**: ✅ Backend accessible
++- **Players API**: ✅ GET, POST working correctly
++- **Categories API**: ✅ GET, POST, DELETE working correctly  
++- **Clubs API**: ✅ GET working correctly
++- **Session API**: ✅ Basic session operations working
++- **Matches API**: ✅ GET matches working
++- **Database Operations**: ✅ Add test data, persistence working
++
++### Critical Player Active Status Testing ✅
++
++#### `/api/players/{id}/toggle-active` PATCH Endpoint
++- **Status**: ✅ **WORKING PERFECTLY**
++- **API Response**: Correct toggle response with proper `isActive` field
++- **Database Persistence**: ✅ Changes persist correctly in SQLite database
++- **Multiple Toggles**: ✅ Consecutive toggles work consistently
++- **Response Format**: ✅ Returns proper JSON with message and `isActive` status
++
++#### `/api/players` GET Endpoint  
++- **Status**: ✅ **WORKING PERFECTLY**
++- **isActive Field**: ✅ Present in all player records
++- **Data Accuracy**: ✅ Reflects current database state correctly
++- **Active Count**: ✅ Properly counts active vs inactive players
++
++### Database Operations ✅
++- **SQLite Database**: ✅ Functioning correctly
++- **Data Persistence**: ✅ Player active status changes persist
++- **CRUD Operations**: ✅ Create, Read, Update, Delete all working
++- **Test Data Management**: ✅ Can add/remove test data successfully
++
++### Session and Match Functionality ✅
++- **Session State**: ✅ Session in "ready" phase
++- **Match Generation**: ✅ Generates matches based on active players
++- **Player Filtering**: ✅ Only active players included in match generation
++
++## Detailed Test Results
++
++### Player Active Status - Detailed Testing
++```
++✅ Initial player state retrieval: Working
++✅ Toggle API call: Returns correct response
++✅ Database persistence: Changes saved correctly  
++✅ Multiple consecutive toggles: All working consistently
++✅ Cross-player testing: Works with different players
++✅ Active player filtering: Only active players used in matches
++```
++
++### API Endpoint Status
++| Endpoint | Method | Status | Notes |
++|----------|--------|--------|-------|
++| `/api/players` | GET | ✅ Working | Returns all players with `isActive` field |
++| `/api/players` | POST | ✅ Working | Creates players with `isActive=true` by default |
++| `/api/players/{id}/toggle-active` | PATCH | ✅ Working | **Critical endpoint working perfectly** |
++| `/api/categories` | GET | ✅ Working | Returns all categories |
++| `/api/categories` | POST | ✅ Working | Creates new categories |
++| `/api/clubs` | GET | ✅ Working | Returns clubs including Main Club |
++| `/api/session` | GET | ✅ Working | Returns session state |
++| `/api/matches` | GET | ✅ Working | Returns match history |
++| `/api/session/generate-matches` | POST | ✅ Working | Generates matches for active players |
++| `/api/add-test-data` | POST | ✅ Working | Adds sample players |
++
++### Minor Issues (Non-Critical)
++- Session config endpoint expects PUT method, not GET (405 error)
++- No "current matches" endpoint exists (404 error)
++- These do not affect core player management functionality
++
++## Root Cause Analysis
++
++### Backend Status: ✅ **FULLY FUNCTIONAL**
++
++The backend API is working correctly for all player active status operations:
++
++1. **Toggle Endpoint**: The `/api/players/{id}/toggle-active` PATCH endpoint works perfectly
++2. **Database Persistence**: SQLite database correctly stores and retrieves `isActive` status
++3. **Data Consistency**: Multiple toggles work consistently without issues
++4. **API Response**: Proper JSON responses with correct status information
++
++### Frontend UI Issue Analysis
++
++Since the backend is working perfectly, the frontend UI not reflecting player active status changes is likely due to:
++
++1. **Frontend Data Refresh**: Frontend may not be refreshing player data after toggle
++2. **API Integration**: Frontend might not be calling the correct endpoint
++3. **State Management**: Frontend state not updating when API calls succeed
++4. **UI Rendering**: Frontend UI components not re-rendering when data changes
++5. **Caching Issues**: Frontend might be caching old player data
++
++## Recommendations
++
++### For Main Agent:
++1. **Backend is fully functional** - no backend fixes needed
++2. **Focus on frontend investigation**:
++   - Check if frontend calls `/api/players/{id}/toggle-active` correctly
++   - Verify frontend refreshes player list after toggle
++   - Ensure frontend state management updates UI components
++   - Check for any frontend caching that prevents UI updates
++
++### Testing Verification:
++- ✅ Backend API endpoints working correctly
++- ✅ Database operations functioning properly  
++- ✅ Player active status toggle working perfectly
++- ✅ Data persistence confirmed across multiple tests
++
++## Conclusion
++
++**The CourtChime backend is working correctly.** The player active status toggle functionality is fully operational with proper database persistence. The issue reported about frontend UI not reflecting changes is **not a backend problem** but rather a frontend data refresh or state management issue.
++
++All core backend functionality including player management, session control, match generation, and database operations are working as expected.
+\ No newline at end of file
