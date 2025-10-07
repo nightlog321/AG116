@@ -423,10 +423,12 @@ export default function PickleballManager() {
   };
 
   const fetchPlayers = async () => {
+    if (!clubSession) return;
+    
     try {
       // Add cache-busting parameter to ensure fresh data
       const timestamp = new Date().getTime();
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players?t=${timestamp}`, {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players?club_name=${clubSession.club_name}&t=${timestamp}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
