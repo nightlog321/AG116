@@ -1298,7 +1298,8 @@ async def add_test_data(db: AsyncSession = Depends(get_db_session)):
                 name=player_data["name"],
                 category=player_data["category"],
                 club_name="Main Club",  # Assign to Main Club
-                rating=player_data["rating"]
+                rating=player_data["rating"],
+                is_active=True  # Explicitly set all test players as active
             )
             db.add(player)
             created_count += 1
