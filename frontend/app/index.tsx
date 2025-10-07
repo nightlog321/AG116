@@ -561,65 +561,7 @@ export default function PickleballManager() {
     }
   };
 
-  // Player management functions using function declarations for proper hoisting
-  async function togglePlayerActiveStatus(playerId: string, playerName: string, currentStatus: boolean) {
-    console.log('🔄 Toggling player status:', { playerId, playerName, currentStatus });
-    try {
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${playerId}/toggle-active`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      console.log('📡 API Response status:', response.status);
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ API Response result:', result);
-        const action = currentStatus ? 'removed from' : 'added to';
-        Alert.alert('Success', `${playerName} ${action} today's session`);
-        console.log('🔄 Refreshing player list...');
-        await fetchPlayers(); // Refresh player list
-        console.log('✅ Player list refreshed');
-      } else {
-        console.error('❌ API Error:', response.status, response.statusText);
-        Alert.alert('Error', 'Failed to update player status');
-      }
-    } catch (error) {
-      console.error('❌ Error toggling player status:', error);
-      Alert.alert('Error', 'Failed to update player status');
-    }
-  }
-
-  async function permanentlyDeletePlayer(playerId: string, playerName: string) {
-    Alert.alert(
-      '⚠️ Permanent Delete', 
-      `Are you sure you want to permanently delete ${playerName}? This will remove all their historical data and cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete Forever', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${playerId}`, {
-                method: 'DELETE'
-              });
-              
-              if (response.ok) {
-                Alert.alert('Deleted', `${playerName} has been permanently deleted`);
-                await fetchPlayers(); // Refresh player list
-              } else {
-                Alert.alert('Error', 'Failed to delete player');
-              }
-            } catch (error) {
-              console.error('Error deleting player:', error);
-              Alert.alert('Error', 'Failed to delete player');
-            }
-          }
-        }
-      ]
-    );
-  }
+  // Player management functions removed - logic moved inline to avoid scope issues
 
   // Start session function (just starts timer)
   const startSession = async () => {
