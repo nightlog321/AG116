@@ -916,6 +916,7 @@ export default function PickleballManager() {
               onGenerateMatches={generateMatches}
               onResetTimer={resetTimer}
               onAddTestData={addTestData}
+              onFetchPlayers={fetchPlayers}
             />
           )}
           
