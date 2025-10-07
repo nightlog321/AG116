@@ -297,8 +297,39 @@ export default function PickleballManager() {
 
   // Initialize data
   useEffect(() => {
-    initializeApp();
+    checkAuthentication();
   }, []);
+
+  const checkAuthentication = async () => {
+    try {
+      const session = await AsyncStorage.getItem('clubSession');
+      if (session) {
+        const parsedSession = JSON.parse(session);
+        setClubSession(parsedSession);
+        setAuthenticated(true);
+        await initializeApp();
+      } else {
+        // No session found, redirect to login
+        setLoading(false);
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      setLoading(false);
+      router.push('/login');
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await AsyncStorage.removeItem('clubSession');
+      setAuthenticated(false);
+      setClubSession(null);
+      router.push('/login');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
 
   // Optimized timer effect - minimal operations
   useEffect(() => {
