@@ -1139,6 +1139,89 @@ async def create_club(club: ClubCreate, db_session: AsyncSession = Depends(get_d
         await db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create club: {str(e)}")
 
+# Authentication endpoints
+@api_router.post("/auth/login", response_model=ClubSession)
+async def club_login(login_data: ClubLogin, db_session: AsyncSession = Depends(get_db_session)):
+    """Authenticate club access with club name and access code"""
+    try:
+        # Find club by name
+        result = await db_session.execute(select(DBClub).where(DBClub.name == login_data.club_name))
+        club = result.scalar_one_or_none()
+        
+        if not club:
+            raise HTTPException(status_code=404, detail="Club not found")
+        
+        # Verify access code
+        if club.access_code != login_data.access_code:
+            raise HTTPException(status_code=401, detail="Invalid access code")
+        
+        # Return session information
+        return ClubSession(
+            club_name=club.name,
+            display_name=club.display_name,
+            authenticated=True
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
+
+@api_router.post("/auth/register", response_model=ClubSession)
+async def club_register(club_data: ClubCreate, db_session: AsyncSession = Depends(get_db_session)):
+    """Register a new club and return session"""
+    try:
+        # Check if club name already exists
+        result = await db_session.execute(select(DBClub).where(DBClub.name == club_data.name))
+        existing = result.scalar_one_or_none()
+        
+        if existing:
+            raise HTTPException(status_code=400, detail="Club name already taken")
+        
+        # Create new club
+        db_club = DBClub(
+            name=club_data.name,
+            display_name=club_data.display_name,
+            description=club_data.description,
+            access_code=club_data.access_code
+        )
+        
+        db_session.add(db_club)
+        
+        # Create default session for the new club
+        default_session = DBSession(
+            club_name=club_data.name,
+            config=json.dumps({
+                "numCourts": 4,
+                "playSeconds": 720,
+                "bufferSeconds": 30,
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": False
+            }),
+            histories=json.dumps({
+                "partnerHistory": {},
+                "opponentHistory": {}
+            })
+        )
+        db_session.add(default_session)
+        
+        await db_session.commit()
+        
+        # Return session information
+        return ClubSession(
+            club_name=db_club.name,
+            display_name=db_club.display_name,
+            authenticated=True
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+
 # Categories
 @api_router.get("/categories", response_model=List[Category])
 async def get_categories(db_session: AsyncSession = Depends(get_db_session)):
