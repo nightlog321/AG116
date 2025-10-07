@@ -74,12 +74,23 @@ class Club(BaseModel):
     name: str  # Primary key - club identifier
     display_name: str
     description: Optional[str] = None
+    access_code: Optional[str] = None  # For club access control
     created_at: Optional[str] = Field(default_factory=lambda: datetime.now().isoformat())
 
 class ClubCreate(BaseModel):
     name: str
     display_name: str
     description: Optional[str] = None
+    access_code: str  # Required for club creation
+
+class ClubLogin(BaseModel):
+    club_name: str
+    access_code: str
+
+class ClubSession(BaseModel):
+    club_name: str
+    display_name: str
+    authenticated: bool = True
 
 class PlayerStats(BaseModel):
     wins: int = 0
