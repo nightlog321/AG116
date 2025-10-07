@@ -1417,7 +1417,7 @@ function AdminConsole({
                 <View key={category.id} style={styles.categorySection}>
                   <Text style={styles.categoryHeader}>{category.name} ({categoryPlayers.length})</Text>
                   {categoryPlayers.map((player) => (
-                    <View key={player.id} style={[
+                    <View key={`${player.id}-${player.isActive}`} style={[
                       styles.playerItem,
                       !player.isActive && styles.playerItemInactive
                     ]}>
