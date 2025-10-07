@@ -2123,21 +2123,41 @@ const styles = StyleSheet.create({
   header: {
     padding: 24,
     paddingBottom: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 8,
   },
+  headerLeft: {
+    flex: 1,
+  },
+  headerCenter: {
+    flex: 2,
+    alignItems: 'center',
+  },
   headerTitle: {
     color: '#ffffff',
     fontSize: 28,
     fontWeight: '700',
-    textAlign: 'center',
     letterSpacing: -0.5,
     textShadowColor: 'rgba(0, 0, 0, 0.2)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+    marginBottom: 2,
+  },
+  clubName: {
+    fontSize: 14,
+    color: '#ffffff',
+    opacity: 0.8,
+  },
+  logoutButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   sessionInfo: {
     flexDirection: 'row',
