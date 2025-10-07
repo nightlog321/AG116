@@ -1095,7 +1095,8 @@ async def create_club(club: ClubCreate, db_session: AsyncSession = Depends(get_d
         db_club = DBClub(
             name=club.name,
             display_name=club.display_name,
-            description=club.description
+            description=club.description,
+            access_code=club.access_code
         )
         
         db_session.add(db_club)
