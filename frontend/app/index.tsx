@@ -1071,7 +1071,7 @@ function AdminConsole({
     }
 
     try {
-      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players`, {
+      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players?club_name=${clubSession?.club_name || 'Main Club'}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
