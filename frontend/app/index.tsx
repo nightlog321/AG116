@@ -289,6 +289,8 @@ export default function PickleballManager() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [session, setSession] = useState<SessionState | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [clubSession, setClubSession] = useState<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize data
