@@ -1486,7 +1486,33 @@ function AdminConsole({
                       </View>
                       <View style={styles.playerActions}>
                         <TouchableOpacity
-                          onPress={() => togglePlayerActiveStatus(player.id, player.name, player.isActive)}
+                          onPress={async () => {
+                            console.log('🔄 Toggling player status:', { playerId: player.id, playerName: player.name, currentStatus: player.isActive });
+                            try {
+                              const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${player.id}/toggle-active`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' }
+                              });
+                              
+                              console.log('📡 API Response status:', response.status);
+                              
+                              if (response.ok) {
+                                const result = await response.json();
+                                console.log('✅ API Response result:', result);
+                                const action = player.isActive ? 'removed from' : 'added to';
+                                Alert.alert('Success', `${player.name} ${action} today's session`);
+                                console.log('🔄 Refreshing player list...');
+                                await fetchPlayers(); // Refresh player list
+                                console.log('✅ Player list refreshed');
+                              } else {
+                                console.error('❌ API Error:', response.status, response.statusText);
+                                Alert.alert('Error', 'Failed to update player status');
+                              }
+                            } catch (error) {
+                              console.error('❌ Error toggling player status:', error);
+                              Alert.alert('Error', 'Failed to update player status');
+                            }
+                          }}
                           style={[
                             styles.playerActionButton,
                             player.isActive ? styles.removeButton : styles.addButton
@@ -1502,7 +1528,36 @@ function AdminConsole({
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                          onPress={() => permanentlyDeletePlayer(player.id, player.name)}
+                          onPress={() => {
+                            Alert.alert(
+                              '⚠️ Permanent Delete', 
+                              `Are you sure you want to permanently delete ${player.name}? This will remove all their historical data and cannot be undone.`,
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                { 
+                                  text: 'Delete Forever', 
+                                  style: 'destructive',
+                                  onPress: async () => {
+                                    try {
+                                      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${player.id}`, {
+                                        method: 'DELETE'
+                                      });
+                                      
+                                      if (response.ok) {
+                                        Alert.alert('Deleted', `${player.name} has been permanently deleted`);
+                                        await fetchPlayers(); // Refresh player list
+                                      } else {
+                                        Alert.alert('Error', 'Failed to delete player');
+                                      }
+                                    } catch (error) {
+                                      console.error('Error deleting player:', error);
+                                      Alert.alert('Error', 'Failed to delete player');
+                                    }
+                                  }
+                                }
+                              ]
+                            );
+                          }}
                           style={[styles.playerActionButton, styles.deleteButton]}
                         >
                           <Ionicons name="trash" size={20} color="#ffffff" />
