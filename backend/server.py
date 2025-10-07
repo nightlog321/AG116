@@ -1332,6 +1332,7 @@ async def get_players(club_name: str = "Main Club", db_session: AsyncSession = D
                 "sitNextRound": db_player.sit_next_round,
                 "sitCount": db_player.sit_count,
                 "missDueToCourtLimit": db_player.miss_due_to_court_limit,
+                "isActive": db_player.is_active,
                 "rating": db_player.rating,
                 "matchesPlayed": db_player.matches_played,
                 "wins": db_player.wins,
