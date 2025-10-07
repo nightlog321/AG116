@@ -865,24 +865,39 @@ export default function PickleballManager() {
         end={{ x: 1, y: 1 }}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>CourtChime</Text>
-        {session && (
-          <View style={styles.sessionInfo}>
-            <Text style={styles.sessionText}>
-              Round {session.currentRound}/{computeRoundsPlanned} | {session.phase.toUpperCase()}
-              {session.paused && ' (PAUSED)'}
-            </Text>
-            {session.timeRemaining > 0 && (
-              <Text style={[
-                styles.timerText,
-                session.timeRemaining <= 60 && session.phase === 'play' ? styles.timerWarning : null,
-                session.phase === 'idle' ? styles.timerIdle : null
-              ]}>
-                {formatTime(session.timeRemaining)}
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>CourtChime</Text>
+          {clubSession && (
+            <Text style={styles.clubName}>{clubSession.display_name}</Text>
+          )}
+        </View>
+        
+        <View style={styles.headerCenter}>
+          {session && (
+            <View style={styles.sessionInfo}>
+              <Text style={styles.sessionText}>
+                Round {session.currentRound}/{computeRoundsPlanned} | {session.phase.toUpperCase()}
+                {session.paused && ' (PAUSED)'}
               </Text>
-            )}
-          </View>
-        )}
+              {session.timeRemaining > 0 && (
+                <Text style={[
+                  styles.timerText,
+                  session.timeRemaining <= 60 && session.phase === 'play' ? styles.timerWarning : null,
+                  session.phase === 'idle' ? styles.timerIdle : null
+                ]}>
+                  {formatTime(session.timeRemaining)}
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+
+        <TouchableOpacity 
+          style={styles.logoutButton}
+          onPress={logout}
+        >
+          <Ionicons name="log-out-outline" size={24} color="#ffffff" />
+        </TouchableOpacity>
       </LinearGradient>
 
       {/* Tab Navigation */}
