@@ -563,22 +563,29 @@ export default function PickleballManager() {
 
   // Player management functions
   const togglePlayerActiveStatus = async (playerId: string, playerName: string, currentStatus: boolean) => {
+    console.log('🔄 Toggling player status:', { playerId, playerName, currentStatus });
     try {
       const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${playerId}/toggle-active`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' }
       });
       
+      console.log('📡 API Response status:', response.status);
+      
       if (response.ok) {
         const result = await response.json();
+        console.log('✅ API Response result:', result);
         const action = currentStatus ? 'removed from' : 'added to';
         Alert.alert('Success', `${playerName} ${action} today's session`);
+        console.log('🔄 Refreshing player list...');
         await fetchPlayers(); // Refresh player list
+        console.log('✅ Player list refreshed');
       } else {
+        console.error('❌ API Error:', response.status, response.statusText);
         Alert.alert('Error', 'Failed to update player status');
       }
     } catch (error) {
-      console.error('Error toggling player status:', error);
+      console.error('❌ Error toggling player status:', error);
       Alert.alert('Error', 'Failed to update player status');
     }
   };
