@@ -103,6 +103,7 @@ interface Match {
   matchType: 'singles' | 'doubles';
   scoreA?: number;
   scoreB?: number;
+  matchDate: string;  // ISO date string when match was created
 }
 
 interface SessionConfig {
