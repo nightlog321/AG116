@@ -561,6 +561,59 @@ export default function PickleballManager() {
     }
   };
 
+  // Player management functions
+  const togglePlayerActiveStatus = async (playerId: string, playerName: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${playerId}/toggle-active`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const action = currentStatus ? 'removed from' : 'added to';
+        Alert.alert('Success', `${playerName} ${action} today's session`);
+        await fetchPlayers(); // Refresh player list
+      } else {
+        Alert.alert('Error', 'Failed to update player status');
+      }
+    } catch (error) {
+      console.error('Error toggling player status:', error);
+      Alert.alert('Error', 'Failed to update player status');
+    }
+  };
+
+  const permanentlyDeletePlayer = async (playerId: string, playerName: string) => {
+    Alert.alert(
+      '⚠️ Permanent Delete', 
+      `Are you sure you want to permanently delete ${playerName}? This will remove all their historical data and cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete Forever', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${playerId}`, {
+                method: 'DELETE'
+              });
+              
+              if (response.ok) {
+                Alert.alert('Deleted', `${playerName} has been permanently deleted`);
+                await fetchPlayers(); // Refresh player list
+              } else {
+                Alert.alert('Error', 'Failed to delete player');
+              }
+            } catch (error) {
+              console.error('Error deleting player:', error);
+              Alert.alert('Error', 'Failed to delete player');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   // Start session function (just starts timer)
   const startSession = async () => {
     try {
