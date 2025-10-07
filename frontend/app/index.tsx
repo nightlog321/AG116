@@ -1459,8 +1459,8 @@ function AdminConsole({
                                 alert(`API Success! Player is now ${result.isActive ? 'active' : 'inactive'}`);
                                 
                                 console.log('🔄 About to refresh players...');
-                                await fetchPlayers();
-                                console.log('✅ fetchPlayers completed');
+                                await onFetchPlayers();
+                                console.log('✅ onFetchPlayers completed');
                                 
                               } else {
                                 const errorText = await response.text();
