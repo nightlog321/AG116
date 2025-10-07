@@ -79,6 +79,9 @@ class Match(Base):
     score_b = Column(Integer)
     status = Column(String, default="pending")  # pending, completed
     
+    # Match date tracking
+    match_date = Column(DateTime, default=datetime.utcnow)  # Date when match was created
+    
     # Relationship to club
     club = relationship("Club", backref="matches")
 
