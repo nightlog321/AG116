@@ -2968,4 +2968,46 @@ const styles = StyleSheet.create({
   nextRoundButtonTextDisabled: {
     color: '#888888', // Darker text for disabled state
   },
+  // Player management styles
+  playerMainInfo: {
+    flex: 1,
+  },
+  playerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 12,
+  },
+  playerActionButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 80,
+  },
+  playerActionText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  removeButton: {
+    backgroundColor: colors.warning,
+  },
+  addButton: {
+    backgroundColor: colors.success,
+  },
+  deleteButton: {
+    backgroundColor: colors.danger,
+  },
+  playerItemInactive: {
+    opacity: 0.6,
+    backgroundColor: '#f5f5f5',
+  },
+  playerNameInactive: {
+    color: colors.textMuted,
+    fontStyle: 'italic',
+  },
 });
