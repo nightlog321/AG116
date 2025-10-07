@@ -339,6 +339,232 @@ class CourtChimeAPITester:
             self.log_test("Clubs API", False, f"Exception: {str(e)}")
             return False
     
+    def test_club_authentication(self):
+        """Test club authentication system"""
+        try:
+            # Test 1: Club login with correct credentials
+            login_data = {
+                "club_name": "Main Club",
+                "access_code": "demo123"
+            }
+            
+            response = self.session.post(f"{self.base_url}/auth/login", json=login_data)
+            if response.status_code == 200:
+                login_response = response.json()
+                expected_fields = ["club_name", "display_name", "authenticated"]
+                missing_fields = [field for field in expected_fields if field not in login_response]
+                
+                if not missing_fields and login_response.get("authenticated") == True:
+                    self.log_test("Auth - Login Correct Credentials", True, "Login successful with correct response format")
+                else:
+                    self.log_test("Auth - Login Correct Credentials", False, f"Response format incorrect. Missing: {missing_fields}")
+            else:
+                self.log_test("Auth - Login Correct Credentials", False, f"Status: {response.status_code}", response.text)
+            
+            # Test 2: Club login with wrong club name
+            wrong_club_data = {
+                "club_name": "NonExistent Club",
+                "access_code": "demo123"
+            }
+            
+            response = self.session.post(f"{self.base_url}/auth/login", json=wrong_club_data)
+            if response.status_code == 404:
+                self.log_test("Auth - Login Wrong Club Name", True, "Correctly rejected non-existent club")
+            else:
+                self.log_test("Auth - Login Wrong Club Name", False, f"Expected 404, got {response.status_code}")
+            
+            # Test 3: Club login with wrong access code
+            wrong_code_data = {
+                "club_name": "Main Club",
+                "access_code": "wrongcode"
+            }
+            
+            response = self.session.post(f"{self.base_url}/auth/login", json=wrong_code_data)
+            if response.status_code == 401:
+                self.log_test("Auth - Login Wrong Access Code", True, "Correctly rejected wrong access code")
+            else:
+                self.log_test("Auth - Login Wrong Access Code", False, f"Expected 401, got {response.status_code}")
+            
+            # Test 4: Club registration with new club
+            import uuid
+            unique_id = str(uuid.uuid4())[:8]
+            new_club_data = {
+                "name": f"Test Club {unique_id}",
+                "display_name": f"Test Club {unique_id}",
+                "description": "Test club for authentication testing",
+                "access_code": f"test{unique_id}"
+            }
+            
+            response = self.session.post(f"{self.base_url}/auth/register", json=new_club_data)
+            if response.status_code == 200:
+                register_response = response.json()
+                expected_fields = ["club_name", "display_name", "authenticated"]
+                missing_fields = [field for field in expected_fields if field not in register_response]
+                
+                if not missing_fields and register_response.get("authenticated") == True:
+                    self.log_test("Auth - Register New Club", True, "Club registration successful")
+                    # Store for later tests
+                    self.test_club_name = new_club_data["name"]
+                    self.test_club_access_code = new_club_data["access_code"]
+                else:
+                    self.log_test("Auth - Register New Club", False, f"Response format incorrect. Missing: {missing_fields}")
+            else:
+                self.log_test("Auth - Register New Club", False, f"Status: {response.status_code}", response.text)
+            
+            # Test 5: Club registration with duplicate name
+            duplicate_club_data = {
+                "name": "Main Club",
+                "display_name": "Duplicate Main Club",
+                "description": "This should fail",
+                "access_code": "duplicate123"
+            }
+            
+            response = self.session.post(f"{self.base_url}/auth/register", json=duplicate_club_data)
+            if response.status_code == 400:
+                self.log_test("Auth - Register Duplicate Name", True, "Correctly rejected duplicate club name")
+            else:
+                self.log_test("Auth - Register Duplicate Name", False, f"Expected 400, got {response.status_code}")
+            
+            # Test 6: Club registration with missing fields
+            incomplete_club_data = {
+                "name": "Incomplete Club",
+                "display_name": "Incomplete Club"
+                # Missing access_code
+            }
+            
+            response = self.session.post(f"{self.base_url}/auth/register", json=incomplete_club_data)
+            if response.status_code >= 400:
+                self.log_test("Auth - Register Missing Fields", True, "Correctly rejected incomplete data")
+            else:
+                self.log_test("Auth - Register Missing Fields", False, f"Expected error status, got {response.status_code}")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Club Authentication", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_club_aware_endpoints(self):
+        """Test club-aware player endpoints"""
+        try:
+            # Test 1: Players endpoint with club_name parameter
+            params = {"club_name": "Main Club"}
+            response = self.session.get(f"{self.base_url}/players", params=params)
+            
+            if response.status_code == 200:
+                players = response.json()
+                if isinstance(players, list):
+                    self.log_test("Club-Aware - Players GET", True, f"Retrieved {len(players)} players for Main Club")
+                    
+                    # Verify player structure
+                    if players:
+                        player = players[0]
+                        required_fields = ["id", "name", "category", "isActive"]
+                        missing_fields = [field for field in required_fields if field not in player]
+                        
+                        if not missing_fields:
+                            self.log_test("Club-Aware - Player Structure", True, "Players have correct structure")
+                        else:
+                            self.log_test("Club-Aware - Player Structure", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_test("Club-Aware - Players GET", False, "Response should be a list of players")
+            else:
+                self.log_test("Club-Aware - Players GET", False, f"Status: {response.status_code}", response.text)
+            
+            # Test 2: Player creation with club_name parameter
+            test_player_data = {
+                "name": "Test Player Auth",
+                "category": "Beginner"
+            }
+            
+            params = {"club_name": "Main Club"}
+            response = self.session.post(f"{self.base_url}/players", json=test_player_data, params=params)
+            
+            if response.status_code == 200:
+                created_player = response.json()
+                required_fields = ["id", "name", "category", "isActive"]
+                missing_fields = [field for field in required_fields if field not in created_player]
+                
+                if not missing_fields:
+                    self.log_test("Club-Aware - Player Creation", True, f"Created player: {created_player['name']}")
+                    self.created_players.append(created_player["id"])  # For cleanup
+                    
+                    # Test 3: Player toggle with club_name parameter
+                    params = {"club_name": "Main Club"}
+                    response = self.session.patch(f"{self.base_url}/players/{created_player['id']}/toggle-active", params=params)
+                    
+                    if response.status_code == 200:
+                        toggle_response = response.json()
+                        if "message" in toggle_response and "isActive" in toggle_response:
+                            self.log_test("Club-Aware - Player Toggle", True, "Player toggle successful")
+                        else:
+                            self.log_test("Club-Aware - Player Toggle", False, "Response missing required fields")
+                    else:
+                        self.log_test("Club-Aware - Player Toggle", False, f"Status: {response.status_code}", response.text)
+                else:
+                    self.log_test("Club-Aware - Player Creation", False, f"Missing fields: {missing_fields}")
+            else:
+                self.log_test("Club-Aware - Player Creation", False, f"Status: {response.status_code}", response.text)
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Club-Aware Endpoints", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_database_schema_verification(self):
+        """Test database schema for club authentication"""
+        try:
+            # Test that clubs table exists and has access_code field by testing login
+            # (access_code field is not returned in GET /clubs for security)
+            
+            # Test 1: Verify Main Club exists with demo123 access code
+            login_data = {
+                "club_name": "Main Club",
+                "access_code": "demo123"
+            }
+            
+            response = self.session.post(f"{self.base_url}/auth/login", json=login_data)
+            if response.status_code == 200:
+                self.log_test("DB Schema - Main Club Access Code", True, "Main Club exists with demo123 access code")
+            else:
+                self.log_test("DB Schema - Main Club Access Code", False, f"Main Club login failed: {response.status_code}")
+            
+            # Test 2: Verify clubs table structure via GET endpoint
+            response = self.session.get(f"{self.base_url}/clubs")
+            if response.status_code == 200:
+                clubs = response.json()
+                if clubs:
+                    club = clubs[0]
+                    required_fields = ["name", "display_name"]
+                    missing_fields = [field for field in required_fields if field not in club]
+                    
+                    if not missing_fields:
+                        self.log_test("DB Schema - Clubs Table Structure", True, "Clubs table has correct structure")
+                    else:
+                        self.log_test("DB Schema - Clubs Table Structure", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_test("DB Schema - Clubs Table Structure", False, "No clubs found in database")
+            else:
+                self.log_test("DB Schema - Clubs Table Structure", False, f"Cannot access clubs: {response.status_code}")
+            
+            # Test 3: Verify session table has club-specific data
+            response = self.session.get(f"{self.base_url}/session")
+            if response.status_code == 200:
+                session_data = response.json()
+                if session_data:
+                    self.log_test("DB Schema - Session Club Data", True, "Session data accessible (club-specific)")
+                else:
+                    self.log_test("DB Schema - Session Club Data", False, "No session data found")
+            else:
+                self.log_test("DB Schema - Session Club Data", False, f"Cannot access session: {response.status_code}")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Database Schema Verification", False, f"Exception: {str(e)}")
+            return False
+    
     def cleanup_test_data(self):
         """Clean up test data created during testing"""
         try:
