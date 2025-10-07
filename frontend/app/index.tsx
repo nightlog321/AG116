@@ -1498,7 +1498,7 @@ function AdminConsole({
                             
                             try {
                               console.log('📞 Making API call to:', `${EXPO_PUBLIC_BACKEND_URL}/api/players/${player.id}/toggle-active`);
-                              const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${player.id}/toggle-active`, {
+                              const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${player.id}/toggle-active?club_name=${clubSession?.club_name || 'Main Club'}`, {
                                 method: 'PATCH',
                                 headers: { 'Content-Type': 'application/json' }
                               });
