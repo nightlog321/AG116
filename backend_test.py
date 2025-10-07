@@ -600,6 +600,12 @@ class CourtChimeAPITester:
         
         # Test all API endpoints
         self.test_clubs_api()
+        
+        # Test new club authentication system
+        self.test_club_authentication()
+        self.test_club_aware_endpoints()
+        self.test_database_schema_verification()
+        
         self.test_categories_api()
         
         # Test players API with focus on isActive functionality
