@@ -561,8 +561,8 @@ export default function PickleballManager() {
     }
   };
 
-  // Player management functions
-  const togglePlayerActiveStatus = async (playerId: string, playerName: string, currentStatus: boolean) => {
+  // Player management functions using function declarations for proper hoisting
+  async function togglePlayerActiveStatus(playerId: string, playerName: string, currentStatus: boolean) {
     console.log('🔄 Toggling player status:', { playerId, playerName, currentStatus });
     try {
       const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${playerId}/toggle-active`, {
@@ -588,9 +588,9 @@ export default function PickleballManager() {
       console.error('❌ Error toggling player status:', error);
       Alert.alert('Error', 'Failed to update player status');
     }
-  };
+  }
 
-  const permanentlyDeletePlayer = async (playerId: string, playerName: string) => {
+  async function permanentlyDeletePlayer(playerId: string, playerName: string) {
     Alert.alert(
       '⚠️ Permanent Delete', 
       `Are you sure you want to permanently delete ${playerName}? This will remove all their historical data and cannot be undone.`,
@@ -619,7 +619,7 @@ export default function PickleballManager() {
         }
       ]
     );
-  };
+  }
 
   // Start session function (just starts timer)
   const startSession = async () => {
