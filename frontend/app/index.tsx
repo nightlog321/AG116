@@ -389,11 +389,20 @@ export default function PickleballManager() {
 
   const fetchPlayers = async () => {
     try {
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players`);
+      // Add cache-busting parameter to ensure fresh data
+      const timestamp = new Date().getTime();
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players?t=${timestamp}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await response.json();
+      console.log('🔄 Fetched players data:', data.map(p => ({id: p.id, name: p.name, isActive: p.isActive})));
       setPlayers(data);
+      console.log('✅ Players state updated with', data.length, 'players');
     } catch (error) {
-      console.error('Error fetching players:', error);
+      console.error('❌ Error fetching players:', error);
     }
   };
 
