@@ -24,6 +24,7 @@ class Club(Base):
     name = Column(String, primary_key=True)  # Club name is the identifier
     display_name = Column(String, nullable=False)  # For display purposes
     description = Column(String)
+    access_code = Column(String, nullable=False)  # Access code for club authentication
     created_at = Column(DateTime, default=datetime.now)
 
 class Category(Base):
