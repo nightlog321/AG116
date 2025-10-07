@@ -133,6 +133,7 @@ class Match(BaseModel):
     matchType: MatchType
     scoreA: Optional[int] = None
     scoreB: Optional[int] = None
+    matchDate: str = Field(default_factory=lambda: datetime.now().isoformat())  # Date when match was created
 
 class MatchScoreUpdate(BaseModel):
     scoreA: int
