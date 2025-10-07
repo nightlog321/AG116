@@ -1496,25 +1496,88 @@ async def update_player(player_id: str, updates: PlayerUpdate, db_session: Async
         raise HTTPException(status_code=500, detail=f"Failed to update player: {str(e)}")
 
 @api_router.delete("/players/{player_id}")
-async def delete_player(player_id: str, db_session: AsyncSession = Depends(get_db_session)):
-    """Delete a player from SQLite database"""
+async def delete_player(player_id: str, club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Permanently delete a player (use with caution - will lose all historical data)"""
     try:
-        # Find the player
-        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id))
-        db_player = result.scalar_one_or_none()
+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id, DBPlayer.club_name == club_name))
+        player = result.scalar_one_or_none()
         
-        if not db_player:
+        if not player:
             raise HTTPException(status_code=404, detail="Player not found")
         
-        # Delete the player
-        await db_session.delete(db_player)
+        await db_session.delete(player)
         await db_session.commit()
         
-        return {"message": "Player deleted"}
+        return {"message": f"Player {player.name} permanently deleted"}
         
+    except HTTPException:
+        raise
     except Exception as e:
         await db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to delete player: {str(e)}")
+
+@api_router.patch("/players/{player_id}/toggle-active")
+async def toggle_player_active_status(player_id: str, club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Toggle player's active status for daily sessions (soft delete/restore)"""
+    try:
+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.id == player_id, DBPlayer.club_name == club_name))
+        player = result.scalar_one_or_none()
+        
+        if not player:
+            raise HTTPException(status_code=404, detail="Player not found")
+        
+        # Toggle active status
+        player.is_active = not player.is_active
+        await db_session.commit()
+        
+        status = "activated" if player.is_active else "deactivated"
+        return {
+            "message": f"Player {player.name} {status} for today's session",
+            "isActive": player.is_active
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to toggle player status: {str(e)}")
+
+@api_router.get("/players/active")
+async def get_active_players(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Get only active players for today's session"""
+    try:
+        result = await db_session.execute(
+            select(DBPlayer).where(DBPlayer.club_name == club_name, DBPlayer.is_active == True)
+        )
+        db_players = result.scalars().all()
+        
+        players = []
+        for db_player in db_players:
+            player_data = {
+                'id': db_player.id,
+                'name': db_player.name,
+                'category': db_player.category,
+                'sitNextRound': db_player.sit_next_round,
+                'sitCount': db_player.sit_count,
+                'missDueToCourtLimit': db_player.miss_due_to_court_limit,
+                'isActive': db_player.is_active,
+                'stats': {
+                    'wins': db_player.stats_wins,
+                    'losses': db_player.stats_losses,
+                    'pointDiff': db_player.stats_point_diff
+                },
+                'rating': db_player.rating,
+                'matchesPlayed': db_player.matches_played,
+                'recentForm': json.loads(db_player.recent_form) if db_player.recent_form else [],
+                'ratingHistory': json.loads(db_player.rating_history) if db_player.rating_history else [],
+                'lastUpdated': db_player.last_updated.isoformat() if db_player.last_updated else None
+            }
+            players.append(Player(**player_data))
+        
+        return players
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch active players: {str(e)}")
 
 # Matches
 @api_router.get("/matches", response_model=List[Match])
