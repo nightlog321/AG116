@@ -1696,7 +1696,18 @@ function CourtsDashboard({
             
             return (
               <View key={courtIndex} style={styles.courtCard}>
-                <Text style={styles.courtTitle}>Court {courtIndex + 1}</Text>
+                <View style={styles.courtHeader}>
+                  <Text style={styles.courtTitle}>Court {courtIndex + 1}</Text>
+                  {match && (
+                    <Text style={styles.matchDate}>
+                      {new Date(match.matchDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </Text>
+                  )}
+                </View>
                 {match ? (
                   <View style={styles.courtMatch}>
                     <View style={styles.matchTeams}>
