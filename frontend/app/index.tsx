@@ -1459,12 +1459,48 @@ function AdminConsole({
                 <View key={category.id} style={styles.categorySection}>
                   <Text style={styles.categoryHeader}>{category.name} ({categoryPlayers.length})</Text>
                   {categoryPlayers.map((player) => (
-                    <View key={player.id} style={styles.playerItem}>
-                      <Text style={styles.playerName}>{player.name}</Text>
-                      <View style={styles.playerStats}>
-                        <Text style={styles.playerStat}>W: {player.stats.wins}</Text>
-                        <Text style={styles.playerStat}>L: {player.stats.losses}</Text>
-                        <Text style={styles.playerStat}>Sits: {player.sitCount}</Text>
+                    <View key={player.id} style={[
+                      styles.playerItem,
+                      !player.isActive && styles.playerItemInactive
+                    ]}>
+                      <View style={styles.playerMainInfo}>
+                        <Text style={[
+                          styles.playerName,
+                          !player.isActive && styles.playerNameInactive
+                        ]}>
+                          {player.name}
+                          {!player.isActive && ' (Not Playing Today)'}
+                        </Text>
+                        <View style={styles.playerStats}>
+                          <Text style={styles.playerStat}>W: {player.stats.wins}</Text>
+                          <Text style={styles.playerStat}>L: {player.stats.losses}</Text>
+                          <Text style={styles.playerStat}>Sits: {player.sitCount}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.playerActions}>
+                        <TouchableOpacity
+                          onPress={() => togglePlayerActiveStatus(player.id, player.name, player.isActive)}
+                          style={[
+                            styles.playerActionButton,
+                            player.isActive ? styles.removeButton : styles.addButton
+                          ]}
+                        >
+                          <Ionicons 
+                            name={player.isActive ? "remove-circle" : "add-circle"} 
+                            size={20} 
+                            color="#ffffff" 
+                          />
+                          <Text style={styles.playerActionText}>
+                            {player.isActive ? 'Remove' : 'Add'}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => permanentlyDeletePlayer(player.id, player.name)}
+                          style={[styles.playerActionButton, styles.deleteButton]}
+                        >
+                          <Ionicons name="trash" size={20} color="#ffffff" />
+                          <Text style={styles.playerActionText}>Delete</Text>
+                        </TouchableOpacity>
                       </View>
                     </View>
                   ))}
