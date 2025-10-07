@@ -462,8 +462,9 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None) -> L
         async with AsyncSession(engine) as db_session:
             return await schedule_round(round_index, db_session)
     
-    # Get current session and configuration - SQLite version
-    result = await db_session.execute(select(DBSession).where(DBSession.club_name == "Main Club"))
+    # Get current session and configuration - SQLite version with club support
+    club_name = "Main Club"  # Default for now, will be passed as parameter later
+    result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
     db_session_obj = result.scalar_one_or_none()
     if not db_session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
