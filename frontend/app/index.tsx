@@ -1438,30 +1438,35 @@ function AdminConsole({
                       <View style={styles.playerActions}>
                         <TouchableOpacity
                           onPress={async () => {
-                            console.log('🔄 Toggling player status:', { playerId: player.id, playerName: player.name, currentStatus: player.isActive });
+                            console.log('🚀 BUTTON CLICKED! Starting toggle for:', { playerId: player.id, playerName: player.name, currentStatus: player.isActive });
+                            alert(`Button clicked! Toggling ${player.name} (currently ${player.isActive ? 'active' : 'inactive'})`);
+                            
                             try {
+                              console.log('📞 Making API call to:', `${EXPO_PUBLIC_BACKEND_URL}/api/players/${player.id}/toggle-active`);
                               const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/players/${player.id}/toggle-active`, {
                                 method: 'PATCH',
                                 headers: { 'Content-Type': 'application/json' }
                               });
                               
-                              console.log('📡 API Response status:', response.status);
+                              console.log('📡 API Response received:', response.status, response.statusText);
                               
                               if (response.ok) {
                                 const result = await response.json();
-                                console.log('✅ API Response result:', result);
-                                const action = player.isActive ? 'removed from' : 'added to';
-                                Alert.alert('Success', `${player.name} ${action} today's session`);
-                                console.log('🔄 Refreshing player list...');
-                                await fetchPlayers(); // Refresh player list
-                                console.log('✅ Player list refreshed');
+                                console.log('✅ API Response data:', result);
+                                alert(`API Success! Player is now ${result.isActive ? 'active' : 'inactive'}`);
+                                
+                                console.log('🔄 About to refresh players...');
+                                await fetchPlayers();
+                                console.log('✅ fetchPlayers completed');
+                                
                               } else {
-                                console.error('❌ API Error:', response.status, response.statusText);
-                                Alert.alert('Error', 'Failed to update player status');
+                                const errorText = await response.text();
+                                console.error('❌ API Error:', response.status, errorText);
+                                alert(`API Error: ${response.status} - ${errorText}`);
                               }
                             } catch (error) {
-                              console.error('❌ Error toggling player status:', error);
-                              Alert.alert('Error', 'Failed to update player status');
+                              console.error('❌ Network/JS Error:', error);
+                              alert(`Error: ${error.message}`);
                             }
                           }}
                           style={[
