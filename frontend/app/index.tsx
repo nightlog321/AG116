@@ -1504,7 +1504,7 @@ function AdminConsole({
                                       
                                       if (response.ok) {
                                         Alert.alert('Deleted', `${player.name} has been permanently deleted`);
-                                        await fetchPlayers(); // Refresh player list
+                                        await onFetchPlayers(); // Refresh player list
                                       } else {
                                         Alert.alert('Error', 'Failed to delete player');
                                       }
