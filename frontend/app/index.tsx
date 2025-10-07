@@ -63,6 +63,7 @@ interface Player {
   sitNextRound: boolean;
   sitCount: number;
   missDueToCourtLimit: number;
+  isActive: boolean;  // Can be toggled for daily sessions
   // DUPR-style rating fields
   rating: number;
   matchesPlayed: number;
