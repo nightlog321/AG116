@@ -395,11 +395,16 @@ export default function PickleballManager() {
   };
 
   const initializeApp = async () => {
+    if (!clubSession) {
+      console.error('No club session available for initialization');
+      return;
+    }
+    
     try {
       setLoading(true);
       
-      // Initialize backend data
-      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/init`, {
+      // Initialize backend data with club context
+      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/init?club_name=${clubSession.club_name}`, {
         method: 'POST',
       });
 
