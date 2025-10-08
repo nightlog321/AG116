@@ -1899,7 +1899,7 @@ async def get_session(club_name: str = "Main Club", db_session: AsyncSession = D
         raise HTTPException(status_code=500, detail=f"Failed to get session: {str(e)}")
 
 @api_router.put("/session/config", response_model=SessionState)
-async def update_session_config(config: SessionConfig, db_session: AsyncSession = Depends(get_db_session)):
+async def update_session_config(config: SessionConfig, club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
     """Update session configuration in SQLite database"""
     try:
         # Validate that at least one format is selected
