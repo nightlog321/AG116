@@ -1916,6 +1916,7 @@ async def update_session_config(config: SessionConfig, club_name: str = "Main Cl
             # Create new session with provided config
             session_obj = SessionState(config=config)
             db_session_record = DBSession(
+                club_name=club_name,
                 current_round=session_obj.currentRound,
                 phase=session_obj.phase.value,
                 time_remaining=session_obj.timeRemaining,
