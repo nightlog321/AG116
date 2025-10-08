@@ -609,11 +609,13 @@ export default function PickleballManager() {
     setClubSession(null);
   };
 
-  const handleLoginSuccess = (sessionData: any) => {
+  const handleLoginSuccess = async (sessionData: any) => {
     setClubSession(sessionData);
     setAuthenticated(true);
     setLoading(true);
-    initializeApp();
+    
+    // Use the sessionData directly instead of relying on state
+    await initializeAppWithSession(sessionData);
   };
 
   const logout = async () => {
