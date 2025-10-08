@@ -459,8 +459,10 @@ export default function PickleballManager() {
   };
 
   const fetchSession = async () => {
+    if (!clubSession) return;
+    
     try {
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session`);
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session?club_name=${clubSession.club_name}`);
       const data = await response.json();
       setSession(data);
     } catch (error) {
