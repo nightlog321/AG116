@@ -570,11 +570,13 @@ export default function PickleballManager() {
 
   // Generate matches function (without starting timer)
   const generateMatches = async () => {
+    if (!clubSession) return;
+    
     try {
       // Initialize audio on user interaction
       initializeAudio();
       
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/generate-matches`, {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/generate-matches?club_name=${clubSession.club_name}`, {
         method: 'POST'
       });
       
