@@ -193,9 +193,8 @@ export default function LoginScreen() {
         // Store club session
         await AsyncStorage.setItem('clubSession', JSON.stringify(data));
         
-        Alert.alert('Club Created!', `${data.display_name} has been created successfully`, [
-          { text: 'Continue', onPress: () => router.replace('/') }
-        ]);
+        // Immediate redirect to main app
+        router.replace('/');
       } else {
         Alert.alert('Registration Failed', data.detail || 'Failed to create club');
       }
