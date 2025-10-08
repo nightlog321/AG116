@@ -860,7 +860,7 @@ export default function PickleballManager() {
       }
       
       // Reset session via backend API
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/reset`, {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/reset?club_name=${clubSession?.club_name || 'Main Club'}`, {
         method: 'POST'
       });
       
