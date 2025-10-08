@@ -692,31 +692,25 @@ export default function PickleballManager() {
     console.log('Buffer phase completed. Waiting for manual Next Round button click.');
   };
 
-  const initializeApp = async () => {
-    if (!clubSession) {
-      console.error('No club session available for initialization');
-      setLoading(false);
-      return;
-    }
-    
+  const initializeAppWithSession = async (sessionData: any) => {
     try {
       setLoading(true);
       
       // Initialize backend data with club context
-      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/init?club_name=${clubSession.club_name}`, {
+      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/init?club_name=${sessionData.club_name}`, {
         method: 'POST',
       });
 
       // Optimize: Fetch essential data first, then secondary data
       await Promise.all([
-        fetchSession(), // Most important for app state
-        fetchPlayers()  // Needed for main functionality
+        fetchSessionWithClub(sessionData.club_name),
+        fetchPlayersWithClub(sessionData.club_name)
       ]);
       
       // Fetch secondary data after main data loads
       await Promise.all([
         fetchCategories(),
-        fetchMatches()
+        fetchMatchesWithClub(sessionData.club_name)
       ]);
     } catch (error) {
       console.error('Error initializing app:', error);
@@ -724,6 +718,16 @@ export default function PickleballManager() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const initializeApp = async () => {
+    if (!clubSession) {
+      console.error('No club session available for initialization');
+      setLoading(false);
+      return;
+    }
+    
+    return initializeAppWithSession(clubSession);
   };
 
   const fetchPlayers = async () => {
