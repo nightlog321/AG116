@@ -869,7 +869,11 @@ export default function PickleballManager() {
 
   // Redirect to login if not authenticated
   if (!authenticated || !clubSession) {
-    return null; // This allows expo-router to handle the redirect
+    // Ensure redirect happens
+    if (!loading) {
+      router.replace('/login');
+    }
+    return null;
   }
 
   return (
