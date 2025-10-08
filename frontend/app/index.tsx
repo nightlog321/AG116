@@ -761,16 +761,19 @@ export default function PickleballManager() {
     }
   };
 
-  const fetchSession = async () => {
-    if (!clubSession) return;
-    
+  const fetchSessionWithClub = async (clubName: string) => {
     try {
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session?club_name=${clubSession.club_name}`);
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session?club_name=${clubName}`);
       const data = await response.json();
       setSession(data);
     } catch (error) {
       console.error('Error fetching session:', error);
     }
+  };
+
+  const fetchSession = async () => {
+    if (!clubSession) return;
+    return fetchSessionWithClub(clubSession.club_name);
   };
 
   const fetchMatches = async () => {
