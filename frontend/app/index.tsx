@@ -597,10 +597,10 @@ export default function PickleballManager() {
 
   // Start session function (just starts timer)
   const nextRound = async () => {
-    if (!session) return;
+    if (!session || !clubSession) return;
     
     try {
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/next-round`, {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/next-round?club_name=${clubSession.club_name}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
