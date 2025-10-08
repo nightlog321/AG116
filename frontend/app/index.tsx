@@ -1484,7 +1484,7 @@ function AdminConsole({
     }
   };
 
-  if (!session) return <Text style={styles.loadingText}>Loading session...</Text>;
+  // Removed session check to prevent loading loop
 
   return (
     <View style={styles.adminContainer}>
