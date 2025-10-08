@@ -397,6 +397,7 @@ export default function PickleballManager() {
   const initializeApp = async () => {
     if (!clubSession) {
       console.error('No club session available for initialization');
+      setLoading(false);
       return;
     }
     
