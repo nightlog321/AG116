@@ -937,7 +937,7 @@ export default function PickleballManager() {
       // Initialize audio on user interaction
       initializeAudio();
       
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/start`, {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/start?club_name=${clubSession?.club_name || 'Main Club'}`, {
         method: 'POST'
       });
       
