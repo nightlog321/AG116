@@ -867,6 +867,11 @@ export default function PickleballManager() {
     );
   }
 
+  // Redirect to login if not authenticated
+  if (!authenticated || !clubSession) {
+    return null; // This allows expo-router to handle the redirect
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
