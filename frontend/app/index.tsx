@@ -1471,7 +1471,7 @@ function AdminConsole({
   const pauseResume = async () => {
     try {
       const endpoint = session?.paused ? 'resume' : 'pause';
-      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/${endpoint}`, {
+      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/${endpoint}?club_name=${clubSession?.club_name || 'Main Club'}`, {
         method: 'POST'
       });
       onRefresh();
