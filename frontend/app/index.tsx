@@ -309,14 +309,16 @@ export default function PickleballManager() {
         setAuthenticated(true);
         await initializeApp();
       } else {
-        // No session found, redirect to login
+        // No session found, go directly to login state
         setLoading(false);
-        router.push('/login');
+        setAuthenticated(false);
+        setClubSession(null);
       }
     } catch (error) {
       console.error('Error checking authentication:', error);
       setLoading(false);
-      router.push('/login');
+      setAuthenticated(false);
+      setClubSession(null);
     }
   };
 
