@@ -969,6 +969,7 @@ export default function PickleballManager() {
               session={session}
               categories={categories}
               players={players}
+              clubSession={clubSession}
               onRefresh={() => {
                 fetchSession();
                 fetchPlayers();
