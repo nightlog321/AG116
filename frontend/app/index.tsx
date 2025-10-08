@@ -1378,7 +1378,7 @@ function AdminConsole({
   }, [categories]);
 
   useEffect(() => {
-    if (session?.config) {
+    if (session?.config && !editingConfig) {
       const playMins = Math.floor(session.config.playSeconds / 60);
       const playSecs = session.config.playSeconds % 60;
       setConfigForm({
@@ -1392,7 +1392,7 @@ function AdminConsole({
         maximizeCourtUsage: session.config.maximizeCourtUsage || false
       });
     }
-  }, [session]);
+  }, [session, editingConfig]);
 
   const addPlayer = async () => {
     if (!newPlayerName.trim() || !selectedCategory) {
