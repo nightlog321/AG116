@@ -1014,6 +1014,7 @@ function AdminConsole({
   session, 
   categories, 
   players, 
+  clubSession,
   onRefresh,
   onImportCSV,
   onExportCSV,
@@ -1025,6 +1026,7 @@ function AdminConsole({
   session: SessionState | null;
   categories: Category[];
   players: Player[];
+  clubSession: any;
   onRefresh: () => void;
   onImportCSV: () => void;
   onExportCSV: () => void;
