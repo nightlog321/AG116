@@ -156,9 +156,8 @@ export default function LoginScreen() {
         // Store club session
         await AsyncStorage.setItem('clubSession', JSON.stringify(data));
         
-        Alert.alert('Welcome!', `Successfully logged into ${data.display_name}`, [
-          { text: 'Continue', onPress: () => router.replace('/') }
-        ]);
+        // Immediate redirect to main app
+        router.replace('/');
       } else {
         Alert.alert('Login Failed', data.detail || 'Invalid club name or access code');
       }
