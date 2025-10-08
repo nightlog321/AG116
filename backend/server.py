@@ -1909,7 +1909,7 @@ async def update_session_config(config: SessionConfig, club_name: str = "Main Cl
                 detail="At least one format (Singles or Doubles) must be selected"
             )
         
-        result = await db_session.execute(select(DBSession))
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
         session = result.scalar_one_or_none()
         
         if not session:
