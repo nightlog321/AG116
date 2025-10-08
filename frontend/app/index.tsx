@@ -1378,10 +1378,11 @@ function AdminConsole({
   }, [categories]);
 
   useEffect(() => {
+    // Only reset form when explicitly not editing AND when session first loads or changes significantly
     if (session?.config && !editingConfig) {
       const playMins = Math.floor(session.config.playSeconds / 60);
       const playSecs = session.config.playSeconds % 60;
-      setConfigForm({
+      const newFormData = {
         numCourts: session.config.numCourts.toString(),
         playMinutes: playMins.toString(),
         playSeconds: playSecs.toString().padStart(2, '0'),
@@ -1390,9 +1391,16 @@ function AdminConsole({
         allowDoubles: session.config.allowDoubles ?? true,
         allowCrossCategory: session.config.allowCrossCategory || false,
         maximizeCourtUsage: session.config.maximizeCourtUsage || false
-      });
+      };
+      
+      // Only update if the form data is actually different to avoid unnecessary resets
+      const currentFormString = JSON.stringify(configForm);
+      const newFormString = JSON.stringify(newFormData);
+      if (currentFormString !== newFormString) {
+        setConfigForm(newFormData);
+      }
     }
-  }, [session, editingConfig]);
+  }, [session?.config, editingConfig]); // More specific dependency
 
   const addPlayer = async () => {
     if (!newPlayerName.trim() || !selectedCategory) {
