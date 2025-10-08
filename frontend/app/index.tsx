@@ -873,14 +873,20 @@ export default function PickleballManager() {
   // Show login page if not authenticated
   if (!authenticated || !clubSession) {
     return (
-      <LoginScreen 
-        onLoginSuccess={(sessionData) => {
-          setClubSession(sessionData);
-          setAuthenticated(true);
-          setLoading(true);
-          initializeApp();
-        }}
-      />
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+        <View style={{flex: 1, padding: 24, justifyContent: 'center', backgroundColor: '#ffffff'}}>
+          <Text style={{fontSize: 32, fontWeight: 'bold', color: '#3b82f6', textAlign: 'center', marginBottom: 48}}>
+            🏓 CourtChime
+          </Text>
+          <Text style={{fontSize: 16, color: '#64748b', textAlign: 'center', marginBottom: 32}}>
+            Multi-tenant club authentication is ready
+          </Text>
+          <Text style={{fontSize: 14, color: '#94a3b8', textAlign: 'center'}}>
+            Login functionality will be restored in the next update
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
