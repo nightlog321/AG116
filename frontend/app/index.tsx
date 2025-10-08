@@ -1446,7 +1446,7 @@ function AdminConsole({
         return;
       }
 
-      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/config`, {
+      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/config?club_name=${clubSession?.club_name || 'Main Club'}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
