@@ -1446,7 +1446,7 @@ function AdminConsole({
         return;
       }
 
-      await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/config?club_name=${clubSession?.club_name || 'Main Club'}`, {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/config?club_name=${clubSession?.club_name || 'Main Club'}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1460,9 +1460,14 @@ function AdminConsole({
         })
       });
 
-      setEditingConfig(false);
-      onRefresh();
-      Alert.alert('Success', 'Configuration saved successfully!');
+      if (response.ok) {
+        setEditingConfig(false);
+        onRefresh();
+        Alert.alert('Success', 'Configuration saved successfully!');
+      } else {
+        const errorText = await response.text();
+        Alert.alert('Error', `Failed to save configuration: ${errorText}`);
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to save configuration');
     }
