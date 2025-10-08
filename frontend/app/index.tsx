@@ -672,7 +672,7 @@ export default function PickleballManager() {
         Alert.alert('⏰ Round Complete', 'Starting buffer time - preparing next round...', [{ text: 'OK' }]);
         
         // Start buffer phase
-        await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/buffer`, { method: 'POST' });
+        await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/buffer?club_name=${clubSession?.club_name || 'Main Club'}`, { method: 'POST' });
         
         // Fetch updated session
         await fetchSession();
