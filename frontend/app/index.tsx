@@ -1484,7 +1484,7 @@ function AdminConsole({
     try {
       initializeAudio();
       
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/horn`, {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/horn?club_name=${clubSession?.club_name || 'Main Club'}`, {
         method: 'POST'
       });
       
