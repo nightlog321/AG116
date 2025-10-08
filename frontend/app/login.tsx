@@ -193,7 +193,10 @@ export default function LoginScreen() {
         // Store club session
         await AsyncStorage.setItem('clubSession', JSON.stringify(data));
         
-        // Immediate redirect to main app
+        // Add a small delay to ensure storage is written
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Redirect to main app
         router.replace('/');
       } else {
         Alert.alert('Registration Failed', data.detail || 'Failed to create club');
