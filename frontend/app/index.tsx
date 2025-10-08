@@ -870,13 +870,18 @@ export default function PickleballManager() {
     );
   }
 
-  // Redirect to login if not authenticated
+  // Show login page if not authenticated
   if (!authenticated || !clubSession) {
-    // Ensure redirect happens
-    if (!loading) {
-      router.replace('/login');
-    }
-    return null;
+    return (
+      <LoginScreen 
+        onLoginSuccess={(sessionData) => {
+          setClubSession(sessionData);
+          setAuthenticated(true);
+          setLoading(true);
+          initializeApp();
+        }}
+      />
+    );
   }
 
   return (
