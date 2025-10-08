@@ -778,13 +778,11 @@ export default function PickleballManager() {
     return fetchSessionWithClub(clubSession.club_name);
   };
 
-  const fetchMatches = async () => {
-    if (!clubSession) return;
-    
+  const fetchMatchesWithClub = async (clubName: string) => {
     try {
       // Add cache-busting parameter to ensure fresh data
       const timestamp = new Date().getTime();
-      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/matches?club_name=${clubSession.club_name}&t=${timestamp}`, {
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/matches?club_name=${clubName}&t=${timestamp}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
@@ -796,6 +794,11 @@ export default function PickleballManager() {
     } catch (error) {
       console.error('Error fetching matches:', error);
     }
+  };
+
+  const fetchMatches = async () => {
+    if (!clubSession) return;
+    return fetchMatchesWithClub(clubSession.club_name);
   };
 
   const formatTime = (seconds: number) => {
