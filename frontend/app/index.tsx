@@ -307,6 +307,13 @@ export default function PickleballManager() {
     setClubSession(null);
   };
 
+  const handleLoginSuccess = (sessionData: any) => {
+    setClubSession(sessionData);
+    setAuthenticated(true);
+    setLoading(true);
+    initializeApp();
+  };
+
   const logout = async () => {
     try {
       await AsyncStorage.removeItem('clubSession');
