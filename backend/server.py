@@ -1682,10 +1682,10 @@ async def get_active_players(club_name: str = "Main Club", db_session: AsyncSess
 
 # Matches
 @api_router.get("/matches", response_model=List[Match])
-async def get_matches(db_session: AsyncSession = Depends(get_db_session)):
-    """Get all matches from SQLite database"""
+async def get_matches(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Get matches for a specific club from SQLite database"""
     try:
-        result = await db_session.execute(select(DBMatch))
+        result = await db_session.execute(select(DBMatch).where(DBMatch.club_name == club_name))
         matches = result.scalars().all()
         
         # Convert SQLAlchemy models to Pydantic models
