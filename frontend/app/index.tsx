@@ -1949,6 +1949,9 @@ function CourtsDashboard({
   setMatches: (matches: Match[]) => void;
 }) {
   const [scoreInputs, setScoreInputs] = useState<{[matchId: string]: {scoreA: string, scoreB: string}}>({});
+  const [originalMatches, setOriginalMatches] = useState<Match[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedPlayer, setDraggedPlayer] = useState<{playerId: string, fromMatch: string, fromTeam: 'A' | 'B', fromIndex: number} | null>(null);
 
   const getPlayerName = (playerId: string) => {
     const player = players.find(p => p.id === playerId);
