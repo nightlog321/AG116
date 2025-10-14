@@ -2094,7 +2094,7 @@ function CourtsDashboard({
   };
 
   const validateCourts = () => {
-    const currentMatches = getCurrentMatches();
+    const currentMatches = matches;
     let isValid = true;
     let errors: string[] = [];
     
