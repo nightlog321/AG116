@@ -1953,9 +1953,102 @@ function CourtsDashboard({
   const [isDragging, setIsDragging] = useState(false);
   const [draggedPlayer, setDraggedPlayer] = useState<{playerId: string, fromMatch: string, fromTeam: 'A' | 'B', fromIndex: number} | null>(null);
 
+  // Store original matches when they first load
+  useEffect(() => {
+    if (matches.length > 0 && originalMatches.length === 0) {
+      setOriginalMatches([...matches]);
+    }
+  }, [matches]);
+
   const getPlayerName = (playerId: string) => {
     const player = players.find(p => p.id === playerId);
     return player ? player.name : 'Unknown Player';
+  };
+
+  const resetToOriginal = () => {
+    if (originalMatches.length > 0) {
+      setMatches([...originalMatches]);
+    }
+  };
+
+  const movePlayer = (fromMatchId: string, fromTeam: 'A' | 'B', fromIndex: number, toMatchId: string, toTeam: 'A' | 'B', toIndex: number) => {
+    const updatedMatches = [...matches];
+    
+    // Find source and destination matches
+    const fromMatchIndex = updatedMatches.findIndex(m => m.id === fromMatchId);
+    const toMatchIndex = updatedMatches.findIndex(m => m.id === toMatchId);
+    
+    if (fromMatchIndex === -1 || toMatchIndex === -1) return;
+    
+    const fromMatch = updatedMatches[fromMatchIndex];
+    const toMatch = updatedMatches[toMatchIndex];
+    
+    // Get the player being moved
+    const sourceTeam = fromTeam === 'A' ? fromMatch.teamA : fromMatch.teamB;
+    const targetTeam = toTeam === 'A' ? toMatch.teamA : toMatch.teamB;
+    
+    if (fromIndex >= sourceTeam.length) return;
+    
+    const playerId = sourceTeam[fromIndex];
+    
+    // Remove player from source
+    sourceTeam.splice(fromIndex, 1);
+    
+    // Add player to destination
+    if (toIndex >= targetTeam.length) {
+      targetTeam.push(playerId);
+    } else {
+      targetTeam.splice(toIndex, 0, playerId);
+    }
+    
+    setMatches(updatedMatches);
+  };
+
+  const swapPlayers = (match1Id: string, team1: 'A' | 'B', index1: number, match2Id: string, team2: 'A' | 'B', index2: number) => {
+    const updatedMatches = [...matches];
+    
+    // Find matches
+    const match1Index = updatedMatches.findIndex(m => m.id === match1Id);
+    const match2Index = updatedMatches.findIndex(m => m.id === match2Id);
+    
+    if (match1Index === -1 || match2Index === -1) return;
+    
+    const match1 = updatedMatches[match1Index];
+    const match2 = updatedMatches[match2Index];
+    
+    const team1Players = team1 === 'A' ? match1.teamA : match1.teamB;
+    const team2Players = team2 === 'A' ? match2.teamA : match2.teamB;
+    
+    if (index1 >= team1Players.length || index2 >= team2Players.length) return;
+    
+    // Swap players
+    const temp = team1Players[index1];
+    team1Players[index1] = team2Players[index2];
+    team2Players[index2] = temp;
+    
+    setMatches(updatedMatches);
+  };
+
+  const validateCourts = () => {
+    const currentMatches = getCurrentMatches();
+    let isValid = true;
+    let errors: string[] = [];
+    
+    currentMatches.forEach((match, index) => {
+      const totalPlayers = match.teamA.length + match.teamB.length;
+      const expectedPlayers = match.matchType === 'singles' ? 2 : 4;
+      
+      if (totalPlayers !== expectedPlayers) {
+        isValid = false;
+        errors.push(`Court ${match.courtIndex + 1}: Expected ${expectedPlayers} players, has ${totalPlayers}`);
+      }
+    });
+    
+    if (!isValid) {
+      Alert.alert('Invalid Court Configuration', errors.join('\n'));
+    }
+    
+    return isValid;
   };
 
   const getCurrentMatches = () => {
