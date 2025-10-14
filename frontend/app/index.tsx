@@ -800,7 +800,10 @@ export default function PickleballManager() {
   };
 
   const fetchMatches = async () => {
-    if (!clubSession) return;
+    if (!clubSession) {
+      // Fallback to Main Club if no session
+      return fetchMatchesWithClub('Main Club');
+    }
     return fetchMatchesWithClub(clubSession.club_name);
   };
 
