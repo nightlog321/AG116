@@ -2333,16 +2333,10 @@ function CourtsDashboard({
                             index={playerIndex}
                             onMove={movePlayer}
                             onSwap={swapPlayers}
+                            isSelected={selectedPlayer?.matchId === match.id && selectedPlayer?.team === 'B' && selectedPlayer?.index === playerIndex}
+                            onSelect={handlePlayerSelect}
                           />
                         ))}
-                        {/* Drop zone for Team B */}
-                        <DropZone 
-                          matchId={match.id}
-                          team="B"
-                          onDrop={(fromMatchId, fromTeam, fromIndex) => 
-                            movePlayer(fromMatchId, fromTeam, fromIndex, match.id, 'B', match.teamB.length)
-                          }
-                        />
                       </View>
                     </View>
                     <Text style={styles.matchType}>{match.matchType.toUpperCase()}</Text>
