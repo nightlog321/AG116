@@ -1931,7 +1931,7 @@ function AdminConsole({
 }
 
 // Courts Dashboard Component (same structure, updated styles)
-// Draggable Player Component
+// Draggable Player Component with tap-to-select functionality
 function DraggablePlayer({ 
   playerId, 
   playerName, 
@@ -1939,7 +1939,9 @@ function DraggablePlayer({
   team, 
   index, 
   onMove, 
-  onSwap 
+  onSwap,
+  isSelected,
+  onSelect 
 }: {
   playerId: string;
   playerName: string;
@@ -1948,23 +1950,24 @@ function DraggablePlayer({
   index: number;
   onMove: (fromMatchId: string, fromTeam: 'A' | 'B', fromIndex: number, toMatchId: string, toTeam: 'A' | 'B', toIndex: number) => void;
   onSwap: (match1Id: string, team1: 'A' | 'B', index1: number, match2Id: string, team2: 'A' | 'B', index2: number) => void;
+  isSelected: boolean;
+  onSelect: (matchId: string, team: 'A' | 'B', index: number) => void;
 }) {
-  const [isDragging, setIsDragging] = useState(false);
+  
+  const handlePress = () => {
+    onSelect(matchId, team, index);
+  };
   
   return (
     <TouchableOpacity
-      style={[styles.draggablePlayer, isDragging && styles.draggingPlayer]}
-      onLongPress={() => {
-        setIsDragging(true);
-        // Could add haptic feedback here
-      }}
-      onPressOut={() => setIsDragging(false)}
+      style={[styles.draggablePlayer, isSelected && styles.selectedPlayer]}
+      onPress={handlePress}
       activeOpacity={0.7}
     >
-      <View style={styles.playerChip}>
-        <Ionicons name="person" size={16} color={colors.primary} />
-        <Text style={styles.draggablePlayerName}>{playerName}</Text>
-        <Ionicons name="drag-handle" size={16} color={colors.textMuted} />
+      <View style={[styles.playerChip, isSelected && styles.selectedPlayerChip]}>
+        <Ionicons name="person" size={16} color={isSelected ? '#ffffff' : colors.primary} />
+        <Text style={[styles.draggablePlayerName, isSelected && styles.selectedPlayerName]}>{playerName}</Text>
+        <Ionicons name="swap-horizontal" size={16} color={isSelected ? '#ffffff' : colors.textMuted} />
       </View>
     </TouchableOpacity>
   );
