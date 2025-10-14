@@ -2225,20 +2225,50 @@ function CourtsDashboard({
                     <View style={styles.matchTeams}>
                       <View style={styles.team}>
                         <Text style={styles.teamLabel}>Team A:</Text>
-                        {match.teamA.map(playerId => (
-                          <Text key={playerId} style={styles.playerName}>
-                            {getPlayerName(playerId)}
-                          </Text>
+                        {match.teamA.map((playerId, playerIndex) => (
+                          <DraggablePlayer 
+                            key={`${match.id}-A-${playerIndex}`}
+                            playerId={playerId}
+                            playerName={getPlayerName(playerId)}
+                            matchId={match.id}
+                            team="A"
+                            index={playerIndex}
+                            onMove={movePlayer}
+                            onSwap={swapPlayers}
+                          />
                         ))}
+                        {/* Drop zone for Team A */}
+                        <DropZone 
+                          matchId={match.id}
+                          team="A"
+                          onDrop={(fromMatchId, fromTeam, fromIndex) => 
+                            movePlayer(fromMatchId, fromTeam, fromIndex, match.id, 'A', match.teamA.length)
+                          }
+                        />
                       </View>
                       <Text style={styles.vs}>VS</Text>
                       <View style={styles.team}>
                         <Text style={styles.teamLabel}>Team B:</Text>
-                        {match.teamB.map(playerId => (
-                          <Text key={playerId} style={styles.playerName}>
-                            {getPlayerName(playerId)}
-                          </Text>
+                        {match.teamB.map((playerId, playerIndex) => (
+                          <DraggablePlayer 
+                            key={`${match.id}-B-${playerIndex}`}
+                            playerId={playerId}
+                            playerName={getPlayerName(playerId)}
+                            matchId={match.id}
+                            team="B"
+                            index={playerIndex}
+                            onMove={movePlayer}
+                            onSwap={swapPlayers}
+                          />
                         ))}
+                        {/* Drop zone for Team B */}
+                        <DropZone 
+                          matchId={match.id}
+                          team="B"
+                          onDrop={(fromMatchId, fromTeam, fromIndex) => 
+                            movePlayer(fromMatchId, fromTeam, fromIndex, match.id, 'B', match.teamB.length)
+                          }
+                        />
                       </View>
                     </View>
                     <Text style={styles.matchType}>{match.matchType.toUpperCase()}</Text>
