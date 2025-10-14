@@ -2004,8 +2004,12 @@ function CourtsDashboard({
   }, [matches]);
 
   const getPlayerName = (playerId: string) => {
+    console.log('🔍 Getting player name for ID:', playerId);
+    console.log('🔍 Available players:', players.length, players.map(p => ({id: p.id, name: p.name})));
     const player = players.find(p => p.id === playerId);
-    return player ? player.name : 'Unknown Player';
+    const result = player ? player.name : 'Unknown Player';
+    console.log('🔍 Result:', result);
+    return result;
   };
 
   const resetToOriginal = () => {
