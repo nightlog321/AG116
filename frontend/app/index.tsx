@@ -3705,6 +3705,17 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontStyle: 'italic',
   },
+  selectedPlayer: {
+    transform: [{ scale: 1.05 }],
+  },
+  selectedPlayerChip: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primaryDark,
+  },
+  selectedPlayerName: {
+    color: '#ffffff',
+    fontWeight: '600',
+  },
   // Player management styles
   playerMainInfo: {
     flex: 1,
