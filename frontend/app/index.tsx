@@ -2251,13 +2251,32 @@ function CourtsDashboard({
           })}
         </ScrollView>
 
+        {/* Reshuffling Controls */}
+        <View style={styles.reshuffleContainer}>
+          <TouchableOpacity 
+            onPress={resetToOriginal}
+            style={styles.resetButton}
+          >
+            <Ionicons name="refresh" size={20} color={colors.primary} />
+            <Text style={styles.resetButtonText}>Reset to Original</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.dragHint}>
+            💡 Tap and hold players to drag them between courts
+          </Text>
+        </View>
+
         {/* Let's Play Button - only show when ready */}
         <View style={styles.readyActionContainer}>
           <Text style={styles.readyMessage}>
-            ✅ Court assignments ready! Players can see their matches above.
+            ✅ Court assignments ready! Tap "Let's Play" or rearrange players first.
           </Text>
           <TouchableOpacity 
-            onPress={onStartSession}
+            onPress={() => {
+              if (validateCourts()) {
+                onStartSession();
+              }
+            }}
           >
             <LinearGradient
               colors={[colors.success, colors.teal]}
