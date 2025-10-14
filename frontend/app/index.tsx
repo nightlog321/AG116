@@ -2375,7 +2375,7 @@ function CourtsDashboard({
     );
   }
 
-  const currentMatches = getCurrentMatches();
+  const currentMatches = matches;
   const courts = Array.from({ length: session.config.numCourts }, (_, i) => i);
   
   return (
