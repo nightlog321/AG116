@@ -1931,6 +1931,63 @@ function AdminConsole({
 }
 
 // Courts Dashboard Component (same structure, updated styles)
+// Draggable Player Component
+function DraggablePlayer({ 
+  playerId, 
+  playerName, 
+  matchId, 
+  team, 
+  index, 
+  onMove, 
+  onSwap 
+}: {
+  playerId: string;
+  playerName: string;
+  matchId: string;
+  team: 'A' | 'B';
+  index: number;
+  onMove: (fromMatchId: string, fromTeam: 'A' | 'B', fromIndex: number, toMatchId: string, toTeam: 'A' | 'B', toIndex: number) => void;
+  onSwap: (match1Id: string, team1: 'A' | 'B', index1: number, match2Id: string, team2: 'A' | 'B', index2: number) => void;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  
+  return (
+    <TouchableOpacity
+      style={[styles.draggablePlayer, isDragging && styles.draggingPlayer]}
+      onLongPress={() => {
+        setIsDragging(true);
+        // Could add haptic feedback here
+      }}
+      onPressOut={() => setIsDragging(false)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.playerChip}>
+        <Ionicons name="person" size={16} color={colors.primary} />
+        <Text style={styles.draggablePlayerName}>{playerName}</Text>
+        <Ionicons name="drag-handle" size={16} color={colors.textMuted} />
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// Drop Zone Component
+function DropZone({ 
+  matchId, 
+  team, 
+  onDrop 
+}: {
+  matchId: string;
+  team: 'A' | 'B';
+  onDrop: (fromMatchId: string, fromTeam: 'A' | 'B', fromIndex: number) => void;
+}) {
+  return (
+    <View style={styles.dropZone}>
+      <Ionicons name="add-circle-outline" size={20} color={colors.textMuted} />
+      <Text style={styles.dropZoneText}>Drop player here</Text>
+    </View>
+  );
+}
+
 function CourtsDashboard({ 
   session, 
   matches, 
