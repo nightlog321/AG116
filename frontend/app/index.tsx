@@ -2360,7 +2360,7 @@ function CourtsDashboard({
           </TouchableOpacity>
           
           <Text style={styles.dragHint}>
-            💡 Tap and hold players to drag them between courts
+            💡 Tap players to select, then tap another to swap
           </Text>
         </View>
 
