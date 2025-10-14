@@ -2027,6 +2027,27 @@ function CourtsDashboard({
   const resetToOriginal = () => {
     if (originalMatches.length > 0) {
       setMatches([...originalMatches]);
+      setSelectedPlayer(null);
+    }
+  };
+
+  const handlePlayerSelect = (matchId: string, team: 'A' | 'B', index: number) => {
+    if (!selectedPlayer) {
+      // First selection
+      setSelectedPlayer({ matchId, team, index });
+    } else {
+      // Second selection - perform swap
+      if (selectedPlayer.matchId === matchId && selectedPlayer.team === team && selectedPlayer.index === index) {
+        // Same player clicked - deselect
+        setSelectedPlayer(null);
+      } else {
+        // Different player - swap them
+        swapPlayers(
+          selectedPlayer.matchId, selectedPlayer.team, selectedPlayer.index,
+          matchId, team, index
+        );
+        setSelectedPlayer(null);
+      }
     }
   };
 
