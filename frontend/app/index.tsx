@@ -2262,7 +2262,7 @@ function CourtsDashboard({
   }
 
   if (session.phase === 'ready') {
-    const currentMatches = getCurrentMatches();
+    const currentMatches = matches;
     return (
       <View style={styles.dashboardContainer}>
         {/* Show court assignments */}
