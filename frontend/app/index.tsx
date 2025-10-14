@@ -1973,23 +1973,7 @@ function DraggablePlayer({
   );
 }
 
-// Drop Zone Component
-function DropZone({ 
-  matchId, 
-  team, 
-  onDrop 
-}: {
-  matchId: string;
-  team: 'A' | 'B';
-  onDrop: (fromMatchId: string, fromTeam: 'A' | 'B', fromIndex: number) => void;
-}) {
-  return (
-    <View style={styles.dropZone}>
-      <Ionicons name="add-circle-outline" size={20} color={colors.textMuted} />
-      <Text style={styles.dropZoneText}>Drop player here</Text>
-    </View>
-  );
-}
+// Drop Zone Component removed - using tap-to-swap instead
 
 function CourtsDashboard({ 
   session, 
