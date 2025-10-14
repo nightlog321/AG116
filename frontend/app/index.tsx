@@ -3617,6 +3617,83 @@ const styles = StyleSheet.create({
   nextRoundButtonTextDisabled: {
     color: '#888888', // Darker text for disabled state
   },
+  
+  // Drag and Drop Styles
+  reshuffleContainer: {
+    padding: 16,
+    backgroundColor: colors.surface,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  resetButtonText: {
+    color: colors.primary,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  dragHint: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontStyle: 'italic',
+    flex: 1,
+    textAlign: 'right',
+  },
+  draggablePlayer: {
+    marginVertical: 2,
+  },
+  draggingPlayer: {
+    opacity: 0.7,
+    transform: [{ scale: 1.05 }],
+  },
+  playerChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginVertical: 2,
+  },
+  draggablePlayerName: {
+    flex: 1,
+    marginLeft: 6,
+    marginRight: 4,
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  dropZone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+    marginVertical: 4,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+  },
+  dropZoneText: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: colors.textMuted,
+    fontStyle: 'italic',
+  },
   // Player management styles
   playerMainInfo: {
     flex: 1,
