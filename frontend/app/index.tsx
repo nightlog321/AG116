@@ -2010,8 +2010,7 @@ function CourtsDashboard({
 }) {
   const [scoreInputs, setScoreInputs] = useState<{[matchId: string]: {scoreA: string, scoreB: string}}>({});
   const [originalMatches, setOriginalMatches] = useState<Match[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [draggedPlayer, setDraggedPlayer] = useState<{playerId: string, fromMatch: string, fromTeam: 'A' | 'B', fromIndex: number} | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<{matchId: string, team: 'A' | 'B', index: number} | null>(null);
 
   // Store original matches when they first load
   useEffect(() => {
