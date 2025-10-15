@@ -431,6 +431,7 @@ interface SessionState {
 }
 
 // Audio functionality removed - will be added later with custom sounds
+let oneMinuteWarningPlayed = false; // Keep for logic control
 
 // CSV Processing Functions
 const parseCSVLine = (line: string): string[] => {
