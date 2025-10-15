@@ -463,7 +463,7 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
             return await schedule_round(round_index, db_session)
     
     # Get current session and configuration - SQLite version with club support
-    club_name = "Main Club"  # Default for now, will be passed as parameter later
+    # club_name is now passed as parameter
     result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
     db_session_obj = result.scalar_one_or_none()
     if not db_session_obj:
