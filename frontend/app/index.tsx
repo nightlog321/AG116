@@ -571,7 +571,8 @@ export default function PickleballManager() {
       await AsyncStorage.removeItem('clubSession');
       setAuthenticated(false);
       setClubSession(null);
-      router.push('/login'); // Navigate to the login redirect route
+      // Don't use router.push - just let the component re-render to show login
+      // The LoginPage will be shown automatically when authenticated is false
     } catch (error) {
       console.error('Error during logout:', error);
     }
