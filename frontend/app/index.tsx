@@ -537,12 +537,18 @@ export default function PickleballManager() {
   };
 
   const handleLoginSuccess = async (sessionData: any) => {
-    setClubSession(sessionData);
-    setAuthenticated(true);
-    setLoading(true);
-    
-    // Use the sessionData directly instead of relying on state
-    await initializeAppWithSession(sessionData);
+    console.log('🔐 handleLoginSuccess called');
+    try {
+      setClubSession(sessionData);
+      setAuthenticated(true);
+      setLoading(true);
+      
+      // Use the sessionData directly instead of relying on state
+      await initializeAppWithSession(sessionData);
+      console.log('✅ Login success flow completed');
+    } catch (error) {
+      console.error('❌ Error in handleLoginSuccess:', error);
+    }
   };
 
   const logout = async () => {
