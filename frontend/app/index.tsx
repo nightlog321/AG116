@@ -556,7 +556,8 @@ export default function PickleballManager() {
       await AsyncStorage.removeItem('clubSession');
       setAuthenticated(false);
       setClubSession(null);
-      router.push('/login');
+      setLoading(false);
+      // No router navigation needed - the render logic will show LoginPage
     } catch (error) {
       console.error('Error during logout:', error);
     }
