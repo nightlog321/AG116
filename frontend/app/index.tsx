@@ -569,7 +569,7 @@ export default function PickleballManager() {
   // Reset warning flag when new round starts and manage timer
   useEffect(() => {
     if (session?.phase === 'play') {
-      oneMinuteWarningPlayed = false;
+      oneMinuteWarningPlayedRef.current = false;
       // Start timer countdown for play phase
       if (!session.paused && !timerRef.current) { // Only start if not already running
         startTimerCountdown();
@@ -772,7 +772,7 @@ export default function PickleballManager() {
         
         if (newTimeRemaining <= 0) {
           // Reset warning flag when round ends
-          oneMinuteWarningPlayed = false;
+          oneMinuteWarningPlayedRef.current = false;
           // Time's up - trigger automatic phase transition
           handleTimeUp(prev);
         }
