@@ -826,7 +826,7 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
             match_type=match.matchType.value,
             score_a=match.scoreA,
             score_b=match.scoreB,
-            club_name="Main Club"
+            club_name=club_name
         )
         db_session.add(db_match)
         # Update histories
