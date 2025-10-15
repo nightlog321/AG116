@@ -522,6 +522,7 @@ export default function PickleballManager() {
   const [authenticated, setAuthenticated] = useState(false);
   const [clubSession, setClubSession] = useState<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const oneMinuteWarningPlayedRef = useRef(false);
 
   // Initialize data
   useEffect(() => {
