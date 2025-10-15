@@ -2007,7 +2007,7 @@ function CourtsDashboard({
     if (matches.length > 0 && originalMatches.length === 0) {
       setOriginalMatches([...matches]);
     }
-  }, [matches]);
+  }, [matches.length]); // Only depend on length to avoid interference with manual changes
 
   const getPlayerName = (playerId: string) => {
     console.log('🔍 Getting player name for ID:', playerId);
