@@ -452,7 +452,7 @@ def update_histories(match: Match, histories: Dict[str, Any]) -> Dict[str, Any]:
     
     return histories
 
-async def schedule_round(round_index: int, db_session: AsyncSession = None) -> List[Match]:
+async def schedule_round(round_index: int, db_session: AsyncSession = None, club_name: str = "Main Club") -> List[Match]:
     """
     Core scheduling algorithm for round-robin matchmaking
     Implements category-based fair pairing with singles/doubles/auto-mix support
