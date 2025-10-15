@@ -2005,11 +2005,18 @@ function CourtsDashboard({
   // Store original matches when they first load - but only in ready phase
   useEffect(() => {
     console.log('🔍 useEffect triggered - matches.length:', matches.length, 'originalMatches.length:', originalMatches.length, 'session phase:', session?.phase);
-    if (matches.length > 0 && originalMatches.length === 0 && session?.phase === 'ready') {
-      console.log('✅ Storing original matches:', matches.length, 'matches');
-      setOriginalMatches([...matches]);
+    if (matches.length > 0 && session?.phase === 'ready') {
+      // Clear and store fresh original matches when entering ready phase with new matches
+      if (originalMatches.length === 0 || session?.currentRound !== originalMatches[0]?.roundIndex) {
+        console.log('✅ Storing fresh original matches:', matches.length, 'matches');
+        setOriginalMatches([...matches]);
+      }
+    } else if (session?.phase !== 'ready' && originalMatches.length > 0) {
+      // Clear original matches when leaving ready phase
+      console.log('🧹 Clearing original matches - not in ready phase');
+      setOriginalMatches([]);
     }
-  }, [matches, session?.phase]); // Depend on matches and session phase
+  }, [matches, session?.phase, session?.currentRound]); // Depend on matches, session phase, and current round
 
   const getPlayerName = (playerId: string) => {
     console.log('🔍 Getting player name for ID:', playerId);
