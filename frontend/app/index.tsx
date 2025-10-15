@@ -764,9 +764,9 @@ export default function PickleballManager() {
         const newTimeRemaining = prev.timeRemaining - 1;
         
         // One-minute warning siren (only during play phase)
-        if (prev.phase === 'play' && newTimeRemaining === 60 && !oneMinuteWarningPlayed) {
+        if (prev.phase === 'play' && newTimeRemaining === 60 && !oneMinuteWarningPlayedRef.current) {
           // playHorn('warning'); // Audio removed
-          oneMinuteWarningPlayed = true;
+          oneMinuteWarningPlayedRef.current = true;
           Alert.alert('⚠️ One Minute Warning', 'One minute remaining in this round!', [{ text: 'OK' }]);
         }
         
