@@ -7,7 +7,7 @@ import requests
 import json
 import time
 
-BACKEND_URL = "https://court-manager-9.preview.emergentagent.com/api"
+BACKEND_URL = "https://club-scheduler-1.preview.emergentagent.com/api"
 
 def debug_toggle_issue():
     session = requests.Session()

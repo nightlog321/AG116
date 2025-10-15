@@ -12,7 +12,7 @@ import sys
 from typing import Dict, List, Any, Optional
 
 # Backend URL from environment
-BACKEND_URL = "https://court-manager-9.preview.emergentagent.com/api"
+BACKEND_URL = "https://club-scheduler-1.preview.emergentagent.com/api"
 
 class CourtChimeAPITester:
     def __init__(self, base_url: str):
