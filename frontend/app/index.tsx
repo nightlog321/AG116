@@ -2002,14 +2002,14 @@ function CourtsDashboard({
   const [originalMatches, setOriginalMatches] = useState<Match[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<{matchId: string, team: 'A' | 'B', index: number} | null>(null);
 
-  // Store original matches when they first load
+  // Store original matches when they first load - but only in ready phase
   useEffect(() => {
-    console.log('🔍 useEffect triggered - matches.length:', matches.length, 'originalMatches.length:', originalMatches.length);
-    if (matches.length > 0 && originalMatches.length === 0) {
+    console.log('🔍 useEffect triggered - matches.length:', matches.length, 'originalMatches.length:', originalMatches.length, 'session phase:', session?.phase);
+    if (matches.length > 0 && originalMatches.length === 0 && session?.phase === 'ready') {
       console.log('✅ Storing original matches:', matches.length, 'matches');
       setOriginalMatches([...matches]);
     }
-  }, [matches.length]); // Only depend on length to avoid interference with manual changes
+  }, [matches, session?.phase]); // Depend on matches and session phase
 
   const getPlayerName = (playerId: string) => {
     console.log('🔍 Getting player name for ID:', playerId);
