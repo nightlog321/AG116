@@ -592,7 +592,7 @@ export default function PickleballManager() {
     try {
       if (currentSession.phase === 'play') {
         // Play phase ended - start buffer phase automatically
-        playHorn('end');
+        // playHorn('end'); // Audio removed
         
         // Show notification
         Alert.alert('⏰ Round Complete', 'Starting buffer time - preparing next round...', [{ text: 'OK' }]);
