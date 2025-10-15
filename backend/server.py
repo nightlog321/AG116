@@ -2192,8 +2192,8 @@ async def start_next_round(club_name: str = "Main Club", db_session: AsyncSessio
         if len(players) < 2:
             raise HTTPException(status_code=400, detail="Not enough players for matches")
         
-        # USE ENHANCED RESHUFFLING ALGORITHM - Call schedule_round function
-        matches_created = await schedule_round(next_round, db_session)
+        # USE ENHANCED RESHUFFLING ALGORITHM - Call schedule_round function with club_name
+        matches_created = await schedule_round(next_round, db_session, club_name)
         
         # Update session to ready phase for next round
         session.current_round = next_round
