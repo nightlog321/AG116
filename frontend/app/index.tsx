@@ -1927,6 +1927,7 @@ function CourtsDashboard({
   const [scoreInputs, setScoreInputs] = useState<{[matchId: string]: {scoreA: string, scoreB: string}}>({});
   const [originalMatches, setOriginalMatches] = useState<Match[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<{matchId: string, team: 'A' | 'B', index: number} | null>(null);
+  const oneMinuteWarningPlayedRef = useRef(false);
 
   // Store original matches when they first load - but only in ready phase
   useEffect(() => {
