@@ -874,7 +874,7 @@ export default function PickleballManager() {
       });
       
       if (response.ok) {
-        playHorn('start');
+        // playHorn('start'); // Audio removed
         
         // Refresh data to get the updated session state
         await fetchSession();
