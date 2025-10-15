@@ -484,7 +484,7 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
     config = session_obj.config
     
     # Get all players and categories - SQLite version
-    result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == "Main Club"))
+    result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == club_name))
     db_players = result.scalars().all()
     
     result = await db_session.execute(select(DBCategory))
