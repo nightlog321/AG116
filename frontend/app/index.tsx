@@ -1435,7 +1435,7 @@ function AdminConsole({
       
       if (response.ok) {
         const data = await response.json();
-        playHorn(data.horn || 'manual');
+        // playHorn(data.horn || 'manual'); // Audio removed
         onRefresh();
       }
     } catch (error) {
