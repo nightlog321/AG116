@@ -2019,9 +2019,15 @@ function CourtsDashboard({
   };
 
   const resetToOriginal = () => {
+    console.log('🔄 Reset to Original clicked');
+    console.log('🔄 Original matches count:', originalMatches.length);
+    console.log('🔄 Current matches count:', matches.length);
     if (originalMatches.length > 0) {
+      console.log('🔄 Resetting matches to original');
       setMatches([...originalMatches]);
       setSelectedPlayer(null);
+    } else {
+      console.log('❌ No original matches stored');
     }
   };
 
