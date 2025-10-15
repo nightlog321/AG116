@@ -2029,7 +2029,11 @@ function CourtsDashboard({
       setMatches([...originalMatches]);
       setSelectedPlayer(null);
     } else {
-      console.log('❌ No original matches stored');
+      console.log('❌ No original matches stored - storing current as original');
+      // If no original matches stored, store current ones as original
+      if (matches.length > 0) {
+        setOriginalMatches([...matches]);
+      }
     }
   };
 
