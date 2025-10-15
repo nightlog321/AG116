@@ -553,6 +553,9 @@ export default function PickleballManager() {
   const handleLoginSuccess = async (sessionData: any) => {
     console.log('🔐 handleLoginSuccess called');
     try {
+      // Store session in AsyncStorage first
+      await AsyncStorage.setItem('clubSession', JSON.stringify(sessionData));
+      
       setClubSession(sessionData);
       setAuthenticated(true);
       setLoading(true);
