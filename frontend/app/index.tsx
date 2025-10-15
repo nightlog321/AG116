@@ -817,7 +817,7 @@ export default function PickleballManager() {
     
     try {
       // Initialize audio on user interaction
-      initializeAudio();
+      // initializeAudio(); // Audio removed
       
       const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/generate-matches?club_name=${clubSession.club_name}`, {
         method: 'POST'
@@ -867,7 +867,7 @@ export default function PickleballManager() {
   const startSession = async () => {
     try {
       // Initialize audio on user interaction
-      initializeAudio();
+      // initializeAudio(); // Audio removed
       
       const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/start?club_name=${clubSession?.club_name || 'Main Club'}`, {
         method: 'POST'
@@ -1427,7 +1427,7 @@ function AdminConsole({
 
   const manualHorn = async () => {
     try {
-      initializeAudio();
+      // initializeAudio(); // Audio removed
       
       const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/horn?club_name=${clubSession?.club_name || 'Main Club'}`, {
         method: 'POST'
