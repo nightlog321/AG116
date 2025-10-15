@@ -530,10 +530,25 @@ export default function PickleballManager() {
   }, []);
 
   const checkAuthentication = async () => {
-    // For now, just go directly to login page
-    setLoading(false);
-    setAuthenticated(false);
-    setClubSession(null);
+    try {
+      const session = await AsyncStorage.getItem('clubSession');
+      if (session) {
+        const parsedSession = JSON.parse(session);
+        setClubSession(parsedSession);
+        setAuthenticated(true);
+        await initializeAppWithSession(parsedSession);
+      } else {
+        // No session found - show login page
+        setLoading(false);
+        setAuthenticated(false);
+        setClubSession(null);
+      }
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      setLoading(false);
+      setAuthenticated(false);
+      setClubSession(null);
+    }
   };
 
   const handleLoginSuccess = async (sessionData: any) => {
