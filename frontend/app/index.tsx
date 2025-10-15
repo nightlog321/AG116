@@ -2004,7 +2004,9 @@ function CourtsDashboard({
 
   // Store original matches when they first load
   useEffect(() => {
+    console.log('🔍 useEffect triggered - matches.length:', matches.length, 'originalMatches.length:', originalMatches.length);
     if (matches.length > 0 && originalMatches.length === 0) {
+      console.log('✅ Storing original matches:', matches.length, 'matches');
       setOriginalMatches([...matches]);
     }
   }, [matches.length]); // Only depend on length to avoid interference with manual changes
