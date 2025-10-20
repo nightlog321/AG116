@@ -228,8 +228,13 @@ def calculate_rating_change(player_rating: float, opponent_avg_rating: float, ga
 async def update_player_ratings(match: dict, teamA_score: int, teamB_score: int, db_session: AsyncSession):
     """
     Update player ratings based on match result (DUPR-style) - SQLite version
+    Note: Social category players are excluded from rating calculations
     """
     try:
+        # Skip rating updates for Social category matches
+        if match.get('category') == 'Social':
+            return  # Social matches don't affect ratings
+        
         # Get all players in the match
         all_player_ids = match['teamA'] + match['teamB']
         players = []
