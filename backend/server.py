@@ -1320,7 +1320,8 @@ async def clear_all_data(db: AsyncSession = Depends(get_db_session)):
         default_categories = [
             DBCategory(name="Beginner"),
             DBCategory(name="Intermediate"), 
-            DBCategory(name="Advanced")
+            DBCategory(name="Advanced"),
+            DBCategory(name="Social")
         ]
         
         for category in default_categories:
