@@ -2514,14 +2514,14 @@ function PlayersBoard({ players, matches }: { players: Player[]; matches: Match[
     return colors.textMuted; // Default for lower ratings
   };
 
-  if (players.length === 0) {
+  if (ratedPlayers.length === 0) {
     return (
       <View style={styles.dashboardContainer}>
         <View style={styles.card}>
           <Ionicons name="trophy" size={48} color={colors.primary} />
-          <Text style={styles.emptyTitle}>No Players</Text>
+          <Text style={styles.emptyTitle}>No Rated Players</Text>
           <Text style={styles.emptyText}>
-            Add players from the Admin tab to get started with ratings
+            Add players from the Admin tab to get started with ratings. Social players are not included in ratings.
           </Text>
         </View>
       </View>
@@ -2533,6 +2533,9 @@ function PlayersBoard({ players, matches }: { players: Player[]; matches: Match[
       {/* Header */}
       <View style={styles.standingsHeader}>
         <Text style={styles.standingsTitle}>Player Ratings</Text>
+        <Text style={styles.standingsSubtitle}>
+          {sortedPlayers.length} rated players • Social players excluded
+        </Text>
       </View>
       
       {/* Standings List */}
