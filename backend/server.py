@@ -1807,7 +1807,8 @@ async def update_match_score(match_id: str, score_update: MatchScoreUpdate, db_s
         match_dict = {
             'id': db_match.id,
             'teamA': team_a,
-            'teamB': team_b
+            'teamB': team_b,
+            'category': db_match.category  # Include category to check for Social
         }
         await update_player_ratings(match_dict, score_update.scoreA, score_update.scoreB, db_session)
         
