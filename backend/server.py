@@ -2439,7 +2439,8 @@ async def initialize_data(club_name: str = "Main Club", db_session: AsyncSession
             default_categories = [
                 {"name": "Beginner", "description": "New to pickleball"},
                 {"name": "Intermediate", "description": "Some experience"},
-                {"name": "Advanced", "description": "Experienced players"}
+                {"name": "Advanced", "description": "Experienced players"},
+                {"name": "Social", "description": "Casual play - no scoring required"}
             ]
             
             for cat_data in default_categories:
