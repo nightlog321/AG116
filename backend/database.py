@@ -146,7 +146,8 @@ async def init_database():
             default_categories = [
                 Category(name="Beginner"),
                 Category(name="Intermediate"),
-                Category(name="Advanced")
+                Category(name="Advanced"),
+                Category(name="Social")
             ]
             
             for category in default_categories:
