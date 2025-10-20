@@ -1151,15 +1151,28 @@ export default function PickleballManager() {
         end={{ x: 1, y: 1 }}
         style={styles.header}
       >
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>CourtChime</Text>
-          {clubSession && (
-            <Text style={styles.clubName}>{clubSession.display_name}</Text>
-          )}
+        <View style={styles.headerContent}>
+          {/* Logo on the left */}
+          <View style={styles.headerLeft}>
+            <Image 
+              source={require('../assets/logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+          
+          {/* Logout button on top right */}
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={logout}
+          >
+            <Ionicons name="log-out-outline" size={24} color="#ffffff" />
+          </TouchableOpacity>
         </View>
-        
-        <View style={styles.headerCenter}>
-          {session && (
+
+        {/* Session info pushed to the right below */}
+        {session && (
+          <View style={styles.sessionInfoContainer}>
             <View style={styles.sessionInfo}>
               <Text style={styles.sessionText}>
                 Round {session.currentRound}/{computeRoundsPlanned} | {session.phase.toUpperCase()}
@@ -1175,15 +1188,8 @@ export default function PickleballManager() {
                 </Text>
               )}
             </View>
-          )}
-        </View>
-
-        <TouchableOpacity 
-          style={styles.logoutButton}
-          onPress={logout}
-        >
-          <Ionicons name="log-out-outline" size={24} color="#ffffff" />
-        </TouchableOpacity>
+          </View>
+        )}
       </LinearGradient>
 
       {/* Tab Navigation */}
