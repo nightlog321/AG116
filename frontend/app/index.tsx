@@ -3746,4 +3746,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
   },
+  socialBadge: {
+    backgroundColor: colors.tealLight,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  socialBadgeText: {
+    fontSize: 11,
+    color: colors.teal,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
 });
