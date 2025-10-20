@@ -2481,8 +2481,11 @@ function CourtsDashboard({
 
 // Players Board Component (same structure, updated styles)
 function PlayersBoard({ players, matches }: { players: Player[]; matches: Match[] }) {
+  // Filter out Social players - they don't participate in ratings
+  const ratedPlayers = players.filter(p => p.category !== 'Social');
+  
   // Sort players by rating (highest first) for standings
-  const sortedPlayers = [...players].sort((a, b) => (b.rating || 3.0) - (a.rating || 3.0));
+  const sortedPlayers = [...ratedPlayers].sort((a, b) => (b.rating || 3.0) - (a.rating || 3.0));
   
   const formatRecentForm = (recentForm: string[]) => {
     if (!recentForm || recentForm.length === 0) return 'No recent matches';
