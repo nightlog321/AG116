@@ -98,11 +98,9 @@ function LoginPage({ onLoginSuccess }: { onLoginSuccess: (sessionData: any) => v
           
           {/* Logo and Title */}
           <View style={{alignItems: 'center', marginBottom: 48}}>
-            <Image 
-              source={require('../assets/logo.png')}
-              style={{width: 200, height: 60, marginBottom: 16}}
-              resizeMode="contain"
-            />
+            <Text style={{fontSize: 32, fontWeight: 'bold', color: '#3b82f6', marginBottom: 8}}>
+              🏓 CourtChime
+            </Text>
             <Text style={{fontSize: 16, color: '#64748b', textAlign: 'center'}}>
               {mode === 'login' ? 'Sign into your club' : 'Create a new club'}
             </Text>
