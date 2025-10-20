@@ -2255,13 +2255,20 @@ function CourtsDashboard({
                 <View style={styles.courtHeader}>
                   <Text style={styles.courtTitle}>Court {courtIndex + 1}</Text>
                   {match && (
-                    <Text style={styles.matchDate}>
-                      {new Date(match.matchDate).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </Text>
+                    <>
+                      <Text style={styles.matchDate}>
+                        {new Date(match.matchDate).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </Text>
+                      {match.category === 'Social' && (
+                        <View style={styles.socialBadge}>
+                          <Text style={styles.socialBadgeText}>🎉 Social (Optional Scoring)</Text>
+                        </View>
+                      )}
+                    </>
                   )}
                 </View>
                 {match ? (
