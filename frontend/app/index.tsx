@@ -2661,18 +2661,25 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 24,
-    paddingBottom: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingBottom: 20,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 8,
   },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   headerLeft: {
     flex: 1,
+  },
+  logo: {
+    width: 180,
+    height: 50,
   },
   headerCenter: {
     flex: 2,
@@ -2698,15 +2705,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
+  sessionInfoContainer: {
+    alignItems: 'flex-end',
+  },
   sessionInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 12,
     padding: 12,
+    paddingHorizontal: 16,
     backdropFilter: 'blur(10px)',
+    minWidth: 280,
   },
   sessionText: {
     color: '#ffffff',
