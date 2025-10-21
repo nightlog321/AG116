@@ -1150,6 +1150,8 @@ async def create_club(club: ClubCreate, db_session: AsyncSession = Depends(get_d
 async def club_login(login_data: ClubLogin, db_session: AsyncSession = Depends(get_db_session)):
     """Authenticate club access with club name and access code"""
     try:
+        print(f"🔍 Login attempt: club_name='{login_data.club_name}', access_code='{login_data.access_code}'")
+        
         # Find club by name or display_name
         result = await db_session.execute(
             select(DBClub).where(
@@ -1160,6 +1162,8 @@ async def club_login(login_data: ClubLogin, db_session: AsyncSession = Depends(g
             )
         )
         club = result.scalar_one_or_none()
+        
+        print(f"🔍 Club found: {club.name if club else 'None'}")
         
         if not club:
             raise HTTPException(status_code=404, detail="Club not found")
@@ -1178,6 +1182,7 @@ async def club_login(login_data: ClubLogin, db_session: AsyncSession = Depends(g
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Login error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
 
 @api_router.post("/auth/register", response_model=ClubSession)
