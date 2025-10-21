@@ -2679,6 +2679,10 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
+  headerLogo: {
+    width: 180,
+    height: 50,
+  },
   logo: {
     width: 180,
     height: 50,
