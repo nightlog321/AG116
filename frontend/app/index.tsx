@@ -1154,13 +1154,12 @@ export default function PickleballManager() {
         style={styles.header}
       >
         <View style={styles.headerContent}>
-          {/* Logo on the left */}
+          {/* Title on the left */}
           <View style={styles.headerLeft}>
-            <Image 
-              source={require('../assets/logo-header.png')}
-              style={styles.headerLogo}
-              resizeMode="contain"
-            />
+            <Text style={styles.headerTitle}>CourtChime</Text>
+            {clubSession && (
+              <Text style={styles.clubName}>{clubSession.display_name}</Text>
+            )}
           </View>
           
           {/* Logout button on top right */}
