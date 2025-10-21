@@ -1153,8 +1153,10 @@ async def club_login(login_data: ClubLogin, db_session: AsyncSession = Depends(g
         # Find club by name or display_name
         result = await db_session.execute(
             select(DBClub).where(
-                (DBClub.name == login_data.club_name) | 
-                (DBClub.display_name == login_data.club_name)
+                or_(
+                    DBClub.name == login_data.club_name,
+                    DBClub.display_name == login_data.club_name
+                )
             )
         )
         club = result.scalar_one_or_none()
