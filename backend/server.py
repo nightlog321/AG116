@@ -1150,8 +1150,13 @@ async def create_club(club: ClubCreate, db_session: AsyncSession = Depends(get_d
 async def club_login(login_data: ClubLogin, db_session: AsyncSession = Depends(get_db_session)):
     """Authenticate club access with club name and access code"""
     try:
-        # Find club by name
-        result = await db_session.execute(select(DBClub).where(DBClub.name == login_data.club_name))
+        # Find club by name or display_name
+        result = await db_session.execute(
+            select(DBClub).where(
+                (DBClub.name == login_data.club_name) | 
+                (DBClub.display_name == login_data.club_name)
+            )
+        )
         club = result.scalar_one_or_none()
         
         if not club:
