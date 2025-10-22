@@ -3475,9 +3475,53 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
+  saveScoreButtonDisabled: {
+    backgroundColor: colors.surfaceLight,
+    opacity: 0.6,
+  },
   saveScoreButtonText: {
     color: colors.text,
     fontSize: 14,
+    fontWeight: '600',
+  },
+  winnerSelection: {
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+  },
+  winnerLabel: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  winnerButtons: {
+    gap: 12,
+  },
+  winnerButton: {
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 14,
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
+  winnerButtonSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  winnerButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  winnerButtonText: {
+    color: colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  winnerButtonTextSelected: {
+    color: colors.primary,
     fontWeight: '600',
   },
   finalScore: {
