@@ -4021,4 +4021,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
+  topCourtBadge: {
+    backgroundColor: colors.warning + '20',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  topCourtBadgeText: {
+    fontSize: 11,
+    color: colors.warning,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
 });
