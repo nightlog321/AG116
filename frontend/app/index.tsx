@@ -1369,7 +1369,8 @@ function AdminConsole({
         allowSingles: session.config.allowSingles ?? true,
         allowDoubles: session.config.allowDoubles ?? true,
         allowCrossCategory: session.config.allowCrossCategory || false,
-        maximizeCourtUsage: session.config.maximizeCourtUsage || false
+        maximizeCourtUsage: session.config.maximizeCourtUsage || false,
+        rotationModel: (session.config.rotationModel || 'legacy') as RotationModel
       };
       
       // Only update if the form data is actually different to avoid unnecessary resets
