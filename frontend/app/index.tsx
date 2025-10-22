@@ -1340,7 +1340,8 @@ function AdminConsole({
     allowSingles: true,
     allowDoubles: true,
     allowCrossCategory: false,
-    maximizeCourtUsage: false
+    maximizeCourtUsage: false,
+    rotationModel: 'legacy' as RotationModel
   });
 
   const formatTime = (seconds: number) => {
