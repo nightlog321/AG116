@@ -409,6 +409,8 @@ interface Match {
   matchDate: string;  // ISO date string when match was created
 }
 
+type RotationModel = 'legacy' | 'top_court';
+
 interface SessionConfig {
   numCourts: number;
   playSeconds: number;
@@ -417,6 +419,7 @@ interface SessionConfig {
   allowDoubles: boolean;
   allowCrossCategory: boolean;
   maximizeCourtUsage: boolean;
+  rotationModel?: RotationModel;
 }
 
 interface SessionState {
