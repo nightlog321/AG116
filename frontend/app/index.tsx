@@ -411,6 +411,19 @@ interface Match {
 
 type RotationModel = 'legacy' | 'top_court';
 
+interface CourtRoundResult {
+  courtIndex: number;
+  teamA: string[];
+  teamB: string[];
+  winner?: 'A' | 'B';
+}
+
+interface HistoryState {
+  partnerCounts: Record<string, Record<string, number>>;
+  courtHistory: Record<string, number[]>;
+  wins: Record<string, number>;
+}
+
 interface SessionConfig {
   numCourts: number;
   playSeconds: number;
