@@ -3162,6 +3162,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent, // Use grey accent instead of primary
     borderColor: colors.accent,
   },
+  checkboxButtonDisabled: {
+    opacity: 0.5,
+    backgroundColor: colors.surfaceLight,
+  },
   checkboxButtonText: {
     color: colors.textSecondary,
     fontSize: 14,
@@ -3170,6 +3174,9 @@ const styles = StyleSheet.create({
   checkboxButtonTextActive: {
     color: colors.text,
     fontWeight: '600',
+  },
+  checkboxButtonTextDisabled: {
+    color: colors.textMuted,
   },
   emptyText: {
     color: colors.textMuted,
