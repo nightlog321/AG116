@@ -2190,9 +2190,11 @@ async def schedule_top_court_round(round_index: int, db_session: AsyncSession, c
     Top Court round scheduler: Winners move up, losers move down or stay
     - Court 0 (Top Court): Winners stay, losers drop to bottom court
     - Other courts: Winners move up one court, losers stay
-    - All players re-paired each round
+    - All players split and re-paired each round
     """
     try:
+        import random
+        
         # Get previous round's matches to determine winners/losers
         result = await db_session.execute(
             select(DBMatch).where(
@@ -2205,9 +2207,9 @@ async def schedule_top_court_round(round_index: int, db_session: AsyncSession, c
             # First round - use legacy scheduling
             return await schedule_round(round_index, db_session, club_name)
         
-        # Parse match data and organize players by court based on winners/losers
+        # Parse match data and organize INDIVIDUAL PLAYERS by court based on winners/losers
         num_courts = session_config.numCourts
-        court_players = [[] for _ in range(num_courts)]  # Each court will have 4 players
+        court_players = [[] for _ in range(num_courts)]  # Each court will have 4 individual players
         
         for match in previous_matches:
             court_idx = match.court_index
@@ -2216,26 +2218,31 @@ async def schedule_top_court_round(round_index: int, db_session: AsyncSession, c
             
             # Determine winners and losers based on score
             if match.score_a > match.score_b:
-                winners = team_a
-                losers = team_b
+                winners = team_a  # List of 2 player IDs
+                losers = team_b   # List of 2 player IDs
             else:
                 winners = team_b
                 losers = team_a
             
-            # Apply Top Court movement rules
+            # SPLIT TEAMS: Add individual players, not pairs
+            # Apply Top Court movement rules for INDIVIDUAL players
             if court_idx == 0:
                 # Top Court: winners stay at top, losers drop to bottom
-                court_players[0].extend(winners)
-                court_players[num_courts - 1].extend(losers)
+                for player_id in winners:
+                    court_players[0].append(player_id)
+                for player_id in losers:
+                    court_players[num_courts - 1].append(player_id)
             else:
                 # Other courts: winners move up, losers stay
-                court_players[court_idx - 1].extend(winners)
-                court_players[court_idx].extend(losers)
+                for player_id in winners:
+                    court_players[court_idx - 1].append(player_id)
+                for player_id in losers:
+                    court_players[court_idx].append(player_id)
         
         # Delete previous matches
         await db_session.execute(delete(DBMatch).where(DBMatch.club_name == club_name))
         
-        # Create new matches for each court
+        # Create new matches for each court with SHUFFLED and RE-PAIRED players
         new_matches = []
         for court_idx in range(num_courts):
             players_on_court = court_players[court_idx]
@@ -2257,7 +2264,10 @@ async def schedule_top_court_round(round_index: int, db_session: AsyncSession, c
                             break
             
             if len(players_on_court) >= 4:
-                # Simple pairing: first 2 vs last 2
+                # SHUFFLE players to ensure different pairings
+                random.shuffle(players_on_court)
+                
+                # Create NEW pairs from shuffled players
                 team_a = players_on_court[:2]
                 team_b = players_on_court[2:4]
                 
