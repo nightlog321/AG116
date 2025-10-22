@@ -2011,6 +2011,7 @@ function CourtsDashboard({
   setMatches: (matches: Match[]) => void;
 }) {
   const [scoreInputs, setScoreInputs] = useState<{[matchId: string]: {scoreA: string, scoreB: string}}>({});
+  const [winnerSelections, setWinnerSelections] = useState<{[matchId: string]: 'A' | 'B' | null}>({});
   const [originalMatches, setOriginalMatches] = useState<Match[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<{matchId: string, team: 'A' | 'B', index: number} | null>(null);
 
