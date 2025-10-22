@@ -2202,18 +2202,23 @@ async def start_next_round(club_name: str = "Main Club", db_session: AsyncSessio
         
         next_round = session.current_round + 1
         
-        # Clear previous round matches
-        await db_session.execute(delete(DBMatch).where(DBMatch.club_name == club_name))
-        
-        # Get all players for reshuffling
-        result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == club_name))
-        players = result.scalars().all()
-        
-        if len(players) < 2:
-            raise HTTPException(status_code=400, detail="Not enough players for matches")
-        
-        # USE ENHANCED RESHUFFLING ALGORITHM - Call schedule_round function with club_name
-        matches_created = await schedule_round(next_round, db_session, club_name)
+        # Check if Top Court mode
+        if session_config.rotationModel == 'top_court':
+            # Top Court algorithm: move winners up, losers down
+            matches_created = await schedule_top_court_round(next_round, db_session, club_name, session_config)
+        else:
+            # Clear previous round matches for legacy mode
+            await db_session.execute(delete(DBMatch).where(DBMatch.club_name == club_name))
+            
+            # Get all players for reshuffling
+            result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == club_name))
+            players = result.scalars().all()
+            
+            if len(players) < 2:
+                raise HTTPException(status_code=400, detail="Not enough players for matches")
+            
+            # USE ENHANCED RESHUFFLING ALGORITHM - Call schedule_round function with club_name
+            matches_created = await schedule_round(next_round, db_session, club_name)
         
         # Update session to ready phase for next round
         session.current_round = next_round
@@ -2224,7 +2229,7 @@ async def start_next_round(club_name: str = "Main Club", db_session: AsyncSessio
         await db_session.commit()
         
         return {
-            "message": f"Round {next_round} generated with enhanced reshuffled players",
+            "message": f"Round {next_round} generated with {'Top Court' if session_config.rotationModel == 'top_court' else 'enhanced reshuffled'} players",
             "round": next_round,
             "matches_created": len(matches_created),
             "phase": "ready"
