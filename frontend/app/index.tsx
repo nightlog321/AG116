@@ -2547,7 +2547,69 @@ function CourtsDashboard({
                       Final Score: {match.scoreA} - {match.scoreB}
                     </Text>
                   </View>
+                ) : session?.config?.rotationModel === 'top_court' ? (
+                  // Winner Checkbox for Top Court mode
+                  <View style={styles.winnerSelection}>
+                    <Text style={styles.winnerLabel}>Select Winning Team:</Text>
+                    <View style={styles.winnerButtons}>
+                      <TouchableOpacity
+                        style={[
+                          styles.winnerButton,
+                          winnerSelections[match.id] === 'A' && styles.winnerButtonSelected
+                        ]}
+                        onPress={() => selectWinner(match.id, 'A')}
+                      >
+                        <View style={styles.winnerButtonContent}>
+                          <Ionicons 
+                            name={winnerSelections[match.id] === 'A' ? "checkbox-outline" : "square-outline"} 
+                            size={24} 
+                            color={winnerSelections[match.id] === 'A' ? colors.primary : colors.textSecondary} 
+                          />
+                          <Text style={[
+                            styles.winnerButtonText,
+                            winnerSelections[match.id] === 'A' && styles.winnerButtonTextSelected
+                          ]}>
+                            Team A Wins
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity
+                        style={[
+                          styles.winnerButton,
+                          winnerSelections[match.id] === 'B' && styles.winnerButtonSelected
+                        ]}
+                        onPress={() => selectWinner(match.id, 'B')}
+                      >
+                        <View style={styles.winnerButtonContent}>
+                          <Ionicons 
+                            name={winnerSelections[match.id] === 'B' ? "checkbox-outline" : "square-outline"} 
+                            size={24} 
+                            color={winnerSelections[match.id] === 'B' ? colors.primary : colors.textSecondary} 
+                          />
+                          <Text style={[
+                            styles.winnerButtonText,
+                            winnerSelections[match.id] === 'B' && styles.winnerButtonTextSelected
+                          ]}>
+                            Team B Wins
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                    
+                    <TouchableOpacity
+                      style={[
+                        styles.saveScoreButton,
+                        !winnerSelections[match.id] && styles.saveScoreButtonDisabled
+                      ]}
+                      onPress={() => saveWinner(match)}
+                      disabled={!winnerSelections[match.id]}
+                    >
+                      <Text style={styles.saveScoreButtonText}>Save Winner</Text>
+                    </TouchableOpacity>
+                  </View>
                 ) : (
+                  // Legacy Score Input
                   <View style={styles.scoreInput}>
                     <View style={styles.scoreInputRow}>
                       <Text style={styles.scoreLabel}>Team A:</Text>
