@@ -2376,6 +2376,11 @@ function CourtsDashboard({
               <View key={courtIndex} style={styles.courtCard}>
                 <View style={styles.courtHeader}>
                   <Text style={styles.courtTitle}>Court {courtIndex + 1}</Text>
+                  {session?.config?.rotationModel === 'top_court' && courtIndex === 0 && (
+                    <View style={styles.topCourtBadge}>
+                      <Text style={styles.topCourtBadgeText}>👑 Top Court</Text>
+                    </View>
+                  )}
                   {match && (
                     <>
                       <Text style={styles.matchDate}>
