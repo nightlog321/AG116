@@ -1583,6 +1583,43 @@ function AdminConsole({
             </View>
             
             <View style={styles.configRow}>
+              <Text style={styles.configLabel}>Model:</Text>
+              <View style={styles.formatCheckboxes}>
+                <TouchableOpacity
+                  style={[styles.checkboxButton, configForm.rotationModel === 'legacy' && styles.checkboxButtonActive]}
+                  onPress={() => setConfigForm({...configForm, rotationModel: 'legacy'})}
+                >
+                  <Text style={[styles.checkboxButtonText, configForm.rotationModel === 'legacy' && styles.checkboxButtonTextActive]}>
+                    Legacy
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.checkboxButton, 
+                    configForm.rotationModel === 'top_court' && styles.checkboxButtonActive,
+                    !configForm.allowDoubles && styles.checkboxButtonDisabled
+                  ]}
+                  onPress={() => {
+                    if (configForm.allowDoubles) {
+                      setConfigForm({...configForm, rotationModel: 'top_court'});
+                    } else {
+                      Alert.alert('Top Court Unavailable', 'Top Court is Doubles-only. Please enable Doubles format first.');
+                    }
+                  }}
+                  disabled={!configForm.allowDoubles}
+                >
+                  <Text style={[
+                    styles.checkboxButtonText, 
+                    configForm.rotationModel === 'top_court' && styles.checkboxButtonTextActive,
+                    !configForm.allowDoubles && styles.checkboxButtonTextDisabled
+                  ]}>
+                    Top Court
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            <View style={styles.configRow}>
               <Text style={styles.configLabel}>Cross-Category:</Text>
               <TouchableOpacity
                 style={[styles.toggleButton, configForm.allowCrossCategory && styles.toggleButtonActive]}
