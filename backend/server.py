@@ -158,6 +158,7 @@ class SessionConfig(BaseModel):
     allowDoubles: bool = True
     allowCrossCategory: bool = False
     maximizeCourtUsage: bool = False  # New option for court optimization
+    rotationModel: str = 'legacy'  # 'legacy' or 'top_court'
 
 class SessionState(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
