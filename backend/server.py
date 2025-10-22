@@ -2187,14 +2187,12 @@ async def start_session(club_name: str = "Main Club", db_session: AsyncSession =
 
 async def schedule_top_court_round(round_index: int, db_session: AsyncSession, club_name: str, session_config: SessionConfig) -> List[Match]:
     """
-    Top Court round scheduler: Winners move up, losers move down or stay
+    Top Court round scheduler: Winners move up, losers stay (and both split)
     - Court 0 (Top Court): Winners stay, losers drop to bottom court
     - Other courts: Winners move up one court, losers stay
-    - All players split and re-paired each round
+    - IMPORTANT: Previous partners are split to play AGAINST each other
     """
     try:
-        import random
-        
         # Get previous round's matches to determine winners/losers
         result = await db_session.execute(
             select(DBMatch).where(
@@ -2207,9 +2205,9 @@ async def schedule_top_court_round(round_index: int, db_session: AsyncSession, c
             # First round - use legacy scheduling
             return await schedule_round(round_index, db_session, club_name)
         
-        # Parse match data and organize INDIVIDUAL PLAYERS by court based on winners/losers
+        # Track groups of 2 players (previous partners) that will be split
         num_courts = session_config.numCourts
-        court_players = [[] for _ in range(num_courts)]  # Each court will have 4 individual players
+        court_groups = [[] for _ in range(num_courts)]  # Each entry is a list of 2-player groups
         
         for match in previous_matches:
             court_idx = match.court_index
@@ -2218,99 +2216,89 @@ async def schedule_top_court_round(round_index: int, db_session: AsyncSession, c
             
             # Determine winners and losers based on score
             if match.score_a > match.score_b:
-                winners = team_a  # List of 2 player IDs
-                losers = team_b   # List of 2 player IDs
+                winners = team_a  # Keep as group [player1, player2]
+                losers = team_b
             else:
                 winners = team_b
                 losers = team_a
             
-            # SPLIT TEAMS: Add individual players, not pairs
-            # Apply Top Court movement rules for INDIVIDUAL players
+            # Apply Top Court movement rules - move groups, not individuals
             if court_idx == 0:
-                # Top Court: winners stay at top, losers drop to bottom
-                for player_id in winners:
-                    court_players[0].append(player_id)
-                for player_id in losers:
-                    court_players[num_courts - 1].append(player_id)
+                # Top Court: winner group stays at top, loser group drops to bottom
+                court_groups[0].append(winners)
+                court_groups[num_courts - 1].append(losers)
             else:
-                # Other courts: winners move up, losers stay
-                for player_id in winners:
-                    court_players[court_idx - 1].append(player_id)
-                for player_id in losers:
-                    court_players[court_idx].append(player_id)
+                # Other courts: winner group moves up, loser group stays
+                target_court = court_idx - 1
+                court_groups[target_court].append(winners)
+                court_groups[court_idx].append(losers)
         
         # Delete previous matches
         await db_session.execute(delete(DBMatch).where(DBMatch.club_name == club_name))
         
-        # Create new matches for each court with SHUFFLED and RE-PAIRED players
+        # Create new matches with previous partners playing AGAINST each other
         new_matches = []
         for court_idx in range(num_courts):
-            players_on_court = court_players[court_idx]
+            groups_on_court = court_groups[court_idx]
             
-            if len(players_on_court) != 4:
-                # Handle edge case: not exactly 4 players
-                # Fill with random active players
-                result = await db_session.execute(
-                    select(DBPlayer).where(
-                        and_(DBPlayer.club_name == club_name, DBPlayer.is_active == True)
-                    )
-                )
-                all_active = result.scalars().all()
-                while len(players_on_court) < 4 and all_active:
-                    # Add players not already on this court
-                    for p in all_active:
-                        if p.id not in players_on_court and len(players_on_court) < 4:
-                            players_on_court.append(p.id)
-                            break
+            if len(groups_on_court) != 2:
+                # Handle edge case: not exactly 2 groups (4 players)
+                print(f"Warning: Court {court_idx} has {len(groups_on_court)} groups instead of 2")
+                # Skip this court or fill with random players
+                continue
             
-            if len(players_on_court) >= 4:
-                # SHUFFLE players to ensure different pairings
-                random.shuffle(players_on_court)
-                
-                # Create NEW pairs from shuffled players
-                team_a = players_on_court[:2]
-                team_b = players_on_court[2:4]
-                
-                # Get player objects to determine category
-                result = await db_session.execute(
-                    select(DBPlayer).where(DBPlayer.id.in_(team_a + team_b))
-                )
-                match_players = result.scalars().all()
-                
-                # Use category of first player
-                category = match_players[0].category if match_players else "Intermediate"
-                
-                # Create match
-                new_match = DBMatch(
-                    id=str(uuid.uuid4()),
-                    round_index=round_index,
-                    court_index=court_idx,
-                    category=category,
-                    club_name=club_name,
-                    match_type="doubles",
-                    team_a=json.dumps(team_a),
-                    team_b=json.dumps(team_b),
-                    score_a=0,
-                    score_b=0,
-                    status="active",
-                    match_date=datetime.utcnow()
-                )
-                
-                db_session.add(new_match)
-                new_matches.append({
-                    'id': new_match.id,
-                    'roundIndex': round_index,
-                    'courtIndex': court_idx,
-                    'category': category,
-                    'teamA': team_a,
-                    'teamB': team_b
-                })
+            # We have 2 groups of 2 players each
+            group1 = groups_on_court[0]  # [player1, player2] - were partners
+            group2 = groups_on_court[1]  # [player3, player4] - were partners
+            
+            # Split partners to play AGAINST each other:
+            # Team A: player1 (from group1) + player3 (from group2)
+            # Team B: player2 (from group1) + player4 (from group2)
+            team_a = [group1[0], group2[0]]
+            team_b = [group1[1], group2[1]]
+            
+            # Get player objects to determine category
+            result = await db_session.execute(
+                select(DBPlayer).where(DBPlayer.id.in_(team_a + team_b))
+            )
+            match_players = result.scalars().all()
+            
+            # Use category of first player
+            category = match_players[0].category if match_players else "Intermediate"
+            
+            # Create match
+            new_match = DBMatch(
+                id=str(uuid.uuid4()),
+                round_index=round_index,
+                court_index=court_idx,
+                category=category,
+                club_name=club_name,
+                match_type="doubles",
+                team_a=json.dumps(team_a),
+                team_b=json.dumps(team_b),
+                score_a=0,
+                score_b=0,
+                status="active",
+                match_date=datetime.utcnow()
+            )
+            
+            db_session.add(new_match)
+            new_matches.append({
+                'id': new_match.id,
+                'roundIndex': round_index,
+                'courtIndex': court_idx,
+                'category': category,
+                'teamA': team_a,
+                'teamB': team_b
+            })
         
         await db_session.flush()
         return new_matches
         
     except Exception as e:
         print(f"Error in schedule_top_court_round: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise
 
 
