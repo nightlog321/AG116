@@ -1444,7 +1444,8 @@ function AdminConsole({
           allowSingles: configForm.allowSingles,
           allowDoubles: configForm.allowDoubles,
           allowCrossCategory: configForm.allowCrossCategory,
-          maximizeCourtUsage: configForm.maximizeCourtUsage
+          maximizeCourtUsage: configForm.maximizeCourtUsage,
+          rotationModel: configForm.rotationModel
         })
       });
 
