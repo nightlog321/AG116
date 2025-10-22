@@ -2238,6 +2238,66 @@ function CourtsDashboard({
     }));
   };
 
+  const selectWinner = (matchId: string, team: 'A' | 'B') => {
+    setWinnerSelections(prev => ({
+      ...prev,
+      [matchId]: prev[matchId] === team ? null : team // Toggle selection
+    }));
+  };
+
+  const saveWinner = async (match: Match) => {
+    const winner = winnerSelections[match.id];
+    if (!winner) {
+      Alert.alert('Error', 'Please select a winning team');
+      return;
+    }
+
+    try {
+      console.log('Saving winner for match:', match.id, 'Winner:', winner);
+      
+      // For MVP, we'll use the score endpoint with dummy scores based on winner
+      const scoreA = winner === 'A' ? 11 : 9;
+      const scoreB = winner === 'B' ? 11 : 9;
+      
+      const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/matches/${match.id}/score`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scoreA, scoreB })
+      });
+
+      if (response.ok) {
+        const updatedMatch = await response.json();
+        console.log('Winner saved successfully');
+        
+        // Update match in state
+        setMatches(prevMatches => 
+          prevMatches.map(m => 
+            m.id === match.id 
+              ? { ...m, status: updatedMatch.status, scoreA: updatedMatch.scoreA, scoreB: updatedMatch.scoreB }
+              : m
+          )
+        );
+        
+        // Clear winner selection
+        setWinnerSelections(prev => {
+          const newSelections = { ...prev };
+          delete newSelections[match.id];
+          return newSelections;
+        });
+        
+        await fetchMatches();
+        Alert.alert('Success', 'Winner saved successfully!');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to save winner:', errorData);
+        Alert.alert('Error', `Failed to save winner: ${errorData.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error saving winner:', error);
+      Alert.alert('Error', 'Failed to save winner');
+    }
+  };
+
   if (!session) return <Text style={styles.loadingText}>Loading courts...</Text>;
   
   // Helper function to determine if Next Round button should be enabled
