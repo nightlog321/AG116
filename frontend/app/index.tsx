@@ -2015,8 +2015,8 @@ function CourtsDashboard({
   const [originalMatches, setOriginalMatches] = useState<Match[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<{matchId: string, team: 'A' | 'B', index: number} | null>(null);
 
-  // Calculate sitting out players
-  const getSittingOutPlayers = () => {
+  // Calculate sitting out players - using useMemo for better performance
+  const sittingOutPlayers = useMemo(() => {
     const activePlayers = players.filter(p => p.isActive);
     const playingPlayerIds = new Set<string>();
     
@@ -2028,7 +2028,7 @@ function CourtsDashboard({
     
     // Return players who are active but not in any match
     return activePlayers.filter(p => !playingPlayerIds.has(p.id));
-  };
+  }, [matches, players]);
 
   // Store original matches when they first load - but only in ready phase
   useEffect(() => {
