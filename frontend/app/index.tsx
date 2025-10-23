@@ -3712,6 +3712,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 0, // Removed margin
   },
+  winsLabel: {
+    fontSize: 10,
+    color: colors.textMuted,
+    fontWeight: '500',
+    marginTop: 2,
+  },
   playerStats: {
     alignItems: 'flex-end',
     minWidth: 80, // Further reduced
