@@ -2015,6 +2015,21 @@ function CourtsDashboard({
   const [originalMatches, setOriginalMatches] = useState<Match[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<{matchId: string, team: 'A' | 'B', index: number} | null>(null);
 
+  // Calculate sitting out players
+  const getSittingOutPlayers = () => {
+    const activePlayers = players.filter(p => p.isActive);
+    const playingPlayerIds = new Set<string>();
+    
+    // Collect all player IDs in current matches
+    currentRoundMatches.forEach(match => {
+      match.teamA.forEach((id: string) => playingPlayerIds.add(id));
+      match.teamB.forEach((id: string) => playingPlayerIds.add(id));
+    });
+    
+    // Return players who are active but not in any match
+    return activePlayers.filter(p => !playingPlayerIds.has(p.id));
+  };
+
   // Store original matches when they first load - but only in ready phase
   useEffect(() => {
     console.log('🔍 useEffect triggered - matches.length:', matches.length, 'originalMatches.length:', originalMatches.length, 'session phase:', session?.phase);
