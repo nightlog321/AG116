@@ -2774,18 +2774,29 @@ function PlayersBoard({ players, matches, session }: { players: Player[]; matche
                 </View>
               </View>
               
-              {/* Rating */}
+              {/* Rating or Wins (conditional based on mode) */}
               <View style={styles.ratingContainer}>
                 <View style={styles.ratingBox}>
-                  <Text style={[styles.ratingNumber, { color: ratingColor }]}>
-                    {formatRating(player.rating || 3.0)}
-                  </Text>
-                  {trend && (
-                    <Ionicons 
-                      name={trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'remove'} 
-                      size={16} 
-                      color={trend === 'up' ? '#00ff00' : trend === 'down' ? '#ff4444' : colors.textMuted}
-                    />
+                  {isTopCourt ? (
+                    <>
+                      <Text style={[styles.ratingNumber, { color: colors.primary }]}>
+                        {player.wins || 0}
+                      </Text>
+                      <Text style={styles.winsLabel}>wins</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={[styles.ratingNumber, { color: ratingColor }]}>
+                        {formatRating(player.rating || 3.0)}
+                      </Text>
+                      {trend && (
+                        <Ionicons 
+                          name={trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'remove'} 
+                          size={16} 
+                          color={trend === 'up' ? '#00ff00' : trend === 'down' ? '#ff4444' : colors.textMuted}
+                        />
+                      )}
+                    </>
                   )}
                 </View>
               </View>
