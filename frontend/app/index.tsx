@@ -4318,11 +4318,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 10,
   },
+  sittingOutPlayerSelected: {
+    backgroundColor: colors.primaryLight,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
   sittingOutPlayerName: {
     fontSize: 14,
     color: colors.text,
     fontWeight: '500',
     flex: 1,
+  },
+  sittingOutPlayerNameSelected: {
+    color: colors.primary,
+    fontWeight: '700',
   },
   sittingOutCategory: {
     backgroundColor: colors.accent,
