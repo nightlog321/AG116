@@ -2021,7 +2021,7 @@ function CourtsDashboard({
     const playingPlayerIds = new Set<string>();
     
     // Collect all player IDs in current matches
-    currentRoundMatches.forEach(match => {
+    matches.forEach(match => {
       match.teamA.forEach((id: string) => playingPlayerIds.add(id));
       match.teamB.forEach((id: string) => playingPlayerIds.add(id));
     });
