@@ -2669,12 +2669,17 @@ function CourtsDashboard({
 }
 
 // Players Board Component (same structure, updated styles)
-function PlayersBoard({ players, matches }: { players: Player[]; matches: Match[] }) {
+function PlayersBoard({ players, matches, session }: { players: Player[]; matches: Match[]; session: Session | null }) {
   // Filter out Social players - they don't participate in ratings
   const ratedPlayers = players.filter(p => p.category !== 'Social');
   
-  // Sort players by rating (highest first) for standings
-  const sortedPlayers = [...ratedPlayers].sort((a, b) => (b.rating || 3.0) - (a.rating || 3.0));
+  // Check if Top Court mode
+  const isTopCourt = session?.config?.rotationModel === 'top_court';
+  
+  // Sort players: by wins for Top Court, by rating for Legacy
+  const sortedPlayers = isTopCourt 
+    ? [...ratedPlayers].sort((a, b) => (b.wins || 0) - (a.wins || 0) || a.name.localeCompare(b.name))
+    : [...ratedPlayers].sort((a, b) => (b.rating || 3.0) - (a.rating || 3.0));
   
   const formatRecentForm = (recentForm: string[]) => {
     if (!recentForm || recentForm.length === 0) return 'No recent matches';
