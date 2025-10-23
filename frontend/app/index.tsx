@@ -2726,9 +2726,11 @@ function PlayersBoard({ players, matches, session }: { players: Player[]; matche
     <View style={styles.standingsContainer}>
       {/* Header */}
       <View style={styles.standingsHeader}>
-        <Text style={styles.standingsTitle}>Player Ratings</Text>
+        <Text style={styles.standingsTitle}>
+          {isTopCourt ? 'Player Wins' : 'Player Ratings'}
+        </Text>
         <Text style={styles.standingsSubtitle}>
-          {sortedPlayers.length} rated players • Social players excluded
+          {sortedPlayers.length} {isTopCourt ? 'players' : 'rated players'} • Social players excluded
         </Text>
       </View>
       
