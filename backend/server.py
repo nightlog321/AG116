@@ -1817,13 +1817,23 @@ async def update_match_score(match_id: str, score_update: MatchScoreUpdate, db_s
                 player.stats_point_diff -= point_diff
         
         # Update DUPR-style ratings - SQLite version
-        match_dict = {
-            'id': db_match.id,
-            'teamA': team_a,
-            'teamB': team_b,
-            'category': db_match.category  # Include category to check for Social
-        }
-        await update_player_ratings(match_dict, score_update.scoreA, score_update.scoreB, db_session)
+        # Skip ratings for Top Court mode (only track wins/losses)
+        result_session = await db_session.execute(select(DBSession).where(DBSession.club_name == db_match.club_name))
+        session = result_session.scalar_one_or_none()
+        
+        if session:
+            config_data = json.loads(session.config) if session.config else {}
+            session_config = SessionConfig(**config_data)
+            
+            # Only update ratings for Legacy mode, not Top Court
+            if session_config.rotationModel != 'top_court':
+                match_dict = {
+                    'id': db_match.id,
+                    'teamA': team_a,
+                    'teamB': team_b,
+                    'category': db_match.category
+                }
+                await update_player_ratings(match_dict, score_update.scoreA, score_update.scoreB, db_session)
         
         await db_session.commit()
         await db_session.refresh(db_match)
