@@ -2177,6 +2177,182 @@ function CourtsDashboard({
     return matches.filter(m => m.roundIndex === session.currentRound);
   };
 
+  const movePlayer = (matchId: string, fromTeam: 'A' | 'B', fromIndex: number, toTeam: 'A' | 'B', toIndex: number) => {
+    console.log('Moving player within match:', { matchId, fromTeam, fromIndex, toTeam, toIndex });
+    
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    const sourceTeam = fromTeam === 'A' ? [...match.teamA] : [...match.teamB];
+    const targetTeam = toTeam === 'A' ? [...match.teamA] : [...match.teamB];
+
+    // Swap or move players
+    const temp = sourceTeam[fromIndex];
+    
+    if (fromTeam === toTeam) {
+      // Swapping within same team
+      sourceTeam[fromIndex] = targetTeam[toIndex];
+      targetTeam[toIndex] = temp;
+    } else {
+      // Moving between teams
+      sourceTeam[fromIndex] = targetTeam[toIndex];
+      targetTeam[toIndex] = temp;
+    }
+
+    // Update match
+    setMatches(prevMatches => 
+      prevMatches.map(m => {
+        if (m.id === matchId) {
+          return {
+            ...m,
+            teamA: fromTeam === 'A' ? sourceTeam : targetTeam,
+            teamB: fromTeam === 'B' ? sourceTeam : targetTeam
+          };
+        }
+        return m;
+      })
+    );
+  };
+
+  const handlePlayerSwap = (targetMatchId: string, targetPlayerId: string) => {
+    if (!selectedPlayer) return;
+
+    // Handle sitout to court OR court to sitout swaps
+    if (selectedPlayer.matchId === 'sitout' || targetMatchId === 'sitout') {
+      // One player is in sitout
+      const courtMatchId = selectedPlayer.matchId === 'sitout' ? targetMatchId : selectedPlayer.matchId;
+      const courtMatch = matches.find(m => m.id === courtMatchId);
+      const sitoutPlayerId = selectedPlayer.matchId === 'sitout' ? selectedPlayer.index : targetPlayerId;
+
+      if (!courtMatch) {
+        console.log('Court match not found');
+        setSelectedPlayer(null);
+        return;
+      }
+
+      // Get the court player details
+      let courtPlayerTeam: 'A' | 'B' | null = null;
+      let courtPlayerIndex: number = -1;
+
+      if (selectedPlayer.matchId !== 'sitout') {
+        // Selected player is on court, target is sitout
+        courtPlayerTeam = selectedPlayer.team;
+        courtPlayerIndex = selectedPlayer.index;
+      } else {
+        // Selected player is sitout, need to find target player on court
+        courtMatch.teamA.forEach((pId, idx) => {
+          if (pId === targetPlayerId) {
+            courtPlayerTeam = 'A';
+            courtPlayerIndex = idx;
+          }
+        });
+        courtMatch.teamB.forEach((pId, idx) => {
+          if (pId === targetPlayerId) {
+            courtPlayerTeam = 'B';
+            courtPlayerIndex = idx;
+          }
+        });
+      }
+
+      if (courtPlayerTeam === null || courtPlayerIndex === -1) {
+        console.log('Could not find court player');
+        setSelectedPlayer(null);
+        return;
+      }
+
+      // Swap: Replace court player with sitout player
+      setMatches(prevMatches =>
+        prevMatches.map(m => {
+          if (m.id === courtMatchId) {
+            const team = courtPlayerTeam === 'A' ? [...m.teamA] : [...m.teamB];
+            team[courtPlayerIndex] = sitoutPlayerId;
+
+            return {
+              ...m,
+              teamA: courtPlayerTeam === 'A' ? team : m.teamA,
+              teamB: courtPlayerTeam === 'B' ? team : m.teamB
+            };
+          }
+          return m;
+        })
+      );
+
+      console.log('Swapped court player with sitout player');
+      setSelectedPlayer(null);
+      return;
+    }
+
+    // Handle court to court swaps (existing logic)
+    const targetMatch = matches.find(m => m.id === targetMatchId);
+    if (!targetMatch) {
+      setSelectedPlayer(null);
+      return;
+    }
+
+    let targetTeam: 'A' | 'B' | null = null;
+    let targetIndex = -1;
+
+    targetMatch.teamA.forEach((pId, idx) => {
+      if (pId === targetPlayerId) {
+        targetTeam = 'A';
+        targetIndex = idx;
+      }
+    });
+
+    targetMatch.teamB.forEach((pId, idx) => {
+      if (pId === targetPlayerId) {
+        targetTeam = 'B';
+        targetIndex = idx;
+      }
+    });
+
+    if (targetTeam === null) {
+      setSelectedPlayer(null);
+      return;
+    }
+
+    if (selectedPlayer.matchId === targetMatchId) {
+      // Same match - swap within match
+      movePlayer(selectedPlayer.matchId, selectedPlayer.team, selectedPlayer.index, targetTeam, targetIndex);
+    } else {
+      // Different matches - swap between matches
+      const selectedMatch = matches.find(m => m.id === selectedPlayer.matchId);
+      if (!selectedMatch) {
+        setSelectedPlayer(null);
+        return;
+      }
+
+      const selectedTeam = selectedPlayer.team === 'A' ? [...selectedMatch.teamA] : [...selectedMatch.teamB];
+      const targetTeamArray = targetTeam === 'A' ? [...targetMatch.teamA] : [...targetMatch.teamB];
+
+      const temp = selectedTeam[selectedPlayer.index];
+      selectedTeam[selectedPlayer.index] = targetTeamArray[targetIndex];
+      targetTeamArray[targetIndex] = temp;
+
+      setMatches(prevMatches =>
+        prevMatches.map(m => {
+          if (m.id === selectedPlayer.matchId) {
+            return {
+              ...m,
+              teamA: selectedPlayer.team === 'A' ? selectedTeam : m.teamA,
+              teamB: selectedPlayer.team === 'B' ? selectedTeam : m.teamB
+            };
+          }
+          if (m.id === targetMatchId) {
+            return {
+              ...m,
+              teamA: targetTeam === 'A' ? targetTeamArray : m.teamA,
+              teamB: targetTeam === 'B' ? targetTeamArray : m.teamB
+            };
+          }
+          return m;
+        })
+      );
+    }
+
+    setSelectedPlayer(null);
+  };
+
   const saveScore = async (match: Match) => {
     const scores = scoreInputs[match.id];
     if (!scores) {
