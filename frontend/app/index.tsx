@@ -2464,16 +2464,8 @@ function CourtsDashboard({
 
         {/* Reshuffling Controls */}
         <View style={styles.reshuffleContainer}>
-          <TouchableOpacity 
-            onPress={resetToOriginal}
-            style={styles.resetButton}
-          >
-            <Ionicons name="refresh" size={20} color={colors.primary} />
-            <Text style={styles.resetButtonText}>Reset to Original</Text>
-          </TouchableOpacity>
-          
           <Text style={styles.dragHint}>
-            💡 Tap players to select, then tap another to swap
+            💡 Tap players to swap positions or move to/from sitout
           </Text>
         </View>
 
