@@ -2672,24 +2672,48 @@ function CourtsDashboard({
         );
       })}
       
-      {/* Sitting Out Section */}
+      {/* Sitting Out Section - Interactive for player swapping */}
       {sittingOutPlayers.length > 0 && (
         <View style={styles.sittingOutSection}>
           <View style={styles.sittingOutHeader}>
             <Ionicons name="pause-circle-outline" size={24} color={colors.warning} />
             <Text style={styles.sittingOutTitle}>
-              Sitting Out This Round ({sittingOutPlayers.length})
+              Sitting Out ({sittingOutPlayers.length})
             </Text>
           </View>
           <View style={styles.sittingOutList}>
             {sittingOutPlayers.map((player) => (
-              <View key={player.id} style={styles.sittingOutPlayer}>
-                <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
-                <Text style={styles.sittingOutPlayerName}>{player.name}</Text>
+              <TouchableOpacity
+                key={player.id}
+                style={[
+                  styles.sittingOutPlayer,
+                  selectedPlayer && selectedPlayer.matchId === 'sitout' && selectedPlayer.index === player.id && styles.sittingOutPlayerSelected
+                ]}
+                onPress={() => {
+                  if (selectedPlayer) {
+                    // Player already selected from court - move them to sitout
+                    handlePlayerSwap('sitout', player.id);
+                  } else {
+                    // Select this sitout player to move to court
+                    setSelectedPlayer({ matchId: 'sitout', team: 'A', index: player.id });
+                  }
+                }}
+              >
+                <Ionicons 
+                  name={selectedPlayer && selectedPlayer.matchId === 'sitout' && selectedPlayer.index === player.id ? "checkbox" : "person-outline"} 
+                  size={16} 
+                  color={selectedPlayer && selectedPlayer.matchId === 'sitout' && selectedPlayer.index === player.id ? colors.primary : colors.textSecondary} 
+                />
+                <Text style={[
+                  styles.sittingOutPlayerName,
+                  selectedPlayer && selectedPlayer.matchId === 'sitout' && selectedPlayer.index === player.id && styles.sittingOutPlayerNameSelected
+                ]}>
+                  {player.name}
+                </Text>
                 <View style={styles.sittingOutCategory}>
                   <Text style={styles.sittingOutCategoryText}>{player.category}</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
