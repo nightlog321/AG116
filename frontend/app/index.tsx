@@ -4102,4 +4102,52 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
+  sittingOutSection: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sittingOutHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  sittingOutTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  sittingOutList: {
+    gap: 8,
+  },
+  sittingOutPlayer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceLight,
+    padding: 12,
+    borderRadius: 8,
+    gap: 10,
+  },
+  sittingOutPlayerName: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '500',
+    flex: 1,
+  },
+  sittingOutCategory: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  sittingOutCategoryText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
 });
