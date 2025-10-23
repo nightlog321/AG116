@@ -1295,7 +1295,7 @@ export default function PickleballManager() {
           )}
           
           {activeTab === 'players' && (
-            <PlayersBoard players={players} matches={matches} />
+            <PlayersBoard players={players} matches={matches} session={session} />
           )}
         </ScrollView>
       </KeyboardAvoidingView>
