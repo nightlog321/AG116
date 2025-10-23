@@ -2679,6 +2679,35 @@ function CourtsDashboard({
           </View>
         );
       })}
+      
+      {/* Sitting Out Section */}
+      {(() => {
+        const sittingOut = getSittingOutPlayers();
+        if (sittingOut.length > 0) {
+          return (
+            <View style={styles.sittingOutSection}>
+              <View style={styles.sittingOutHeader}>
+                <Ionicons name="pause-circle-outline" size={24} color={colors.warning} />
+                <Text style={styles.sittingOutTitle}>
+                  Sitting Out This Round ({sittingOut.length})
+                </Text>
+              </View>
+              <View style={styles.sittingOutList}>
+                {sittingOut.map((player) => (
+                  <View key={player.id} style={styles.sittingOutPlayer}>
+                    <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
+                    <Text style={styles.sittingOutPlayerName}>{player.name}</Text>
+                    <View style={styles.sittingOutCategory}>
+                      <Text style={styles.sittingOutCategoryText}>{player.category}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          );
+        }
+        return null;
+      })()}
     </View>
   );
 }
