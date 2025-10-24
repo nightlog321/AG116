@@ -586,7 +586,7 @@ class CourtChimeAPITester:
             
             # Test 1: Core Match Generation for both rotation models
             # Legacy Mode
-            response = self.session.post(f"{self.base_url}/matches/generate", 
+            response = self.session.post(f"{self.base_url}/session/generate-matches", 
                                        params={"club_name": "Main Club"})
             if response.status_code == 200:
                 matches_data = response.json()
