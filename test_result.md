@@ -53,6 +53,53 @@ Implemented tap-to-swap functionality allowing court managers to manually move p
 
 ---
 
+## 🆕 Match Generation Bug Fix - Cross Category + Maximize Courts
+**Date:** 2025-01-28  
+**Issue:** Players sitting out forcefully when "Cross Category" and "Maximize Courts" are both enabled  
+**Status:** ✅ FIXED
+
+### Problem Description:
+When both "Cross Category" and "Maximize Courts" options were enabled, the match generation algorithm was not properly utilizing all available courts, causing players to sit out unnecessarily.
+
+### Root Cause:
+The optimization logic at line 681 had a condition `if additional_courts_available > 0 and not config.allowCrossCategory:` that prevented the secondary court-filling optimization from running when Cross Category was already enabled.
+
+When Cross Category is True:
+1. All players are grouped into a single "Mixed" category
+2. Matches are calculated for that category
+3. If not enough players exist to fill all courts initially, the additional optimization was SKIPPED
+4. Result: Empty courts and players sitting out
+
+### Fix Applied:
+Modified `/app/backend/server.py` lines 680-713:
+- **Removed** the `not config.allowCrossCategory` condition
+- **Updated** the logic to work for both cross-category enabled and disabled modes
+- **Enhanced** the unused player collection to properly extend existing Mixed category plans
+- **Fixed** player tracking to avoid reusing already-assigned players
+
+### Changes Made:
+```python
+# OLD: Only ran when cross-category was disabled
+if additional_courts_available > 0 and not config.allowCrossCategory:
+
+# NEW: Runs regardless of cross-category setting
+if additional_courts_available > 0:
+```
+
+### Expected Behavior After Fix:
+- ✅ When Cross Category + Maximize Courts are enabled, all available courts are utilized
+- ✅ Players only sit out when mathematically necessary (e.g., 13 players, 3 courts = 1 sits)
+- ✅ Algorithm creates additional matches to fill unused courts
+- ✅ Mixed category plans are extended with additional matches when possible
+
+### Testing Required:
+1. Test with Cross Category + Maximize Courts enabled
+2. Verify all courts are filled when enough players exist
+3. Confirm sitout count is minimized
+4. Validate match quality and player distribution
+
+---
+
 ## Backend Test Summary
 **Date:** 2025-10-07  
 **Backend URL:** https://courtchime.preview.emergentagent.com/api  
