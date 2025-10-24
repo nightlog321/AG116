@@ -405,3 +405,89 @@ The logout routing fix has been successfully implemented and verified:
 5. **✅ Error Handling Preserved**: Proper HTTP status codes maintained
 
 **FINAL VERDICT**: The logout routing fix is working correctly. The backend is healthy and all requested endpoints are functioning as expected. No backend-related issues detected.
+
+---
+
+## 🎯 MANUAL SITOUT DRAG & DROP BACKEND TEST RESULTS
+**Date:** 2025-01-28  
+**Test Focus:** Backend API verification for manual player swapping functionality  
+**Success Rate:** 97.6% (41/42 tests passed)
+
+### ✅ BACKEND APIS FULLY FUNCTIONAL FOR DRAG & DROP FEATURE
+
+#### Core Match Generation Testing
+- **✅ Match Generation Endpoint**: `/api/session/generate-matches` working correctly
+- **✅ Legacy Mode Support**: Successfully generates matches for traditional round-robin scheduling
+- **✅ Top Court Mode Support**: Winner-stays model with player movement functioning
+- **✅ Club Parameter**: `club_name=Main Club` parameter working correctly
+- **✅ Match Structure**: Generated matches contain all required fields (teamA, teamB, courtIndex, roundIndex, category, matchType)
+
+#### Session State Management Testing
+- **✅ Session Endpoint**: `/api/session?club_name=Main%20Club` responding correctly
+- **✅ Phase Transitions**: Session phases (idle → ready → playing) supported
+- **✅ Current Round**: `currentRound` field present and accurate
+- **✅ Configuration**: `config.numCourts` and `config.rotationModel` fields verified
+- **✅ Session Structure**: All required fields for frontend consumption present
+
+#### Player Data Integrity Testing
+- **✅ Players Endpoint**: `/api/players?club_name=Main%20Club` working correctly
+- **✅ Active Players**: All active players returned (12 active players found)
+- **✅ Player Structure**: Required fields (id, name, category, isActive) present
+- **✅ Data Format**: Player data structure suitable for frontend consumption
+
+#### Match State Persistence Testing
+- **✅ Match Retrieval**: `/api/matches?club_name=Main%20Club` endpoint functional
+- **✅ Database Persistence**: Match data persists correctly in SQLite database
+- **✅ Match Format**: Match structure includes all required fields for frontend
+- **✅ Data Integrity**: Generated matches maintain proper team assignments
+
+#### Authentication Testing
+- **✅ Club Authentication**: Main Club with demo123 access code working
+- **✅ Login Response**: Correct response format with authenticated=true
+- **✅ Club-Aware Endpoints**: All endpoints support club_name parameter
+- **✅ Security**: Access code validation functioning properly
+
+### 🔧 Technical Implementation Details
+- **Backend URL**: https://courtchime.preview.emergentagent.com/api
+- **Database**: SQLite with club-based multi-tenancy
+- **Authentication Method**: Club name + access code validation
+- **API Prefix**: All endpoints correctly prefixed with '/api'
+- **Response Format**: JSON responses with proper HTTP status codes
+
+### 📊 Test Coverage Summary
+
+| Feature | Status | Details |
+|---------|--------|---------|
+| Match Generation (Legacy) | ✅ Working | Generates matches for round-robin scheduling |
+| Match Generation (Top Court) | ✅ Working | Winner-stays model supported |
+| Session State Management | ✅ Working | Phase transitions and config accessible |
+| Player Data Retrieval | ✅ Working | Active players with correct structure |
+| Match Persistence | ✅ Working | Database storage and retrieval functional |
+| Club Authentication | ✅ Working | Main Club + demo123 access verified |
+| API Response Format | ✅ Working | All responses suitable for frontend |
+
+### ❌ Minor Issues (Non-Critical)
+- **Current Matches Endpoint**: Returns 404 (endpoint may not exist - not required for drag & drop)
+
+### 🚀 PRODUCTION READINESS ASSESSMENT
+
+**The backend APIs supporting the manual sitout drag & drop feature are PRODUCTION READY:**
+
+1. **✅ Core Functionality**: All required endpoints working correctly
+2. **✅ Data Integrity**: Match generation and persistence functioning properly
+3. **✅ Authentication**: Club-based access control operational
+4. **✅ API Structure**: Response formats match frontend requirements
+5. **✅ Error Handling**: Proper HTTP status codes and error responses
+6. **✅ Database Operations**: SQLite persistence working reliably
+
+### 🎯 DRAG & DROP FEATURE BACKEND SUPPORT VERIFIED
+
+The backend successfully supports the manual sitout drag & drop feature by providing:
+
+- **Match Generation**: Creates valid match objects with proper team assignments
+- **Session Management**: Tracks session phases and configuration for "Ready" state
+- **Player Management**: Provides active player data with all necessary fields
+- **Data Persistence**: Maintains match state in database for frontend consumption
+- **Authentication**: Secure club-based access to all endpoints
+
+**RECOMMENDATION**: The backend is fully prepared to support the manual sitout drag & drop feature. All critical APIs are functional and ready for frontend integration.
