@@ -523,7 +523,7 @@ index c5bcd36..e69de29 100644
 ---------------+import json
 ---------------+import time
 ---------------+
----------------+BACKEND_URL = "https://club-scheduler-1.preview.emergentagent.com/api"
+---------------+BACKEND_URL = "https://courtchime.preview.emergentagent.com/api"
 ---------------+
 ---------------+def debug_toggle_issue():
 ---------------+    session = requests.Session()
@@ -609,7 +609,7 @@ index c5bcd36..e69de29 100644
 ---------------+import json
 ---------------+import time
 ---------------+
----------------+BACKEND_URL = "https://club-scheduler-1.preview.emergentagent.com/api"
+---------------+BACKEND_URL = "https://courtchime.preview.emergentagent.com/api"
 ---------------+
 ---------------+def test_player_active_status_detailed():
 ---------------+    """Detailed test of player active status functionality"""
@@ -988,7 +988,7 @@ index c5bcd36..e69de29 100644
 ---------------+
 ---------------+## Test Summary
 ---------------+**Date:** 2025-10-07  
----------------+**Backend URL:** https://club-scheduler-1.preview.emergentagent.com/api  
+---------------+**Backend URL:** https://courtchime.preview.emergentagent.com/api  
 ---------------+**Database:** SQLite (courtchime.db)  
 ---------------+
 ---------------+## Backend Test Results
@@ -1113,7 +1113,7 @@ index c5bcd36..e69de29 100644
 ---------------## Test Summary
 --------------+## Backend Test Summary
 -------------- **Date:** 2025-10-07  
--------------- **Backend URL:** https://club-scheduler-1.preview.emergentagent.com/api  
+-------------- **Backend URL:** https://courtchime.preview.emergentagent.com/api  
 -------------- **Database:** SQLite (courtchime.db)  
 -------------- 
 ---------------## Backend Test Results
@@ -1160,7 +1160,7 @@ index c5bcd36..e69de29 100644
 ---------------## Detailed Test Results
 --------------+## Frontend Test Results
 --------------+**Date:** 2025-10-07  
---------------+**Frontend URL:** https://club-scheduler-1.preview.emergentagent.com  
+--------------+**Frontend URL:** https://courtchime.preview.emergentagent.com  
 --------------+**Test Focus:** Player Remove/Add Button Functionality  
 --------------+**Mobile Testing:** iPhone 12 dimensions (390x844)
 --------------+
@@ -1225,7 +1225,7 @@ index c5bcd36..e69de29 100644
 ---------------✅ Cross-player testing: Works with different players
 ---------------✅ Active player filtering: Only active players used in matches
 --------------+🚀 BUTTON CLICKED! Starting toggle for: {playerId: 392c4cae-6a21-4580-9a95-d1a357d44af2, playerName: Jane Doe, currentStatus: true}
---------------+📞 Making API call to: https://club-scheduler-1.preview.emergentagent.com/api/players/392c4cae-6a21-4580-9a95-d1a357d44af2/toggle-active
+--------------+📞 Making API call to: https://courtchime.preview.emergentagent.com/api/players/392c4cae-6a21-4580-9a95-d1a357d44af2/toggle-active
 --------------+📡 API Response received: 200
 --------------+✅ API Response data: {message: Player Jane Doe deactivated for today's session, isActive: false}
 --------------+🔄 About to refresh players...
@@ -1378,7 +1378,7 @@ index c5bcd36..e69de29 100644
 -------------- a/test_result.md
 -----------+++ b/test_result.md
 -----------@@ -5,11 +5,79 @@
------------ **Backend URL:** https://club-scheduler-1.preview.emergentagent.com/api  
+----------- **Backend URL:** https://courtchime.preview.emergentagent.com/api  
 ----------- **Database:** SQLite (courtchime.db)  
 ----------- 
 ------------### Backend Status: ✅ **FULLY FUNCTIONAL**

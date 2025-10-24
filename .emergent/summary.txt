@@ -1,64 +1,73 @@
 <analysis>
-The previous AI engineer focused on enhancing the CourtChime application across several domains. Initially, the core task involved resolving a critical UI refresh bug in , where player active status updates weren't reflecting visually due to a  scoping issue, which was resolved by passing the function as a prop. Subsequently, a major feature was implemented: a multi-tenant club authentication system. This involved extensive backend modifications to filter all API calls by  and frontend changes for login/registration. This phase encountered multiple issues, including race conditions, duplicate login components, and incorrect  logic, which were systematically addressed. Later, a bug in the admin configuration save functionality was fixed, tracing back to a  dependency and a missing  parameter in a backend endpoint. Manual player reshuffling with a tap-to-swap mechanism was added, fixing issues with Generate Matches and Unknown Players by ensuring backend match queries used . The Reset to Original function was fixed by addressing timing issues in  storage. Audio functionality was removed as requested, leading to a persistent  error, which was resolved by correctly scoping a  variable. Finally, the Next Round functionality was fixed by correcting hardcoded  values in backend scheduling logic. The current persistent issue is a logout routing error, which the engineer is actively debugging, focusing on 's interaction with the inline login component.
+The previous AI engineer diligently worked on the CourtChime application, addressing both bugs and significant feature requests. Initially, the focus was on resolving a logout routing error, which involved debugging  interactions and  usage for session persistence. A major feature, the Social category, was successfully implemented, allowing non-rated play with an optional scoring badge and excluding these players from leaderboards. This required extensive modifications to both backend schemas (SQLite) and frontend UI.
+
+Later, there were multiple attempts to implement and revert a new logo, requiring image resizing and layout adjustments in . Debugging then shifted to login issues on the preview URL, which was identified as an infrastructure routing problem, necessitating the use of the production URL. A critical bug preventing login with a club's  was fixed in the backend  by modifying the SQLAlchemy query, though persistence on the production URL remained problematic.
+
+The engineer then began implementing the complex Top Court rotation model. This involved updating frontend interfaces, adding a UI toggle in the Admin Console, and creating winner checkboxes. After initial UI implementation, a significant backend schema update for  was required in  to ensure persistence. The core Top Court algorithm for player movement and re-pairing (splitting teams, least-recently-partnered logic) was implemented and refined in the backend. Rating calculations for Top Court were then disabled, and the leaderboard was updated to show cumulative wins instead. Finally, a sitout display was added to the Courts tab, which required debugging a  error, leading to a refactor using . The latest task involves implementing drag-and-drop functionality for sitout management.
 </analysis>
 
 <product_requirements>
-The CourtChime application manages time-boxed pickleball sessions, supporting player registration, category-based matchmaking, various game formats, session control (Play/Buffer, Horn Now, Pause/Resume), score capture, and CSV export. Administrative functions for settings and player management are crucial.
+The CourtChime application is designed to manage pickleball sessions, encompassing player registration, category-based matchmaking, various game formats, and session controls like Play/Buffer, Horn Now, Pause/Resume. It supports score capture, CSV export, and administrative functions for settings and player management.
 
-Key implemented features include: fair scheduling, Player & Session CRUD, Live Courts Dashboard, Timer System, a dark gradient UI, cross-category matching, CSV import/export, a DUPR-style rating system, and a multi-club architecture (migrated from MongoDB to SQLite). Recent additions include automatic round progression, enhanced player reshuffling, a manual Next Round button, match date tracking, player daily active/inactive status management with UI controls. A multi-tenant club authentication system was implemented, allowing users to log in with a club name and access code, with data isolated per club. Manual player reshuffling via tap-to-swap was added to the Courts tab during the 'ready' phase, allowing users to rearrange players and reset to original assignments. All audio functionality has been removed.
+Key features include fair scheduling, Player & Session CRUD, a Live Courts Dashboard, Timer System, DUPR-style rating, and a multi-club architecture. Recent enhancements added automatic round progression, a manual Next Round button, match date tracking, player active/inactive status, and a multi-tenant club authentication system with isolated data per club. Manual player reshuffling via tap-to-swap exists on the Courts tab, and all audio functionality has been removed. A new Social category has been implemented, where scoring is optional, and players are excluded from ratings and leaderboards. The application now supports a Top Court rotation model with winner checkboxes, and sitout players are displayed on the Courts tab. The Reset to Original functionality for player assignments is deemed unused and is being removed.
 </product_requirements>
 
 <key_technical_concepts>
 - **Mobile Development:** Expo (React Native), Expo Router.
 - **Backend:** FastAPI, SQLite (SQLAlchemy), Pydantic.
-- **State Management:** React local state (, , ),  for persistent client-side data.
-- **Core Algorithms:** DUPR-style ELO rating system, round-robin scheduling, enhanced player reshuffling.
+- **State Management:** React local state (, , , ), .
+- **Core Algorithms:** DUPR-style ELO rating system, round-robin scheduling, Top Court rotation, least-recently-partnered pairing.
 - **UI/UX:** React Native components, , .
-- **Drag & Drop:**  (attempted), simplified to tap-to-swap logic.
 </key_technical_concepts>
 
 <code_architecture>
 
 
 -   **/app/backend/server.py**:
-    -   **Importance:** Core FastAPI backend.
-    -   **Changes Made:** Extensively modified to include  parameter in almost all API endpoints (, , , , etc.) for multi-tenancy. Added , ,  endpoints. Corrected  and match creation logic to use dynamic .
+    -   **Importance:** Core FastAPI backend handling all API endpoints and business logic.
+    -   **Changes Made:** Extensively modified for multi-tenancy (club_name parameter in API calls). Added , . Updated  and match creation to use dynamic . Modified the login endpoint to allow authentication by either  or . Added Social category to default categories and modified  to skip social matches. Updated  Pydantic model to include . Implemented  with complex player movement and re-pairing logic (splitting teams, least-recently-partnered). Disabled  for Top Court matches.
 -   **/app/backend/database.py**:
-    -   **Importance:** Manages SQLite connection and ORM models.
-    -   **Changes Made:** Added  column to the  model.
--   **/app/backend/mongodb_models.py (created), /app/backend/db_manager.py (created)**:
-    -   **Importance:** Attempted hybrid database solution (MongoDB in production, SQLite in dev).
-    -   **Changes Made:** Created, then effectively deprecated/removed during the shift back to pure SQLite.
+    -   **Importance:** Manages SQLite connection and ORM models, including database initialization.
+    -   **Changes Made:** Added  column to the  model. Updated database initialization logic to include the Social category.
 -   **/app/frontend/app/index.tsx**:
-    -   **Importance:** Main frontend UI logic.
-    -   **Changes Made:** Massive refactoring to implement multi-tenancy: added authentication state (, ), , ,  functions. Updated all API calls to pass . Implemented tap-to-swap reshuffling in  (removed drag-and-drop libs). Added  using  to correctly scope timer warning logic. Removed all audio-related code. Corrected  dependencies for  and  state.
--   **/app/frontend/app/login.tsx (created and modified multiple times)**:
-    -   **Importance:** Dedicated file-based route for login/registration.
-    -   **Changes Made:** Created to handle login/registration UI and API calls. Initially included redirect logic, which led to routing conflicts. Currently designed to render the login page, but the routing from  to this component is still problematic.
--   **/app/frontend/.env**:
-    -   **Importance:** Stores frontend environment variables.
-    -   **Changes Made:**  and  configurations used for API calls.
+    -   **Importance:** Main frontend UI logic, including most components and state management.
+    -   **Changes Made:** Refactored for multi-tenancy, authentication state, and API calls. Corrected  to persist session data to . Implemented UI for Social category (badge, filtered leaderboards). Added and reverted logo display in header and login page multiple times, adjusting layout and styles. Implemented Top Court UI: Model toggle in , winner checkboxes for courts, Top Court badge on Court 1, and conditional leaderboard display (Wins only). Implemented sitout display:  function (refactored with ) and UI section. Currently being modified to enable drag-and-drop for sitout management, removing Reset to Original button.
+-   **/app/frontend/app/login.tsx**:
+    -   **Importance:** Dedicated route for login/registration.
+    -   **Changes Made:** Initially created for login/registration, but its redirect logic caused conflicts. The  was removed to allow  to handle routing for unauthenticated users. This file is currently not used as  is inlined in .
 -   **/app/frontend/app.json**:
     -   **Importance:** Expo project configuration.
-    -   **Changes Made:**  plugin and  enabled, contributing to routing challenges.
--   **/app/frontend/package.json**:
-    -   **Importance:** Defines frontend dependencies.
-    -   **Changes Made:** , ,  (added, then its usage reverted to tap-to-swap).
+    -   **Changes Made:**  plugin and  enabled.
+-   **/app/frontend/.env**:
+    -   **Importance:** Stores frontend environment variables.
+    -   **Changes Made:**  and  configurations are present.
+-   **/app/frontend/assets/**:
+    -   **Importance:** Stores static assets like images.
+    -   **Changes Made:** Logo image files (e.g., , ) were created and managed here during logo implementation efforts. These were subsequently removed during reverts.
 </code_architecture>
 
 <pending_tasks>
-- **Logout Routing Fix:** The logout functionality is still causing an Unmatched route error, preventing the app from reliably returning to the login screen.
+- **Implement Manual Sitout Drag & Drop:**
+    - Make the sitout section draggable.
+    - Allow dragging players from sitout to courts and vice-versa.
+    - Ensure validation prevents creating invalid matches (e.g., more/less than 4 players per court).
+    - This functionality should work for both Legacy and Top Court modes.
+    - The  function needs full implementation with drag-and-drop logic.
+- **Add styling for the selected state of players** during drag and drop.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was addressing the persistent Unmatched route error that occurs when a user attempts to log out. The sequence of actions leading to this point includes:
+Immediately before this summary request, the AI engineer was implementing the manual sitout drag & drop functionality for the  in . This feature aims to allow court managers to manually move players between courts and the sitout area, replacing the Reset to Original button which was deemed unused.
 
-1.  **Initial Attempt:** Removed  from the  function in  (Chat Message 735), assuming the inline  component would handle rendering. This didn't fully resolve it.
-2.  **Reintroduction of Router:** Realized that  was still configured (via ) and likely expecting a file-based route. A new  file was created in  (Chat Message 755), and the  import and  were restored in 's  function (Chat Messages 757, 759).
-3.  **Authentication Check Fix:** Discovered that  in  was temporarily hardcoded to , preventing proper re-authentication flow. This was corrected (Chat Message 771).
-4.  **Current Problem:** Despite these fixes, the Unmatched route error persists, indicating that  is still failing to correctly resolve the  route or that the  redirect logic (which attempts to redirect back to ) is causing a loop or conflict. The current thought is that  itself, which was implemented as a redirect, might be the root cause. The AI engineer is planning to simplify  to directly render the login UI.
+The work has progressed as follows:
+1.  **Removal of Reset to Original:** The Reset to Original button and associated Top Players text/instructions have been successfully removed from the  component.
+2.  **Sitout Section Interaction:** The sitout section has been modified to make players tappable for selection, which is a preliminary step for enabling drag-and-drop.
+3.  ** Function:** A placeholder  function has been created. This function is intended to handle the logic for swapping players between courts and the sitout area, including validation (e.g., maintaining 4 players per court). This function is critical for the core functionality of the drag & drop feature and is not yet fully implemented.
+4.  **Pending Styling:** The next immediate step is to add styling for the selected state of players to provide visual feedback during the drag-and-drop process.
+
+The current state is that the UI elements for removing previous features are in place, and the sitout section is prepared for interaction, but the core drag-and-drop logic and visual feedback are still under active development. The goal is to allow manual player management in the Ready phase for both Legacy and Top Court rotation models.
 </current_work>
 
 <optional_next_step>
-Simplify the  file to directly render the  UI, rather than attempting a redirect.
+Add styles for the selected state of players to visually indicate when a player is tapped for a swap operation.
 </optional_next_step>

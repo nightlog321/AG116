@@ -2,7 +2,7 @@
 
 ## Backend Test Summary
 **Date:** 2025-10-07  
-**Backend URL:** https://club-scheduler-1.preview.emergentagent.com/api  
+**Backend URL:** https://courtchime.preview.emergentagent.com/api  
 **Database:** SQLite (courtchime.db)  
 
 ### Backend Status: ✅ **FULLY FUNCTIONAL WITH NEW CLUB AUTHENTICATION**
@@ -83,7 +83,7 @@ All authentication endpoints return correct response format:
 
 ## Frontend Test Results
 **Date:** 2025-10-07  
-**Frontend URL:** https://club-scheduler-1.preview.emergentagent.com  
+**Frontend URL:** https://courtchime.preview.emergentagent.com  
 **Test Focus:** Player Remove/Add Button Functionality  
 **Mobile Testing:** iPhone 12 dimensions (390x844)
 
@@ -141,7 +141,7 @@ From console logs, the API integration is working flawlessly:
 
 ```
 🚀 BUTTON CLICKED! Starting toggle for: {playerId: 392c4cae-6a21-4580-9a95-d1a357d44af2, playerName: Jane Doe, currentStatus: true}
-📞 Making API call to: https://club-scheduler-1.preview.emergentagent.com/api/players/392c4cae-6a21-4580-9a95-d1a357d44af2/toggle-active
+📞 Making API call to: https://courtchime.preview.emergentagent.com/api/players/392c4cae-6a21-4580-9a95-d1a357d44af2/toggle-active
 📡 API Response received: 200
 ✅ API Response data: {message: Player Jane Doe deactivated for today's session, isActive: false}
 🔄 About to refresh players...
