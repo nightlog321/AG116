@@ -245,10 +245,10 @@ class CourtChimeAPITester:
             return False
     
     def test_match_generation(self):
-        """Test match generation functionality"""
+        """Test match generation functionality for both rotation models"""
         try:
             # First ensure we have enough active players
-            response = self.session.get(f"{self.base_url}/players")
+            response = self.session.get(f"{self.base_url}/players", params={"club_name": "Main Club"})
             if response.status_code != 200:
                 self.log_test("Match Generation - Get Players", False, f"Cannot get players: {response.status_code}")
                 return False
@@ -262,8 +262,8 @@ class CourtChimeAPITester:
             
             self.log_test("Match Generation - Player Count", True, f"Found {len(active_players)} active players")
             
-            # Test generate matches
-            response = self.session.post(f"{self.base_url}/session/generate-matches")
+            # Test generate matches endpoint with club_name parameter
+            response = self.session.post(f"{self.base_url}/matches/generate", params={"club_name": "Main Club"})
             if response.status_code != 200:
                 self.log_test("Match Generation - Generate", False, f"Status: {response.status_code}", response.text)
                 return False
@@ -275,7 +275,7 @@ class CourtChimeAPITester:
             # Verify matches have proper structure
             if generated_matches:
                 sample_match = generated_matches[0]
-                required_fields = ["id", "teamA", "teamB", "category", "matchType", "status"]
+                required_fields = ["id", "teamA", "teamB", "category", "matchType", "status", "roundIndex", "courtIndex"]
                 missing_fields = [field for field in required_fields if field not in sample_match]
                 
                 if not missing_fields:
