@@ -2081,8 +2081,16 @@ function CourtsDashboard({
       if (selectedPlayer.matchId === matchId && selectedPlayer.team === team && selectedPlayer.index === index) {
         // Same player clicked - deselect
         setSelectedPlayer(null);
+      } else if (selectedPlayer.matchId === 'sitout') {
+        // Sitout player selected, now tapping court player - swap with sitout
+        const match = matches.find(m => m.id === matchId);
+        if (match) {
+          const courtTeam = team === 'A' ? match.teamA : match.teamB;
+          const courtPlayerId = courtTeam[index];
+          handlePlayerSwap(matchId, courtPlayerId);
+        }
       } else {
-        // Different player - swap them
+        // Court to court swap - use existing logic
         swapPlayers(
           selectedPlayer.matchId, selectedPlayer.team, selectedPlayer.index,
           matchId, team, index
