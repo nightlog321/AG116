@@ -1,5 +1,58 @@
 # CourtChime Test Results
 
+## 🆕 Manual Sitout Drag & Drop Implementation
+**Date:** 2025-01-28  
+**Feature:** Manual player swapping between courts and sitout area  
+**Status:** ✅ IMPLEMENTATION COMPLETE - READY FOR TESTING
+
+### Implementation Summary
+Implemented tap-to-swap functionality allowing court managers to manually move players between courts and the sitout area during the "Ready" phase.
+
+#### Changes Made:
+1. **Enhanced `handlePlayerSelect` Function:**
+   - Added logic to detect when a sitout player is selected first, then a court player is tapped
+   - Properly triggers `handlePlayerSwap` for sitout ↔ court swaps
+   - Maintains existing court ↔ court swap functionality
+
+2. **Added Sitout Section to Ready Phase:**
+   - Displayed sitout players in a dedicated section during "Ready" phase
+   - Players are tappable with visual feedback (blue highlight when selected)
+   - Shows player name, category, and selection state
+   - Icon changes from "person-outline" to "checkbox" when selected
+
+3. **Fixed Duplicate `movePlayer` Function:**
+   - Removed unused `movePlayer` function that moved players between different matches
+   - Kept the `movePlayer` function that swaps players within the same match
+
+4. **Removed "Reset to Original" Button:**
+   - As requested, removed the unused "Reset to Original" functionality
+   - Removed "Top Players" instructional text
+
+### Swap Functionality:
+- **Court → Sitout:** Select a court player, then tap a sitout player to swap
+- **Sitout → Court:** Select a sitout player, then tap a court player to swap
+- **Court → Court:** Select a player on one court, then tap a player on another court to swap
+- **Deselect:** Tap the same player again to deselect
+
+### Visual Feedback:
+- **Court Players (Selected):** Blue background, white text, scale animation
+- **Sitout Players (Selected):** Blue background with border, checkbox icon, bold blue text
+- **Instruction:** "💡 Tap players to swap positions or move to/from sitout"
+
+### Files Modified:
+- `/app/frontend/app/index.tsx`:
+  - Modified `handlePlayerSelect` function (lines 2075-2100)
+  - Added sitout section to ready phase (lines 2649-2697)
+  - Removed duplicate `movePlayer` function
+  - Existing `handlePlayerSwap` function already had complete sitout swap logic
+
+### Next Steps:
+1. Backend testing to verify swap functionality
+2. Frontend testing to verify UI interactions
+3. Validation testing to ensure courts maintain 4 players
+
+---
+
 ## Backend Test Summary
 **Date:** 2025-10-07  
 **Backend URL:** https://courtchime.preview.emergentagent.com/api  
