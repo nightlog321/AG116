@@ -193,10 +193,10 @@ class CourtChimeAPITester:
             return False
     
     def test_session_api(self):
-        """Test session control endpoints"""
+        """Test session control endpoints with club-aware functionality"""
         try:
-            # Test GET session
-            response = self.session.get(f"{self.base_url}/session")
+            # Test GET session with club_name parameter
+            response = self.session.get(f"{self.base_url}/session", params={"club_name": "Main Club"})
             if response.status_code != 200:
                 self.log_test("Session GET", False, f"Status: {response.status_code}", response.text)
                 return False
@@ -204,13 +204,26 @@ class CourtChimeAPITester:
             session_data = response.json()
             self.log_test("Session GET", True, f"Session phase: {session_data.get('phase', 'unknown')}")
             
-            # Test session configuration
-            response = self.session.get(f"{self.base_url}/session/config")
-            if response.status_code == 200:
-                config = response.json()
-                self.log_test("Session Config", True, f"Courts: {config.get('numCourts', 'unknown')}")
+            # Verify session has required fields for drag & drop feature
+            required_fields = ["currentRound", "phase", "config"]
+            missing_fields = [field for field in required_fields if field not in session_data]
+            
+            if not missing_fields:
+                self.log_test("Session Structure", True, "Session has all required fields")
+                
+                # Check config structure
+                config = session_data.get("config", {})
+                config_fields = ["numCourts", "rotationModel"]
+                missing_config = [field for field in config_fields if field not in config]
+                
+                if not missing_config:
+                    rotation_model = config.get("rotationModel", "unknown")
+                    num_courts = config.get("numCourts", "unknown")
+                    self.log_test("Session Config", True, f"Courts: {num_courts}, Rotation: {rotation_model}")
+                else:
+                    self.log_test("Session Config", False, f"Missing config fields: {missing_config}")
             else:
-                self.log_test("Session Config", False, f"Status: {response.status_code}")
+                self.log_test("Session Structure", False, f"Missing session fields: {missing_fields}")
             
             return True
             
