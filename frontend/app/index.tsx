@@ -2100,39 +2100,6 @@ function CourtsDashboard({
     }
   };
 
-  const movePlayer = (fromMatchId: string, fromTeam: 'A' | 'B', fromIndex: number, toMatchId: string, toTeam: 'A' | 'B', toIndex: number) => {
-    const updatedMatches = [...matches];
-    
-    // Find source and destination matches
-    const fromMatchIndex = updatedMatches.findIndex(m => m.id === fromMatchId);
-    const toMatchIndex = updatedMatches.findIndex(m => m.id === toMatchId);
-    
-    if (fromMatchIndex === -1 || toMatchIndex === -1) return;
-    
-    const fromMatch = updatedMatches[fromMatchIndex];
-    const toMatch = updatedMatches[toMatchIndex];
-    
-    // Get the player being moved
-    const sourceTeam = fromTeam === 'A' ? fromMatch.teamA : fromMatch.teamB;
-    const targetTeam = toTeam === 'A' ? toMatch.teamA : toMatch.teamB;
-    
-    if (fromIndex >= sourceTeam.length) return;
-    
-    const playerId = sourceTeam[fromIndex];
-    
-    // Remove player from source
-    sourceTeam.splice(fromIndex, 1);
-    
-    // Add player to destination
-    if (toIndex >= targetTeam.length) {
-      targetTeam.push(playerId);
-    } else {
-      targetTeam.splice(toIndex, 0, playerId);
-    }
-    
-    setMatches(updatedMatches);
-  };
-
   const swapPlayers = (match1Id: string, team1: 'A' | 'B', index1: number, match2Id: string, team2: 'A' | 'B', index2: number) => {
     const updatedMatches = [...matches];
     
