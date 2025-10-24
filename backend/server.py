@@ -677,38 +677,45 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
                     plan['singles'] += additional_singles_possible
                     additional_courts_available -= additional_singles_possible
         
-        # If we still have unused courts and players sitting out, try cross-category optimization
-        if additional_courts_available > 0 and not config.allowCrossCategory:
-            # Collect all unused players across categories
+        # If we still have unused courts and players sitting out, try additional optimization
+        if additional_courts_available > 0:
+            # Collect all unused players across all categories
             all_unused_players = []
             for cat_name, plan in court_plans.items():
                 current_players_used = (plan['doubles'] * 4) + (plan['singles'] * 2)
                 unused_players = plan['eligible_players'][current_players_used:]
                 all_unused_players.extend(unused_players)
             
-            # Try to create mixed matches with unused players to fill courts
+            # Try to create additional matches with unused players to fill courts
             if len(all_unused_players) >= 4 and config.allowDoubles and additional_courts_available > 0:
-                mixed_doubles = min(len(all_unused_players) // 4, additional_courts_available)
-                if mixed_doubles > 0 and "Mixed" not in court_plans:
-                    court_plans["Mixed"] = {
-                        'doubles': mixed_doubles,
-                        'singles': 0,
-                        'eligible_players': all_unused_players[:mixed_doubles * 4]
-                    }
-                    additional_courts_available -= mixed_doubles
+                additional_doubles = min(len(all_unused_players) // 4, additional_courts_available)
+                if additional_doubles > 0:
+                    if "Mixed" in court_plans:
+                        # Add to existing Mixed category
+                        court_plans["Mixed"]['doubles'] += additional_doubles
+                        court_plans["Mixed"]['eligible_players'].extend(all_unused_players[:additional_doubles * 4])
+                    else:
+                        # Create new Mixed category for cross-category matches
+                        court_plans["Mixed"] = {
+                            'doubles': additional_doubles,
+                            'singles': 0,
+                            'eligible_players': all_unused_players[:additional_doubles * 4]
+                        }
+                    additional_courts_available -= additional_doubles
+                    all_unused_players = all_unused_players[additional_doubles * 4:]  # Remove used players
             
             # Remaining players for singles matches
-            remaining_mixed = len(all_unused_players) % 4
-            if remaining_mixed >= 2 and config.allowSingles and additional_courts_available > 0:
-                mixed_singles = min(remaining_mixed // 2, additional_courts_available)
-                if mixed_singles > 0:
+            if len(all_unused_players) >= 2 and config.allowSingles and additional_courts_available > 0:
+                additional_singles = min(len(all_unused_players) // 2, additional_courts_available)
+                if additional_singles > 0:
                     if "Mixed" in court_plans:
-                        court_plans["Mixed"]['singles'] += mixed_singles
+                        court_plans["Mixed"]['singles'] += additional_singles
+                        court_plans["Mixed"]['eligible_players'].extend(all_unused_players[:additional_singles * 2])
                     else:
                         court_plans["Mixed"] = {
                             'doubles': 0,
-                            'singles': mixed_singles,
-                            'eligible_players': all_unused_players[-mixed_singles * 2:]
+                            'singles': additional_singles,
+                            'eligible_players': all_unused_players[:additional_singles * 2]
                         }
         
         # Recalculate total courts needed after optimization
