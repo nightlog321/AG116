@@ -760,7 +760,7 @@ class CourtChimeAPITester:
             self.test_player_toggle_active(created_player["id"])
         else:
             # Try with existing players if any
-            response = self.session.get(f"{self.base_url}/players")
+            response = self.session.get(f"{self.base_url}/players", params={"club_name": "Main Club"})
             if response.status_code == 200:
                 players = response.json()
                 if players:
@@ -771,6 +771,9 @@ class CourtChimeAPITester:
         self.test_matches_api()
         self.test_database_operations()
         self.test_match_generation()
+        
+        # 🎯 Test Manual Sitout Drag & Drop Backend Support
+        self.test_manual_sitout_drag_drop_backend()
         
         # Clean up test data
         self.cleanup_test_data()
