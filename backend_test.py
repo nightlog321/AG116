@@ -276,7 +276,7 @@ class CourtChimeAPITester:
             self.log_test("Match Generation - Player Count", True, f"Found {len(active_players)} active players")
             
             # Test generate matches endpoint with club_name parameter
-            response = self.session.post(f"{self.base_url}/matches/generate", params={"club_name": "Main Club"})
+            response = self.session.post(f"{self.base_url}/session/generate-matches", params={"club_name": "Main Club"})
             if response.status_code != 200:
                 self.log_test("Match Generation - Generate", False, f"Status: {response.status_code}", response.text)
                 return False
