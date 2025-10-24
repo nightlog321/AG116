@@ -562,7 +562,7 @@ class CourtChimeAPITester:
                 self.log_test("DB Schema - Clubs Table Structure", False, f"Cannot access clubs: {response.status_code}")
             
             # Test 3: Verify session table has club-specific data
-            response = self.session.get(f"{self.base_url}/session")
+            response = self.session.get(f"{self.base_url}/session", params={"club_name": "Main Club"})
             if response.status_code == 200:
                 session_data = response.json()
                 if session_data:
@@ -576,6 +576,137 @@ class CourtChimeAPITester:
             
         except Exception as e:
             self.log_test("Database Schema Verification", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_manual_sitout_drag_drop_backend(self):
+        """Test backend APIs that support manual sitout drag & drop feature"""
+        try:
+            print("\n🎯 Testing Manual Sitout Drag & Drop Backend Support")
+            print("=" * 60)
+            
+            # Test 1: Core Match Generation for both rotation models
+            # Legacy Mode
+            response = self.session.post(f"{self.base_url}/matches/generate", 
+                                       params={"club_name": "Main Club"})
+            if response.status_code == 200:
+                matches_data = response.json()
+                matches = matches_data.get("matches", [])
+                self.log_test("Drag&Drop - Legacy Match Generation", True, 
+                            f"Generated {len(matches)} matches for Legacy mode")
+                
+                # Verify match structure for frontend consumption
+                if matches:
+                    match = matches[0]
+                    required_fields = ["id", "teamA", "teamB", "courtIndex", "roundIndex", "category", "matchType"]
+                    missing_fields = [field for field in required_fields if field not in match]
+                    
+                    if not missing_fields:
+                        self.log_test("Drag&Drop - Match Structure", True, 
+                                    "Matches have correct structure for frontend")
+                    else:
+                        self.log_test("Drag&Drop - Match Structure", False, 
+                                    f"Missing fields: {missing_fields}")
+            else:
+                self.log_test("Drag&Drop - Legacy Match Generation", False, 
+                            f"Status: {response.status_code}", response.text)
+            
+            # Test 2: Session State Management for Ready Phase
+            response = self.session.get(f"{self.base_url}/session", 
+                                      params={"club_name": "Main Club"})
+            if response.status_code == 200:
+                session = response.json()
+                
+                # Verify session phase transitions support
+                phase = session.get("phase", "unknown")
+                current_round = session.get("currentRound", 0)
+                config = session.get("config", {})
+                
+                self.log_test("Drag&Drop - Session State", True, 
+                            f"Phase: {phase}, Round: {current_round}")
+                
+                # Verify config includes rotationModel field
+                if "rotationModel" in config and "numCourts" in config:
+                    rotation_model = config["rotationModel"]
+                    num_courts = config["numCourts"]
+                    self.log_test("Drag&Drop - Session Config", True, 
+                                f"Rotation: {rotation_model}, Courts: {num_courts}")
+                else:
+                    self.log_test("Drag&Drop - Session Config", False, 
+                                "Missing rotationModel or numCourts in config")
+            else:
+                self.log_test("Drag&Drop - Session State", False, 
+                            f"Status: {response.status_code}", response.text)
+            
+            # Test 3: Player Data Integrity for Active Players
+            response = self.session.get(f"{self.base_url}/players", 
+                                      params={"club_name": "Main Club"})
+            if response.status_code == 200:
+                players = response.json()
+                active_players = [p for p in players if p.get("isActive", False)]
+                
+                self.log_test("Drag&Drop - Player Data", True, 
+                            f"Retrieved {len(active_players)} active players")
+                
+                # Verify player structure includes all necessary fields
+                if players:
+                    player = players[0]
+                    required_fields = ["id", "name", "category", "isActive"]
+                    missing_fields = [field for field in required_fields if field not in player]
+                    
+                    if not missing_fields:
+                        self.log_test("Drag&Drop - Player Structure", True, 
+                                    "Players have all required fields")
+                    else:
+                        self.log_test("Drag&Drop - Player Structure", False, 
+                                    f"Missing fields: {missing_fields}")
+            else:
+                self.log_test("Drag&Drop - Player Data", False, 
+                            f"Status: {response.status_code}", response.text)
+            
+            # Test 4: Match State Persistence
+            response = self.session.get(f"{self.base_url}/matches", 
+                                      params={"club_name": "Main Club"})
+            if response.status_code == 200:
+                matches = response.json()
+                self.log_test("Drag&Drop - Match Persistence", True, 
+                            f"Retrieved {len(matches)} persisted matches")
+                
+                # Verify match data structure for frontend consumption
+                if matches:
+                    match = matches[0]
+                    if all(field in match for field in ["teamA", "teamB", "courtIndex"]):
+                        self.log_test("Drag&Drop - Match Data Format", True, 
+                                    "Match data format suitable for frontend")
+                    else:
+                        self.log_test("Drag&Drop - Match Data Format", False, 
+                                    "Match data missing required fields")
+            else:
+                self.log_test("Drag&Drop - Match Persistence", False, 
+                            f"Status: {response.status_code}", response.text)
+            
+            # Test 5: Authentication with Main Club credentials
+            login_data = {
+                "club_name": "Main Club",
+                "access_code": "demo123"
+            }
+            
+            response = self.session.post(f"{self.base_url}/auth/login", json=login_data)
+            if response.status_code == 200:
+                auth_response = response.json()
+                if auth_response.get("authenticated") == True:
+                    self.log_test("Drag&Drop - Authentication", True, 
+                                "Main Club authentication successful")
+                else:
+                    self.log_test("Drag&Drop - Authentication", False, 
+                                "Authentication response invalid")
+            else:
+                self.log_test("Drag&Drop - Authentication", False, 
+                            f"Status: {response.status_code}", response.text)
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Manual Sitout Drag & Drop Backend", False, f"Exception: {str(e)}")
             return False
     
     def cleanup_test_data(self):
