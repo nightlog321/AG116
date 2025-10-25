@@ -62,6 +62,12 @@ class MaximizeCourtsBackendTester:
                 self.log_result("Clear Data", False, f"Status: {response.status_code}")
                 return False
             
+            # Clear any existing matches
+            try:
+                self.session.delete(f"{self.backend_url}/matches?club_name={self.club_name}")
+            except:
+                pass  # Ignore if endpoint doesn't exist
+            
             # Add test data to get base players
             response = self.session.post(f"{self.backend_url}/add-test-data")
             if response.status_code != 200:
