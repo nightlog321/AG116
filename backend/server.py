@@ -2025,7 +2025,7 @@ async def generate_matches(club_name: str = "Main Club", db_session: AsyncSessio
         session_obj = await get_session(club_name, db_session)
         
         # Check if we have enough players based on enabled formats
-        result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == club_name))
+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == club_name, DBPlayer.is_active == True))
         players = result.scalars().all()
         players_count = len(players)
         
