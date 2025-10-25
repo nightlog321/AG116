@@ -539,13 +539,13 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
     
     if config.allowCrossCategory:
         # Mix all players together in one group
-        all_eligible = [p for p in players if not p.sitNextRound]
+        all_eligible = [p for p in players if not p.sitNextRound and p.isActive]
         if all_eligible:
             players_by_category["Mixed"] = all_eligible
     else:
         # Group by individual categories (original behavior)
         for player in players:
-            if not player.sitNextRound:  # Exclude players forced to sit
+            if not player.sitNextRound and player.isActive:  # Exclude players forced to sit and inactive players
                 players_by_category[player.category].append(player)
     
     # Initialize match planning
