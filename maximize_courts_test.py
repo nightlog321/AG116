@@ -139,20 +139,30 @@ class MaximizeCourtsBackendTester:
             self.log_result("Update Session Config", False, f"Error: {str(e)}")
             return False
     
-    def generate_matches(self) -> Dict[str, Any]:
-        """Generate matches and return the result"""
+    def generate_matches(self) -> List[Dict[str, Any]]:
+        """Generate matches and return the matches list"""
         try:
+            # First, generate the matches
             response = self.session.post(f"{self.backend_url}/session/generate-matches?club_name={self.club_name}")
             
-            if response.status_code == 200:
-                return response.json()
-            else:
+            if response.status_code != 200:
                 self.log_result("Generate Matches", False, f"Status: {response.status_code}, Response: {response.text}")
-                return {}
+                return []
+            
+            # Then, fetch the generated matches
+            response = self.session.get(f"{self.backend_url}/matches?club_name={self.club_name}")
+            
+            if response.status_code == 200:
+                matches = response.json()
+                self.log_result("Generate Matches", True, f"Generated {len(matches)} matches")
+                return matches
+            else:
+                self.log_result("Fetch Matches", False, f"Status: {response.status_code}, Response: {response.text}")
+                return []
                 
         except Exception as e:
             self.log_result("Generate Matches", False, f"Error: {str(e)}")
-            return {}
+            return []
     
     def analyze_match_results(self, matches: List[Dict], expected_courts: int, expected_players_in_matches: int, test_name: str) -> bool:
         """Analyze match generation results"""
