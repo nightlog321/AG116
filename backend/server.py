@@ -603,24 +603,47 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
         
         # Apply court optimization OVERRIDE if enabled
         if config.maximizeCourtUsage:
-            # Override fairness constraints - maximize player participation
-            # Recalculate to use all available players more efficiently
-            # BUT limit to available courts to prevent unnecessary sitouts
+            # Maximize court usage: Fill ALL available courts, minimize sitouts
+            # Strategy: Try to fill all numCourts with the best combination of doubles/singles
+            
+            courts_to_fill = config.numCourts
+            best_doubles = 0
+            best_singles = 0
+            
             if config.allowDoubles and config.allowSingles:
-                # Mixed approach: maximize doubles, then singles
-                max_doubles = min(count // 4, config.numCourts)  # Limit to available courts
-                remaining_after_doubles = count - (max_doubles * 4)
-                max_singles = min(remaining_after_doubles // 2, config.numCourts - max_doubles)
+                # Mixed approach: Try different combinations to use all courts
+                # Prioritize doubles, then fill remaining courts with singles
                 
-                # Always override with maximum possible matches when optimization is enabled
-                doubles_matches = max_doubles
-                singles_matches = max_singles
+                # Calculate maximum doubles we can make with available players
+                max_possible_doubles = count // 4
+                
+                # Try to use all courts
+                if max_possible_doubles >= courts_to_fill:
+                    # We have enough players for all courts to be doubles
+                    best_doubles = courts_to_fill
+                    best_singles = 0
+                else:
+                    # Use all possible doubles, fill rest with singles
+                    best_doubles = max_possible_doubles
+                    remaining_players = count - (best_doubles * 4)
+                    remaining_courts = courts_to_fill - best_doubles
+                    
+                    # Fill remaining courts with singles if we have enough players
+                    possible_singles = remaining_players // 2
+                    best_singles = min(possible_singles, remaining_courts)
+                
+                doubles_matches = best_doubles
+                singles_matches = best_singles
+                
             elif config.allowDoubles:
-                # Doubles only - maximize doubles matches
-                doubles_matches = min(count // 4, config.numCourts)  # Limit to available courts
+                # Doubles only - fill all courts with doubles
+                doubles_matches = min(count // 4, courts_to_fill)
+                singles_matches = 0
+                
             elif config.allowSingles:
-                # Singles only - maximize singles matches  
-                singles_matches = min(count // 2, config.numCourts)  # Limit to available courts
+                # Singles only - fill all courts with singles
+                doubles_matches = 0
+                singles_matches = min(count // 2, courts_to_fill)
         
         court_plans[cat_name] = {
             'doubles': doubles_matches,
