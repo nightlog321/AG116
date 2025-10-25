@@ -605,21 +605,22 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
         if config.maximizeCourtUsage:
             # Override fairness constraints - maximize player participation
             # Recalculate to use all available players more efficiently
+            # BUT limit to available courts to prevent unnecessary sitouts
             if config.allowDoubles and config.allowSingles:
                 # Mixed approach: maximize doubles, then singles
-                max_doubles = count // 4
-                remaining_after_doubles = count % 4
-                max_singles = remaining_after_doubles // 2
+                max_doubles = min(count // 4, config.numCourts)  # Limit to available courts
+                remaining_after_doubles = count - (max_doubles * 4)
+                max_singles = min(remaining_after_doubles // 2, config.numCourts - max_doubles)
                 
                 # Always override with maximum possible matches when optimization is enabled
                 doubles_matches = max_doubles
                 singles_matches = max_singles
             elif config.allowDoubles:
                 # Doubles only - maximize doubles matches
-                doubles_matches = count // 4
+                doubles_matches = min(count // 4, config.numCourts)  # Limit to available courts
             elif config.allowSingles:
                 # Singles only - maximize singles matches  
-                singles_matches = count // 2
+                singles_matches = min(count // 2, config.numCourts)  # Limit to available courts
         
         court_plans[cat_name] = {
             'doubles': doubles_matches,
