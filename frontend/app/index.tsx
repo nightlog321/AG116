@@ -2925,14 +2925,14 @@ function PlayersBoard({ players, matches, session }: { players: Player[]; matche
   // Show all players sorted by name
   const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name));
 
-  if (ratedPlayers.length === 0) {
+  if (sortedPlayers.length === 0) {
     return (
       <View style={styles.dashboardContainer}>
         <View style={styles.card}>
           <Ionicons name="trophy" size={48} color={colors.primary} />
-          <Text style={styles.emptyTitle}>No Rated Players</Text>
+          <Text style={styles.emptyTitle}>No Players</Text>
           <Text style={styles.emptyText}>
-            Add players from the Admin tab to get started with ratings. Social players are not included in ratings.
+            Add players from the Admin tab to get started.
           </Text>
         </View>
       </View>
