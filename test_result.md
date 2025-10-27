@@ -67,6 +67,67 @@
 
 ---
 
+## 🚨 CRITICAL BUG DISCOVERED - MATCH GENERATION ALGORITHM
+**Date:** 2025-01-28  
+**Test Focus:** Final verification test revealed critical bug in doubles match creation  
+**Status:** ❌ CRITICAL BUG FOUND - IMMEDIATE FIX REQUIRED
+
+### 🔥 CRITICAL ISSUE IDENTIFIED
+
+#### Problem Description:
+During final verification testing of the 13 players, 3 courts scenario, a **CRITICAL BUG** was discovered in the `create_doubles_matches` function in `/app/backend/server.py`.
+
+#### Bug Details:
+- **Issue**: Matches are being created with **identical teams on both sides**
+- **Example**: TeamA: `[player1, player2]`, TeamB: `[player1, player2]` (same players!)
+- **Impact**: Only 6 players are being used instead of 12 for 3 doubles matches
+- **Result**: 7 sitouts instead of 1 for the 13 players, 3 courts scenario
+
+#### Evidence from Backend Logs:
+```
+INSERT INTO matches (...) VALUES (
+  'doubles', 
+  '["16a8019f-0a24-496b-89db-d68f874b83b2", "96193e7e-7444-43aa-b33c-46ceb1d48f2f"]', 
+  '["16a8019f-0a24-496b-89db-d68f874b83b2", "96193e7e-7444-43aa-b33c-46ceb1d48f2f"]'
+)
+```
+
+#### Root Cause Analysis:
+1. **Location**: `/app/backend/server.py` lines 894-1018 (`create_doubles_matches` function)
+2. **Issue**: Team pairing logic in lines 975-995 is failing to find proper opponent teams
+3. **Fallback Problem**: When `best_opponent_team` is not found, algorithm creates invalid matches
+4. **Category Distribution**: 
+   - Beginner: 4 players → Should create 1 doubles match
+   - Intermediate: 5 players → Should create 1 doubles match  
+   - Advanced: 4 players → Should create 1 doubles match
+   - **Total**: Should be 3 matches with 12 players, 1 sitout
+
+#### Test Results:
+- **Expected**: 13 players → 3 doubles matches (12 players), 1 sitout
+- **Actual**: 13 players → 3 invalid matches (6 unique players), 7 sitouts
+- **Critical Test Status**: ❌ **FAILED**
+
+#### Impact Assessment:
+- **Severity**: CRITICAL - Core functionality broken
+- **User Impact**: Matches are unplayable (same players on both teams)
+- **Data Integrity**: Match generation algorithm fundamentally flawed
+- **Production Readiness**: ❌ **NOT READY** - Must be fixed before deployment
+
+#### Immediate Action Required:
+1. **Fix the team pairing logic** in `create_doubles_matches` function
+2. **Add validation** to prevent duplicate players across teams
+3. **Implement proper fallback** when opponent teams cannot be found
+4. **Add comprehensive testing** for edge cases in match generation
+
+#### Testing Status:
+- **13 Players, 3 Courts Scenario**: ❌ CRITICAL FAILURE
+- **Various Player/Court Combinations**: ❌ Multiple failures due to same bug
+- **Overall Backend Status**: ❌ CRITICAL BUG - REQUIRES IMMEDIATE FIX
+
+**🚨 RECOMMENDATION**: This critical bug must be resolved immediately. The match generation algorithm is fundamentally broken and creates unplayable matches. All deployment should be halted until this issue is fixed and thoroughly tested.
+
+---
+
 ## 🆕 Manual Sitout Drag & Drop Implementation
 **Date:** 2025-01-28  
 **Feature:** Manual player swapping between courts and sitout area  
