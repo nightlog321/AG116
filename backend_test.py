@@ -15,7 +15,7 @@ BACKEND_URL = "https://courtchime.preview.emergentagent.com/api"
 CLUB_NAME = "Main Club"
 ACCESS_CODE = "demo123"
 
-class CourtChimeAPITester:
+class FinalFixesTester:
     def __init__(self, base_url: str):
         self.base_url = base_url
         self.session = requests.Session()
