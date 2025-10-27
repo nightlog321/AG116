@@ -505,7 +505,8 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
             'category': db_player.category,
             'sitNextRound': db_player.sit_next_round,
             'sitCount': db_player.sit_count,
-            'missCourtLimit': db_player.miss_due_to_court_limit,
+            'missDueToCourtLimit': db_player.miss_due_to_court_limit,
+            'isActive': db_player.is_active,  # CRITICAL FIX: Include isActive field
             'stats': {
                 'wins': db_player.stats_wins,
                 'losses': db_player.stats_losses,
@@ -513,6 +514,8 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
             },
             'rating': db_player.rating,
             'matchesPlayed': db_player.matches_played,
+            'wins': db_player.wins,
+            'losses': db_player.losses,
             'recentForm': json.loads(db_player.recent_form) if db_player.recent_form else [],
             'ratingHistory': json.loads(db_player.rating_history) if db_player.rating_history else [],
             'lastUpdated': db_player.last_updated.isoformat() if db_player.last_updated else None
