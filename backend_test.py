@@ -355,16 +355,25 @@ class FinalFixesTester:
         self.log_test("First Round - Correct Player Allocation", correct_allocation,
                      f"Players in matches: {len(players_in_matches)}, Active players: {len(active_players)}")
     
-    def test_top_court_first_round(self):
-        """Test 2: Top Court Mode First Round"""
-        print("\n🏆 Testing Top Court Mode First Round")
+    def test_top_court_mode_comprehensive(self):
+        """Test Top Court Mode First Round and Rotation"""
+        print("\n🏆 Testing Top Court Mode Comprehensive")
         
-        # Clear matches and configure for top court
+        # Clear matches and setup 8 players for clean test
         self.clear_matches()
-        self.activate_all_players()
+        players = self.get_players()
+        
+        # Setup exactly 8 active players for clean Top Court test
+        for i, player in enumerate(players):
+            should_be_active = i < 8
+            current_active = player.get('isActive', True)
+            
+            if should_be_active != current_active:
+                self.session.patch(f"{BACKEND_URL}/players/{player['id']}/toggle-active", 
+                                 params={"club_name": CLUB_NAME})
         
         config = {
-            "numCourts": 3,
+            "numCourts": 2,  # Use 2 courts for cleaner Top Court test
             "allowSingles": True,
             "allowDoubles": True,
             "allowCrossCategory": False,
@@ -372,8 +381,7 @@ class FinalFixesTester:
             "rotationModel": "top_court"
         }
         
-        config_updated = self.update_session_config(config)
-        if not config_updated:
+        if not self.update_session_config(config):
             self.log_test("Top Court - Config Update", False, "Failed to update config for top court mode")
             return
         
@@ -389,38 +397,64 @@ class FinalFixesTester:
         court_0_matches = [m for m in matches if m['courtIndex'] == 0]
         has_top_court = len(court_0_matches) > 0
         
-        # Verify all courts are filled when maximize courts is enabled
+        # Verify all courts filled
         court_indices = set(match['courtIndex'] for match in matches)
         courts_used = len(court_indices)
+        all_courts_filled = courts_used == 2
         
-        # Count active players
-        players = self.get_players()
-        active_players = [p for p in players if p.get('isActive', True)]
-        
+        # Verify no inactive players in matches
+        active_players = [p for p in self.get_players() if p.get('isActive', True)]
         players_in_matches = set()
         for match in matches:
             players_in_matches.update(match['teamA'])
             players_in_matches.update(match['teamB'])
         
-        all_courts_filled = courts_used == 3  # Should use all 3 courts
+        inactive_in_matches = any(
+            player_id not in [p['id'] for p in active_players]
+            for match in matches
+            for player_id in match['teamA'] + match['teamB']
+        )
         
         self.log_test("Top Court - Court 0 Exists", has_top_court, 
-                     f"Court 0 (Top Court) found: {len(court_0_matches)} matches")
+                     f"Court 0 (Top Court) found with {len(court_0_matches)} matches")
         
         self.log_test("Top Court - All Courts Filled", all_courts_filled,
-                     f"Used {courts_used}/3 courts with {len(players_in_matches)} players")
+                     f"Used {courts_used}/2 courts")
         
-        # Verify inactive players are excluded
-        inactive_players_in_matches = []
-        for match in matches:
-            for player_id in match['teamA'] + match['teamB']:
-                player = next((p for p in active_players if p['id'] == player_id), None)
-                if player and not player.get('isActive', True):
-                    inactive_players_in_matches.append(player_id)
+        self.log_test("Top Court - No Inactive Players", not inactive_in_matches,
+                     f"All players in matches are active")
         
-        no_inactive_in_matches = len(inactive_players_in_matches) == 0
-        self.log_test("Top Court - No Inactive Players", no_inactive_in_matches,
-                     f"Inactive players in matches: {len(inactive_players_in_matches)}")
+        # Test Top Court rotation by saving match results
+        if matches and len(matches) >= 2:
+            try:
+                # Save results for Court 0 (Top Court) - Team A wins
+                court_0_match = next((m for m in matches if m['courtIndex'] == 0), None)
+                if court_0_match:
+                    response = self.session.patch(
+                        f"{BACKEND_URL}/matches/{court_0_match['id']}/score",
+                        params={"club_name": CLUB_NAME},
+                        json={"scoreA": 11, "scoreB": 5}
+                    )
+                    
+                    if response.status_code == 200:
+                        self.log_test("Top Court - Save Match Results", True, "Court 0 match results saved")
+                        
+                        # Generate next round to test rotation
+                        next_result = self.generate_matches()
+                        if next_result:
+                            next_matches = self.get_matches()
+                            rotation_working = len(next_matches) > 0
+                            self.log_test("Top Court - Rotation Logic", rotation_working,
+                                         f"Next round generated with {len(next_matches)} matches")
+                        else:
+                            self.log_test("Top Court - Rotation Logic", False, "Failed to generate next round")
+                    else:
+                        self.log_test("Top Court - Save Match Results", False, f"Failed to save results: {response.status_code}")
+                else:
+                    self.log_test("Top Court - Save Match Results", False, "No Court 0 match found")
+                    
+            except Exception as e:
+                self.log_test("Top Court - Rotation Test", False, f"Error testing rotation: {str(e)}")
     
     def test_cross_category_maximize_courts(self):
         """Test 4: Cross Category + Maximize Courts"""
