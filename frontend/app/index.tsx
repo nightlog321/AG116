@@ -2924,6 +2924,15 @@ function CourtsDashboard({
 function PlayersBoard({ players, matches, session }: { players: Player[]; matches: Match[]; session: Session | null }) {
   // Show all players sorted by name
   const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name));
+  
+  const formatRecentForm = (recentForm: string[]) => {
+    if (!recentForm || recentForm.length === 0) return 'No recent matches';
+    return recentForm.slice(-5).join('-'); // Show last 5 results
+  };
+  
+  const formatRating = (rating: number) => {
+    return rating ? rating.toFixed(2) : '3.00';
+  };
 
   if (sortedPlayers.length === 0) {
     return (
