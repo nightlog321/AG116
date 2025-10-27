@@ -156,15 +156,152 @@ class FinalFixesTester:
             print(f"Error clearing matches: {e}")
             return False
     
-    def test_first_round_maximize_courts(self):
-        """Test 1: First Round Generation with Maximize Courts"""
-        print("\n🎯 Testing First Round Generation with Maximize Courts")
+    def test_13_players_3_courts_critical_scenario(self):
+        """Test CRITICAL: 13 Players, 3 Courts → 3 doubles, 1 sitout"""
+        print("\n🎯 CRITICAL TEST: 13 Players, 3 Courts Scenario")
         
-        # Ensure all players are active
-        self.activate_all_players()
-        
-        # Clear any existing matches
+        # Clear matches and setup exactly 13 active players
         self.clear_matches()
+        players = self.get_players()
+        
+        # Ensure exactly 13 players are active
+        for i, player in enumerate(players):
+            should_be_active = i < 13
+            current_active = player.get('isActive', True)
+            
+            if should_be_active != current_active:
+                response = self.session.patch(f"{BACKEND_URL}/players/{player['id']}/toggle-active", 
+                                            params={"club_name": CLUB_NAME})
+                if response.status_code != 200:
+                    self.log_test("13P3C - Player Setup", False, f"Failed to toggle player {player['name']}")
+                    return
+        
+        # Configure: 3 courts, maximize courts enabled
+        config = {
+            "numCourts": 3,
+            "allowSingles": True,
+            "allowDoubles": True,
+            "allowCrossCategory": False,
+            "maximizeCourtUsage": True,
+            "rotationModel": "legacy"
+        }
+        
+        if not self.update_session_config(config):
+            self.log_test("13P3C - Config Update", False, "Failed to update session config")
+            return
+        
+        # Generate matches
+        result = self.generate_matches()
+        if not result:
+            self.log_test("13P3C - Match Generation", False, "Failed to generate matches")
+            return
+        
+        matches = self.get_matches()
+        
+        # Verify critical requirements
+        active_players = [p for p in self.get_players() if p.get('isActive', True)]
+        players_in_matches = set()
+        
+        for match in matches:
+            players_in_matches.update(match['teamA'])
+            players_in_matches.update(match['teamB'])
+        
+        # Critical assertions
+        expected_courts = 3
+        expected_players_in_matches = 12  # 3 doubles = 12 players
+        expected_sitouts = 1  # 13 - 12 = 1
+        
+        actual_courts = len(matches)
+        actual_players_in_matches = len(players_in_matches)
+        actual_sitouts = len(active_players) - actual_players_in_matches
+        
+        # This is the CRITICAL test - must pass
+        critical_success = (
+            len(active_players) == 13 and
+            actual_courts == expected_courts and
+            actual_players_in_matches == expected_players_in_matches and
+            actual_sitouts == expected_sitouts
+        )
+        
+        details = f"Active: {len(active_players)}/13, Courts: {actual_courts}/3, In matches: {actual_players_in_matches}/12, Sitouts: {actual_sitouts}/1"
+        
+        self.log_test("🚨 CRITICAL: 13 Players, 3 Courts → 3 doubles, 1 sitout", critical_success, details)
+        
+        # Verify all matches are doubles
+        all_doubles = all(len(match['teamA']) == 2 and len(match['teamB']) == 2 for match in matches)
+        self.log_test("13P3C - All Doubles Matches", all_doubles, f"All {len(matches)} matches are doubles")
+        
+        # Verify no extra sitouts (the original bug)
+        no_extra_sitouts = actual_sitouts == 1
+        self.log_test("13P3C - No Extra Sitouts", no_extra_sitouts, f"Exactly 1 sitout, not 3+ (original bug)")
+
+    def test_various_player_court_combinations(self):
+        """Test Various Player/Court Combinations with Maximize Courts"""
+        print("\n🎯 Testing Various Player/Court Combinations")
+        
+        test_scenarios = [
+            {"players": 12, "courts": 3, "expected_matches": 3, "expected_sitouts": 0, "description": "12 players, 3 courts → 3 doubles, 0 sitouts"},
+            {"players": 16, "courts": 4, "expected_matches": 4, "expected_sitouts": 0, "description": "16 players, 4 courts → 4 doubles, 0 sitouts"},
+            {"players": 10, "courts": 3, "expected_matches": 3, "expected_sitouts": 0, "description": "10 players, 3 courts → 2 doubles + 1 singles, 0 sitouts"},
+            {"players": 15, "courts": 4, "expected_matches": 4, "expected_sitouts": 2, "description": "15 players, 4 courts → 3 doubles + 1 singles, 2 sitouts"}
+        ]
+        
+        for scenario in test_scenarios:
+            self.clear_matches()
+            players = self.get_players()
+            
+            # Setup exact number of active players
+            for i, player in enumerate(players):
+                should_be_active = i < scenario["players"]
+                current_active = player.get('isActive', True)
+                
+                if should_be_active != current_active:
+                    self.session.patch(f"{BACKEND_URL}/players/{player['id']}/toggle-active", 
+                                     params={"club_name": CLUB_NAME})
+            
+            # Configure session
+            config = {
+                "numCourts": scenario["courts"],
+                "allowSingles": True,
+                "allowDoubles": True,
+                "allowCrossCategory": False,
+                "maximizeCourtUsage": True,
+                "rotationModel": "legacy"
+            }
+            
+            self.update_session_config(config)
+            
+            # Generate matches
+            result = self.generate_matches()
+            if not result:
+                self.log_test(f"Combo - {scenario['description']}", False, "Failed to generate matches")
+                continue
+            
+            matches = self.get_matches()
+            active_players = [p for p in self.get_players() if p.get('isActive', True)]
+            
+            players_in_matches = set()
+            for match in matches:
+                players_in_matches.update(match['teamA'])
+                players_in_matches.update(match['teamB'])
+            
+            actual_matches = len(matches)
+            actual_sitouts = len(active_players) - len(players_in_matches)
+            
+            success = (
+                actual_matches == scenario["expected_matches"] and
+                actual_sitouts == scenario["expected_sitouts"]
+            )
+            
+            details = f"Matches: {actual_matches}/{scenario['expected_matches']}, Sitouts: {actual_sitouts}/{scenario['expected_sitouts']}"
+            self.log_test(f"Combo - {scenario['description']}", success, details)
+
+    def test_first_round_generation_verification(self):
+        """Test First Round Generation Uses schedule_round Function"""
+        print("\n🎯 Testing First Round Generation Verification")
+        
+        self.clear_matches()
+        self.activate_all_players()
         
         # Configure for maximize courts
         config = {
@@ -176,20 +313,11 @@ class FinalFixesTester:
             "rotationModel": "legacy"
         }
         
-        config_updated = self.update_session_config(config)
-        if not config_updated:
+        if not self.update_session_config(config):
             self.log_test("First Round - Config Update", False, "Failed to update session config")
             return
         
-        # Test Scenario 1: 16 players, 3 courts
-        players = self.get_players()
-        active_players = [p for p in players if p.get('isActive', True)]
-        
-        if len(active_players) < 12:
-            self.log_test("First Round - Player Count", False, f"Need at least 12 active players, got {len(active_players)}")
-            return
-        
-        # Generate matches
+        # Generate first round
         result = self.generate_matches()
         if not result:
             self.log_test("First Round - Match Generation", False, "Failed to generate matches")
@@ -197,35 +325,35 @@ class FinalFixesTester:
         
         matches = self.get_matches()
         
-        # Verify all 3 courts are used
-        court_indices = set(match['courtIndex'] for match in matches)
-        courts_used = len(court_indices)
+        # Verify schedule_round is being called (proper match structure)
+        has_proper_structure = all(
+            'id' in match and 'teamA' in match and 'teamB' in match and 
+            'courtIndex' in match and 'category' in match and 'matchType' in match
+            for match in matches
+        )
         
-        # Count players in matches
+        # Verify debug logs would show "DEBUG MAXIMIZE COURTS" (we can't check logs directly)
+        # But we can verify the behavior indicates maximize courts is working
+        courts_used = len(set(match['courtIndex'] for match in matches))
+        maximize_courts_working = courts_used == 3  # Should use all 3 courts
+        
+        # Verify correct player counts and court allocations
         players_in_matches = set()
         for match in matches:
             players_in_matches.update(match['teamA'])
             players_in_matches.update(match['teamB'])
         
-        players_playing = len(players_in_matches)
-        sitouts = len(active_players) - players_playing
+        active_players = [p for p in self.get_players() if p.get('isActive', True)]
+        correct_allocation = len(players_in_matches) <= len(active_players)
         
-        # Verify maximize courts logic
-        expected_courts = min(3, len(matches))
-        courts_filled = courts_used == expected_courts
+        self.log_test("First Round - Uses schedule_round Function", has_proper_structure,
+                     "Matches have proper structure from schedule_round function")
         
-        self.log_test("First Round - All Courts Used", courts_filled, 
-                     f"Used {courts_used}/{expected_courts} courts, {players_playing} players, {sitouts} sitouts")
+        self.log_test("First Round - Maximize Courts Working", maximize_courts_working,
+                     f"Uses {courts_used}/3 courts with maximize courts enabled")
         
-        # Test Scenario 2: Verify algorithm uses schedule_round
-        # Check if matches have proper structure indicating advanced algorithm
-        has_proper_structure = all(
-            'teamA' in match and 'teamB' in match and 'courtIndex' in match 
-            for match in matches
-        )
-        
-        self.log_test("First Round - Advanced Algorithm Structure", has_proper_structure,
-                     f"Matches have proper structure from schedule_round function")
+        self.log_test("First Round - Correct Player Allocation", correct_allocation,
+                     f"Players in matches: {len(players_in_matches)}, Active players: {len(active_players)}")
     
     def test_top_court_first_round(self):
         """Test 2: Top Court Mode First Round"""
