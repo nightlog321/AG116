@@ -534,9 +534,6 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
     players = [Player(**p) for p in players_data]
     categories = [Category(**c) for c in categories_data]
     
-    players = [Player(**p) for p in players_data]
-    categories = [Category(**c) for c in categories_data]
-    
     # Group players by category or all together based on allowCrossCategory
     players_by_category = defaultdict(list)
     
