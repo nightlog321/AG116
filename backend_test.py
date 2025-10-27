@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-CourtChime Backend API Test Suite
-Tests all core backend functionality including player management, 
-session control, match generation, and database operations.
+CourtChime Backend Testing - Final Fixes Verification
+Testing first round generation fixes and Top Court mode with maximize courts
 """
 
 import requests
@@ -13,6 +12,8 @@ from typing import Dict, List, Any, Optional
 
 # Backend URL from environment
 BACKEND_URL = "https://courtchime.preview.emergentagent.com/api"
+CLUB_NAME = "Main Club"
+ACCESS_CODE = "demo123"
 
 class CourtChimeAPITester:
     def __init__(self, base_url: str):
