@@ -654,25 +654,31 @@ class FinalFixesTester:
     
     def run_all_tests(self):
         """Run all backend tests"""
-        print("🚀 Starting CourtChime Backend Testing - Final Fixes Verification")
-        print("=" * 70)
+        print("🚀 Starting CourtChime Backend Final Verification Test")
+        print("🎯 Focus: 13 players, 3 courts scenario and comprehensive verification")
+        print("=" * 80)
         
         # Authenticate first
         if not self.authenticate():
             print("❌ Authentication failed. Cannot proceed with tests.")
-            return
+            return False
         
-        # Run all test suites
-        self.test_first_round_maximize_courts()
-        self.test_top_court_first_round()
+        # Run all test suites in priority order
+        print("\n🔥 CRITICAL TESTS - Must Pass")
+        self.test_13_players_3_courts_critical_scenario()
+        
+        print("\n📊 COMPREHENSIVE VERIFICATION TESTS")
+        self.test_various_player_court_combinations()
+        self.test_first_round_generation_verification()
+        self.test_top_court_mode_comprehensive()
         self.test_cross_category_maximize_courts()
         self.test_inactive_player_filtering()
         self.test_court_utilization_scenarios()
         
-        # Print summary
-        print("\n" + "=" * 70)
-        print("📊 TEST SUMMARY")
-        print("=" * 70)
+        # Print detailed summary
+        print("\n" + "=" * 80)
+        print("📊 FINAL VERIFICATION TEST RESULTS SUMMARY")
+        print("=" * 80)
         
         passed = sum(1 for result in self.test_results if result['success'])
         total = len(self.test_results)
@@ -682,14 +688,41 @@ class FinalFixesTester:
         print(f"Failed: {total - passed}")
         print(f"Success Rate: {(passed/total)*100:.1f}%")
         
+        # Show critical test results first
+        critical_tests = [result for result in self.test_results if "CRITICAL" in result['test']]
+        if critical_tests:
+            print(f"\n🔥 CRITICAL TEST RESULTS:")
+            for test in critical_tests:
+                status = "✅ PASS" if test['success'] else "❌ FAIL"
+                print(f"  {status} {test['test']}")
+                if test['details']:
+                    print(f"      └─ {test['details']}")
+        
         # Show failed tests
         failed_tests = [result for result in self.test_results if not result['success']]
         if failed_tests:
             print(f"\n❌ FAILED TESTS ({len(failed_tests)}):")
             for test in failed_tests:
-                print(f"  • {test['test']}: {test['details']}")
+                print(f"  • {test['test']}")
+                if test['details']:
+                    print(f"    └─ {test['details']}")
+        
+        # Show passed tests summary
+        passed_tests = [result for result in self.test_results if result['success']]
+        if passed_tests:
+            print(f"\n✅ PASSED TESTS ({len(passed_tests)}):")
+            for test in passed_tests:
+                print(f"  • {test['test']}")
+        
+        # Final verdict
+        if passed == total:
+            print(f"\n🎉 ALL TESTS PASSED! The system is working correctly.")
+            print(f"✅ The 13 players, 3 courts scenario is fixed!")
+            print(f"✅ All critical fixes have been verified!")
         else:
-            print(f"\n✅ ALL TESTS PASSED!")
+            print(f"\n⚠️  {total - passed} test(s) failed. Review the issues above.")
+            if any("CRITICAL" in test['test'] for test in failed_tests):
+                print(f"🚨 CRITICAL TESTS FAILED - Immediate attention required!")
         
         return passed == total
 
