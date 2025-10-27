@@ -2979,30 +2979,21 @@ function PlayersBoard({ players, matches, session }: { players: Player[]; matche
       {/* Header */}
       <View style={styles.standingsHeader}>
         <Text style={styles.standingsTitle}>
-          {isTopCourt ? 'Player Wins' : 'Player Ratings'}
+          Players
         </Text>
         <Text style={styles.standingsSubtitle}>
-          {sortedPlayers.length} {isTopCourt ? 'players' : 'rated players'} • Social players excluded
+          {sortedPlayers.length} players
         </Text>
       </View>
       
       {/* Standings List */}
       <ScrollView style={styles.standingsList}>
         {sortedPlayers.map((player, index) => {
-          const winRate = (player.matchesPlayed || 0) > 0 
-            ? ((player.wins || 0) / (player.matchesPlayed || 1) * 100).toFixed(0)
-            : '0';
-          const trend = getRatingTrend(player.ratingHistory || []);
-          const ratingColor = getRatingColor(player.rating || 3.0);
-          
           return (
             <View key={player.id} style={styles.standingRow}>
               {/* Rank */}
               <View style={styles.rankContainer}>
                 <Text style={styles.rankNumber}>{index + 1}</Text>
-                {index === 0 && <Ionicons name="trophy" size={16} color="#FFD700" />}
-                {index === 1 && <Ionicons name="medal" size={16} color="#C0C0C0" />}
-                {index === 2 && <Ionicons name="medal" size={16} color="#CD7F32" />}
               </View>
               
               {/* Player Info */}
@@ -3013,71 +3004,25 @@ function PlayersBoard({ players, matches, session }: { players: Player[]; matche
                   styles.categorySticker, 
                   player.category === 'Beginner' && styles.categoryBeginner,
                   player.category === 'Intermediate' && styles.categoryIntermediate,
-                  player.category === 'Advanced' && styles.categoryAdvanced
+                  player.category === 'Advanced' && styles.categoryAdvanced,
+                  player.category === 'Social' && styles.categorySocial
                 ]}>
                   <Text style={[
                     styles.categoryStickerText,
                     player.category === 'Beginner' && styles.categoryBeginnerText,
                     player.category === 'Intermediate' && styles.categoryIntermediateText,
-                    player.category === 'Advanced' && styles.categoryAdvancedText
+                    player.category === 'Advanced' && styles.categoryAdvancedText,
+                    player.category === 'Social' && styles.categorySocialText
                   ]}>
                     {player.category.toUpperCase()}
                   </Text>
                 </View>
               </View>
-              
-              {/* Rating or Wins (conditional based on mode) */}
-              <View style={styles.ratingContainer}>
-                <View style={styles.ratingBox}>
-                  {isTopCourt ? (
-                    <>
-                      <Text style={[styles.ratingNumber, { color: colors.primary }]}>
-                        {player.wins || 0}
-                      </Text>
-                      <Text style={styles.winsLabel}>wins</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={[styles.ratingNumber, { color: ratingColor }]}>
-                        {formatRating(player.rating || 3.0)}
-                      </Text>
-                      {trend && (
-                        <Ionicons 
-                          name={trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'remove'} 
-                          size={16} 
-                          color={trend === 'up' ? '#00ff00' : trend === 'down' ? '#ff4444' : colors.textMuted}
-                        />
-                      )}
-                    </>
-                  )}
-                </View>
-              </View>
-              
-              {/* Stats */}
-              <View style={styles.playerStats}>
-                <Text style={styles.statText}>
-                  {player.wins || 0}-{player.losses || 0}
-                </Text>
-                <Text style={styles.statSubtext}>
-                  {winRate}% ({player.matchesPlayed || 0} matches)
-                </Text>
-                <Text style={styles.recentForm}>
-                  Form: {formatRecentForm(player.recentForm || [])}
-                </Text>
-              </View>
             </View>
           );
         })}
       </ScrollView>
-      
-      {/* Legend */}
-      <View style={styles.ratingsLegend}>
-        <Text style={styles.legendTitle}>Rating Scale</Text>
-        <View style={styles.legendRow}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: '#FFD700' }]} />
-            <Text style={styles.legendText}>5.5+ Elite</Text>
-          </View>
+    </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendColor, { backgroundColor: '#C0C0C0' }]} />
             <Text style={styles.legendText}>4.5+ Advanced</Text>
