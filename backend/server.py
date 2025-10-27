@@ -613,8 +613,6 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
             best_doubles = 0
             best_singles = 0
             
-            print(f"DEBUG MAXIMIZE COURTS: Category {cat_name}, Players: {count}, Courts to fill: {courts_to_fill}")
-            
             if config.allowDoubles and config.allowSingles:
                 # Mixed approach: Try different combinations to use all courts
                 # Prioritize doubles, then fill remaining courts with singles
@@ -622,14 +620,11 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
                 # Calculate maximum doubles we can make with available players
                 max_possible_doubles = count // 4
                 
-                print(f"DEBUG: Max possible doubles: {max_possible_doubles}")
-                
                 # Try to use all courts
                 if max_possible_doubles >= courts_to_fill:
                     # We have enough players for all courts to be doubles
                     best_doubles = courts_to_fill
                     best_singles = 0
-                    print(f"DEBUG: Using all {courts_to_fill} courts for doubles")
                 else:
                     # Use all possible doubles, fill rest with singles
                     best_doubles = max_possible_doubles
@@ -639,8 +634,6 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
                     # Fill remaining courts with singles if we have enough players
                     possible_singles = remaining_players // 2
                     best_singles = min(possible_singles, remaining_courts)
-                    
-                    print(f"DEBUG: {best_doubles} doubles, {best_singles} singles")
                 
                 doubles_matches = best_doubles
                 singles_matches = best_singles
@@ -649,13 +642,11 @@ async def schedule_round(round_index: int, db_session: AsyncSession = None, club
                 # Doubles only - fill all courts with doubles
                 doubles_matches = min(count // 4, courts_to_fill)
                 singles_matches = 0
-                print(f"DEBUG: Doubles only - {doubles_matches} matches")
                 
             elif config.allowSingles:
                 # Singles only - fill all courts with singles
                 doubles_matches = 0
                 singles_matches = min(count // 2, courts_to_fill)
-                print(f"DEBUG: Singles only - {singles_matches} matches")
         
         court_plans[cat_name] = {
             'doubles': doubles_matches,
