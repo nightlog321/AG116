@@ -2922,43 +2922,8 @@ function CourtsDashboard({
 
 // Players Board Component (same structure, updated styles)
 function PlayersBoard({ players, matches, session }: { players: Player[]; matches: Match[]; session: Session | null }) {
-  // Filter out Social players - they don't participate in ratings
-  const ratedPlayers = players.filter(p => p.category !== 'Social');
-  
-  // Check if Top Court mode
-  const isTopCourt = session?.config?.rotationModel === 'top_court';
-  
-  // Sort players: by wins for Top Court, by rating for Legacy
-  const sortedPlayers = isTopCourt 
-    ? [...ratedPlayers].sort((a, b) => (b.wins || 0) - (a.wins || 0) || a.name.localeCompare(b.name))
-    : [...ratedPlayers].sort((a, b) => (b.rating || 3.0) - (a.rating || 3.0));
-  
-  const formatRecentForm = (recentForm: string[]) => {
-    if (!recentForm || recentForm.length === 0) return 'No recent matches';
-    return recentForm.slice(-5).join('-'); // Show last 5 results
-  };
-  
-  const formatRating = (rating: number) => {
-    return rating ? rating.toFixed(2) : '3.00';
-  };
-  
-  const getRatingTrend = (ratingHistory: any[]) => {
-    if (!ratingHistory || ratingHistory.length < 2) return null;
-    const recent = ratingHistory.slice(-3); // Last 3 rating changes
-    if (recent.length < 2) return null;
-    
-    const trend = recent[recent.length - 1].newRating - recent[0].oldRating;
-    if (trend > 0.1) return 'up';
-    if (trend < -0.1) return 'down';
-    return 'stable';
-  };
-  
-  const getRatingColor = (rating: number) => {
-    if (rating >= 5.5) return '#FFD700'; // Gold for high ratings
-    if (rating >= 4.5) return '#C0C0C0'; // Silver for good ratings  
-    if (rating >= 3.5) return '#CD7F32'; // Bronze for average ratings
-    return colors.textMuted; // Default for lower ratings
-  };
+  // Show all players sorted by name
+  const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name));
 
   if (ratedPlayers.length === 0) {
     return (
