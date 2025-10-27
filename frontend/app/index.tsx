@@ -2988,21 +2988,6 @@ function PlayersBoard({ players, matches, session }: { players: Player[]; matche
         })}
       </ScrollView>
     </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: '#C0C0C0' }]} />
-            <Text style={styles.legendText}>4.5+ Advanced</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: '#CD7F32' }]} />
-            <Text style={styles.legendText}>3.5+ Intermediate</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: colors.textMuted }]} />
-            <Text style={styles.legendText}>Below 3.5 Beginner</Text>
-          </View>
-        </View>
-      </View>
-    </View>
   );
 }
 
