@@ -988,7 +988,12 @@ async def create_doubles_matches(
                 team_b = teams[j_idx]
                 
                 # CRITICAL FIX: Check for duplicate players BEFORE scoring this opponent
-                # Ensure no player from team_a or current matches appears in team_b
+                # 1. Ensure no player appears in both team_a and team_b (same match)
+                if any(player in team_b for player in team_a):
+                    # Skip this opponent - contains players already in team_a
+                    continue
+                
+                # 2. Ensure no player from this proposed match appears in current matches
                 players_in_proposed_match = team_a + team_b
                 already_used = [p for p in players_in_proposed_match if any(p in m.teamA or p in m.teamB for m in current_matches)]
                 if already_used:
