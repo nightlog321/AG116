@@ -987,6 +987,14 @@ async def create_doubles_matches(
                 
                 team_b = teams[j_idx]
                 
+                # CRITICAL FIX: Check for duplicate players BEFORE scoring this opponent
+                # Ensure no player from team_a or current matches appears in team_b
+                players_in_proposed_match = team_a + team_b
+                already_used = [p for p in players_in_proposed_match if any(p in m.teamA or p in m.teamB for m in current_matches)]
+                if already_used:
+                    # Skip this opponent - contains already-used players
+                    continue
+                
                 # Calculate composite opponent score
                 opponent_history_score = calculate_opponent_score(team_a, team_b, histories)
                 
@@ -1003,13 +1011,6 @@ async def create_doubles_matches(
                     best_opponent_index = j_idx
             
             if best_opponent_team:
-                # VALIDATION: Check if any player is already used in current matches
-                players_in_match = team_a + best_opponent_team
-                already_used = [p for p in players_in_match if any(p in m.teamA or p in m.teamB for m in current_matches)]
-                if already_used:
-                    print(f"WARNING: Skipping match - players already used: {already_used}")
-                    continue
-                
                 match = Match(
                     roundIndex=round_index,
                     courtIndex=start_court_index + len(current_matches),
