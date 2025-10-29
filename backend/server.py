@@ -1003,6 +1003,13 @@ async def create_doubles_matches(
                     best_opponent_index = j_idx
             
             if best_opponent_team:
+                # VALIDATION: Check if any player is already used in current matches
+                players_in_match = team_a + best_opponent_team
+                already_used = [p for p in players_in_match if any(p in m.teamA or p in m.teamB for m in current_matches)]
+                if already_used:
+                    print(f"WARNING: Skipping match - players already used: {already_used}")
+                    continue
+                
                 match = Match(
                     roundIndex=round_index,
                     courtIndex=start_court_index + len(current_matches),
