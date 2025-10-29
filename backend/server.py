@@ -936,6 +936,26 @@ async def create_doubles_matches(
     # Pair teams into matches with enhanced opponent selection
     used_team_indices = set()
     
+    # VALIDATION: Check for duplicate players in teams list
+    all_team_players = []
+    for team in teams:
+        all_team_players.extend(team)
+    if len(all_team_players) != len(set(all_team_players)):
+        # Found duplicates in teams - this shouldn't happen
+        from collections import Counter
+        player_counts = Counter(all_team_players)
+        duplicates = [p for p, c in player_counts.items() if c > 1]
+        print(f"ERROR: Duplicate players in teams: {duplicates}")
+        # Remove duplicate teams to fix the issue
+        seen_players = set()
+        valid_teams = []
+        for team in teams:
+            if not any(p in seen_players for p in team):
+                valid_teams.append(team)
+                seen_players.update(team)
+        teams = valid_teams
+        print(f"Fixed: Reduced teams from {len(teams) + len(duplicates)} to {len(teams)}")
+    
     # Try multiple team pairing combinations for better balance
     best_matches = []
     best_rating_variance = float('inf')
