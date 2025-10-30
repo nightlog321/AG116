@@ -2997,11 +2997,11 @@ function PlayersBoard({ players, matches, session }: { players: Player[]; matche
               
               {/* Stats */}
               <View style={styles.playerStats}>
-                <Text style={styles.recentForm}>
-                  Form: {formatRecentForm(player.recentForm || [])}
-                </Text>
                 <Text style={styles.ratingText}>
                   Rating: {formatRating(player.rating || 3.0)}
+                </Text>
+                <Text style={styles.recentForm}>
+                  Form: {formatRecentForm(player.recentForm || [])}
                 </Text>
               </View>
             </View>
