@@ -1691,7 +1691,7 @@ function AdminConsole({
               <Text style={styles.saveButtonText}>Save Configuration</Text>
             </TouchableOpacity>
           </View>
-        ) : (
+        ) : session?.config ? (
           <View style={styles.sessionStats}>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>Courts</Text>
@@ -1729,6 +1729,8 @@ function AdminConsole({
               <Text style={styles.statValue}>{session.config.maximizeCourtUsage ? 'Yes' : 'No'}</Text>
             </View>
           </View>
+        ) : (
+          <Text style={styles.emptyText}>Loading session configuration...</Text>
         )}
 
         {/* Session Control Buttons */}
