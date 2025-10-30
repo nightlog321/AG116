@@ -3904,8 +3904,11 @@ const styles = StyleSheet.create({
   },
   recentForm: {
     color: colors.textSecondary,
-    fontSize: 9, // Reduced font size
-    fontFamily: 'monospace',
+    fontSize: 12,
+  },
+  ratingText: {
+    color: colors.textSecondary,
+    fontSize: 12,
   },
   ratingsLegend: {
     backgroundColor: colors.surface,
