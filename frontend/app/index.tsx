@@ -3221,6 +3221,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  sessionDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: colors.cardBackground,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  sessionDateText: {
+    fontSize: 14,
+    color: colors.text,
+    marginLeft: 8,
+    fontWeight: '500',
+  },
   editButtonLarge: {
     paddingVertical: 10,
     paddingHorizontal: 16,
