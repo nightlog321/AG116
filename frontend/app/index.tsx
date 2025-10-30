@@ -738,6 +738,21 @@ export default function PickleballManager() {
       const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session?club_name=${clubName}`);
       const data = await response.json();
       setSession(data);
+      
+      // Auto-update session date if it's a new day
+      const todayDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      if (data.sessionDate && data.sessionDate !== todayDate) {
+        console.log(`📅 New day detected! Updating session date from ${data.sessionDate} to ${todayDate}`);
+        await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/update-date?club_name=${clubName}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionDate: todayDate })
+        });
+        // Refresh session to get updated date
+        const updatedResponse = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session?club_name=${clubName}`);
+        const updatedData = await updatedResponse.json();
+        setSession(updatedData);
+      }
     } catch (error) {
       console.error('Error fetching session:', error);
     }
