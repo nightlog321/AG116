@@ -124,6 +124,23 @@ async def init_database():
     """Initialize database with default data"""
     await create_tables()
     
+    # Add migration for session_date column if it doesn't exist
+    async with async_session() as db_session:
+        try:
+            from sqlalchemy import text
+            # Check if session_date column exists
+            result = await db_session.execute(text("PRAGMA table_info(session)"))
+            columns = [row[1] for row in result.fetchall()]
+            
+            if 'session_date' not in columns:
+                # Add the column with default value
+                await db_session.execute(text("ALTER TABLE session ADD COLUMN session_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
+                await db_session.commit()
+                print("✅ Added session_date column to session table")
+        except Exception as e:
+            print(f"Migration info: {e}")
+            await db_session.rollback()
+    
     async with async_session() as session:
         # Check if clubs exist
         from sqlalchemy import select
