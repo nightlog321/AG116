@@ -1527,6 +1527,16 @@ function AdminConsole({
           </TouchableOpacity>
         </View>
         
+        {/* Session Date Display */}
+        {session?.sessionDate && (
+          <View style={styles.sessionDateContainer}>
+            <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+            <Text style={styles.sessionDateText}>
+              Session Date: {session.sessionDate}
+            </Text>
+          </View>
+        )}
+        
         {editingConfig ? (
           <View style={styles.configForm}>
             <View style={styles.configRow}>
