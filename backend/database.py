@@ -96,6 +96,9 @@ class Session(Base):
     time_remaining = Column(Integer, default=720)  # seconds
     paused = Column(Boolean, default=False)
     
+    # Session date - automatically captures the date when session is created/started
+    session_date = Column(DateTime, default=datetime.now)  # Calendar date of the session
+    
     # Configuration as JSON
     config = Column(Text, default="{}")  # JSON string for session config
     
