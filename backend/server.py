@@ -2009,12 +2009,18 @@ async def get_session(club_name: str = "Main Club", db_session: AsyncSession = D
         config = json.loads(session.config) if session.config else {}
         histories = json.loads(session.histories) if session.histories else {}
         
+        # Format session_date as ISO string (YYYY-MM-DD)
+        session_date_str = None
+        if session.session_date:
+            session_date_str = session.session_date.strftime('%Y-%m-%d') if hasattr(session.session_date, 'strftime') else str(session.session_date)
+        
         session_state = SessionState(
             id=session.id,
             currentRound=session.current_round,
             phase=session.phase,
             timeRemaining=session.time_remaining,
             paused=session.paused,
+            sessionDate=session_date_str,
             config=SessionConfig(**config),
             histories=histories
         )
