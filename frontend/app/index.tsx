@@ -2997,9 +2997,6 @@ function PlayersBoard({ players, matches, session }: { players: Player[]; matche
               
               {/* Stats */}
               <View style={styles.playerStats}>
-                <Text style={styles.statText}>
-                  W: {player.wins || 0} | L: {player.losses || 0}
-                </Text>
                 <Text style={styles.recentForm}>
                   Form: {formatRecentForm(player.recentForm || [])}
                 </Text>
