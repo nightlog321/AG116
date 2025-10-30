@@ -1843,8 +1843,10 @@ function AdminConsole({
                           !player.isActive && styles.playerNameInactive
                         ]}>
                           {player.name}
-                          {!player.isActive && ' (Not Playing Today)'}
                         </Text>
+                        {!player.isActive && (
+                          <Text style={styles.notPlayingBadge}>Not Playing Today</Text>
+                        )}
                         <View style={styles.playerStats}>
                           <Text style={styles.playerStat}>W: {player.stats.wins}</Text>
                           <Text style={styles.playerStat}>L: {player.stats.losses}</Text>
