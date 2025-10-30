@@ -1778,6 +1778,22 @@ async def reset_all_players_inactive(club_name: str = "Main Club", db_session: A
         await db_session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/players/reset-all-active")
+async def reset_all_players_active(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Reset all players to active state"""
+    try:
+        result = await db_session.execute(select(DBPlayer).where(DBPlayer.club_name == club_name))
+        players = result.scalars().all()
+        
+        for player in players:
+            player.is_active = True
+        
+        await db_session.commit()
+        return {"message": f"Reset {len(players)} players to active", "count": len(players)}
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Matches
 @api_router.get("/matches", response_model=List[Match])
 async def get_matches(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
