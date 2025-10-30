@@ -46,7 +46,7 @@ class Player(Base):
     miss_due_to_court_limit = Column(Integer, default=0)
     
     # Active status for daily sessions
-    is_active = Column(Boolean, default=True)  # Can be toggled for daily sessions
+    is_active = Column(Boolean, default=False)  # Default to not playing, add them for each session
     
     # DUPR-style rating fields
     rating = Column(Float, default=3.0)
