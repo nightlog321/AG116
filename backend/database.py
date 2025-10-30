@@ -128,13 +128,17 @@ async def init_database():
     async with async_session() as db_session:
         try:
             from sqlalchemy import text
+            from datetime import datetime
             # Check if session_date column exists
             result = await db_session.execute(text("PRAGMA table_info(session)"))
             columns = [row[1] for row in result.fetchall()]
             
             if 'session_date' not in columns:
-                # Add the column with default value
-                await db_session.execute(text("ALTER TABLE session ADD COLUMN session_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
+                # Add the column without default first
+                await db_session.execute(text("ALTER TABLE session ADD COLUMN session_date TIMESTAMP"))
+                # Update existing rows with current timestamp
+                current_time = datetime.now().isoformat()
+                await db_session.execute(text(f"UPDATE session SET session_date = '{current_time}'"))
                 await db_session.commit()
                 print("✅ Added session_date column to session table")
         except Exception as e:
