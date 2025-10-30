@@ -1818,9 +1818,9 @@ function AdminConsole({
         </TouchableOpacity>
       </View>
 
-      {/* Current Players */}
+      {/* Player Roster */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Current Players ({players.length})</Text>
+        <Text style={styles.cardTitle}>Player Roster ({players.filter(p => p.isActive).length} playing today / {players.length} total)</Text>
         {players.length === 0 ? (
           <Text style={styles.emptyText}>No players added yet</Text>
         ) : (
