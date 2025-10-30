@@ -4185,6 +4185,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontStyle: 'italic',
   },
+  notPlayingBadge: {
+    fontSize: 11,
+    color: colors.warning,
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
   // Court header and date styles
   courtHeader: {
     flexDirection: 'row',
