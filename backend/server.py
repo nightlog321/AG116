@@ -166,6 +166,7 @@ class SessionState(BaseModel):
     phase: SessionPhase = SessionPhase.idle
     timeRemaining: int = 0
     paused: bool = False
+    sessionDate: Optional[str] = None  # ISO format date string (YYYY-MM-DD)
     config: SessionConfig = Field(default_factory=SessionConfig)
     histories: Dict[str, Any] = Field(default_factory=dict)  # partners and opponents histories
 
