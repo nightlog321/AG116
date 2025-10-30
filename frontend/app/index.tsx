@@ -883,6 +883,21 @@ export default function PickleballManager() {
   const nextRound = async () => {
     if (!session || !clubSession) return;
     
+    // Validate that all matches have scores saved
+    const unsavedMatches = matches.filter(m => 
+      m.roundIndex === session.currentRound && 
+      m.status !== 'saved'
+    );
+    
+    if (unsavedMatches.length > 0) {
+      Alert.alert(
+        '⚠️ Unsaved Scores',
+        `${unsavedMatches.length} court(s) have unsaved scores. Please save all scores before proceeding to the next round.`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
     try {
       const response = await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/session/next-round?club_name=${clubSession.club_name}`, {
         method: 'POST',
