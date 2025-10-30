@@ -2429,6 +2429,38 @@ async def start_play(club_name: str = "Main Club", db_session: AsyncSession = De
         await db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to start play: {str(e)}")
 
+@api_router.post("/session/update-date")
+async def update_session_date(request: Request, club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Update session date to current date (auto-update for new day)"""
+    try:
+        body = await request.json()
+        new_date_str = body.get('sessionDate')
+        
+        if not new_date_str:
+            raise HTTPException(status_code=400, detail="sessionDate is required")
+        
+        # Parse the date string
+        from datetime import datetime
+        new_date = datetime.strptime(new_date_str, '%Y-%m-%d')
+        
+        # Get current session
+        result = await db_session.execute(select(DBSession).where(DBSession.club_name == club_name))
+        session = result.scalar_one_or_none()
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        # Update session date
+        session.session_date = new_date
+        await db_session.commit()
+        
+        return {"message": f"Session date updated to {new_date_str}", "sessionDate": new_date_str}
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update session date: {str(e)}")
+
 @api_router.post("/session/pause")
 async def pause_session(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
     """Pause the session"""
