@@ -2258,7 +2258,7 @@ function CourtsDashboard({
     );
   };
 
-  const handlePlayerSwap = (targetMatchId: string, targetPlayerId: string) => {
+  const handlePlayerSwap = async (targetMatchId: string, targetPlayerId: string) => {
     if (!selectedPlayer) return;
 
     // Handle sitout to court OR court to sitout swaps
