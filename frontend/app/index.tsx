@@ -2296,6 +2296,21 @@ function CourtsDashboard({
         })
       );
 
+      // Save match update to backend
+      await saveMatchToBackend(courtMatchId, prevMatches => {
+        const match = prevMatches.find(m => m.id === courtMatchId);
+        if (match) {
+          const team = courtPlayerTeam === 'A' ? [...match.teamA] : [...match.teamB];
+          team[courtPlayerIndex] = sitoutPlayerId;
+          return {
+            ...match,
+            teamA: courtPlayerTeam === 'A' ? team : match.teamA,
+            teamB: courtPlayerTeam === 'B' ? team : match.teamB
+          };
+        }
+        return match;
+      });
+
       console.log('Swapped court player with sitout player');
       setSelectedPlayer(null);
       return;
