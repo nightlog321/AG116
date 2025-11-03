@@ -1991,6 +1991,35 @@ async def mark_match_incomplete(match_id: str, db_session: AsyncSession = Depend
         await db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to mark match as incomplete: {str(e)}")
 
+@api_router.put("/matches/{match_id}")
+async def update_match(match_id: str, request: Request, club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
+    """Update match team assignments (for manual player swaps)"""
+    try:
+        body = await request.json()
+        team_a = body.get('teamA', [])
+        team_b = body.get('teamB', [])
+        
+        result = await db_session.execute(
+            select(DBMatch).where(and_(DBMatch.id == match_id, DBMatch.club_name == club_name))
+        )
+        match = result.scalar_one_or_none()
+        
+        if not match:
+            raise HTTPException(status_code=404, detail="Match not found")
+        
+        # Update team assignments
+        match.team_a = json.dumps(team_a)
+        match.team_b = json.dumps(team_b)
+        
+        await db_session.commit()
+        
+        return {"message": "Match updated", "id": match_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db_session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update match: {str(e)}")
+
 # Session Management
 @api_router.get("/session", response_model=SessionState)
 async def get_session(club_name: str = "Main Club", db_session: AsyncSession = Depends(get_db_session)):
