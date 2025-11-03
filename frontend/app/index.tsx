@@ -948,10 +948,10 @@ export default function PickleballManager() {
         // playHorn('start'); // Audio removed
         
         // Refresh data to get the updated session state
+        // DO NOT re-fetch matches - this would reset manual player swaps
         await fetchSession();
         await fetchPlayers();
         await fetchCategories();
-        await fetchMatches();
         
         // Timer will be started automatically by useEffect when session phase changes to 'play'
       }
