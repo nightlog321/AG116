@@ -4307,6 +4307,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     overflow: 'hidden',
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
   },
   socialBadge: {
     backgroundColor: colors.tealLight,
