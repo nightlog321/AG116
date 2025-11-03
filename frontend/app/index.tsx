@@ -2144,7 +2144,7 @@ function CourtsDashboard({
     }
   };
 
-  const swapPlayers = (match1Id: string, team1: 'A' | 'B', index1: number, match2Id: string, team2: 'A' | 'B', index2: number) => {
+  const swapPlayers = async (match1Id: string, team1: 'A' | 'B', index1: number, match2Id: string, team2: 'A' | 'B', index2: number) => {
     const updatedMatches = [...matches];
     
     // Find matches
@@ -2167,6 +2167,31 @@ function CourtsDashboard({
     team2Players[index2] = temp;
     
     setMatches(updatedMatches);
+    
+    // Save both matches to backend
+    try {
+      await Promise.all([
+        fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/matches/${match1Id}?club_name=${clubSession?.club_name || 'Main Club'}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            teamA: match1.teamA,
+            teamB: match1.teamB
+          })
+        }),
+        fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/matches/${match2Id}?club_name=${clubSession?.club_name || 'Main Club'}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            teamA: match2.teamA,
+            teamB: match2.teamB
+          })
+        })
+      ]);
+      console.log('✅ Court-to-court swap saved to backend');
+    } catch (error) {
+      console.error('❌ Error saving swap to backend:', error);
+    }
   };
 
   const validateCourts = () => {
