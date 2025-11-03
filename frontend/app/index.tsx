@@ -2296,6 +2296,23 @@ function CourtsDashboard({
         })
       );
 
+      // Save swap to backend
+      try {
+        const matchToUpdate = updatedMatches.find(m => m.id === courtMatchId);
+        if (matchToUpdate) {
+          await fetch(`${EXPO_PUBLIC_BACKEND_URL}/api/matches/${courtMatchId}?club_name=${clubSession?.club_name || 'Main Club'}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              teamA: matchToUpdate.teamA,
+              teamB: matchToUpdate.teamB
+            })
+          });
+        }
+      } catch (error) {
+        console.error('Error saving swap to backend:', error);
+      }
+
       console.log('Swapped court player with sitout player');
       setSelectedPlayer(null);
       return;
