@@ -2,23 +2,22 @@ staticSites:
   - name: ag116-frontend
     env: node
     root: .
-    # remove any checked-in node_modules / package-lock that may exist in the repo,
-    # then install with legacy peer deps and run expo export to web-build in repo root
-    installCommand: npm ci --prefer-offline --no-audit --no-fund --legacy-peer-deps || npm install --legacy-peer-deps
-    buildCommand: |
-      set -e
-      echo "=== CLEAN repo node artifacts (if any) ==="
+    installCommand: |
+      echo "=== CLEANUP BEFORE INSTALL ==="
       rm -rf node_modules package-lock.json package-lock.* yarn.lock frontend/node_modules || true
-      echo "=== Node & npm versions ==="
-      node -v && npm -v
-      echo "=== npx expo version (if available) ==="
-      npx expo --version || true
-      echo "=== npm install (legacy-peer-deps) ==="
+      echo "=== NPM CACHE CLEAN ==="
+      npm cache clean --force || true
+      echo "=== NPM INSTALL (legacy peer deps) ==="
       npm install --legacy-peer-deps
-      echo "=== attempt expo export:web ==="
-      npx expo export:web --no-interactive --output-dir web-build 2>&1 | sed -n '1,200p' || true
-      echo "=== ls root ==="
+    buildCommand: |
+      echo "=== NODE & NPM ==="
+      node -v && npm -v
+      echo "=== NPX EXPO VERSION ==="
+      npx expo --version || true
+      echo "=== RUN EXPO EXPORT (capture output) ==="
+      npx expo export:web --no-interactive --output-dir web-build 2>&1 | sed -n '1,400p' || true
+      echo "=== LS ROOT ==="
       ls -la
-      echo "=== find web-build (if any) ==="
-      find . -maxdepth 3 -type d -iname "web-build" -o -iname "web" -o -iname "dist" -o -iname "build" -print -quit
+      echo "=== FIND web-build ==="
+      find . -maxdepth 4 -type d -iname "web-build" -o -iname "web" -o -iname "dist" -o -iname "build" -print -quit
     publishPath: web-build
