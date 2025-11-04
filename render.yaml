@@ -3,5 +3,5 @@ staticSites:
     env: node
     root: frontend
     installCommand: npm install --legacy-peer-deps
-    buildCommand: npm run build:web
+    buildCommand: npx expo export:web --output-dir web-build
     publishPath: web-build
