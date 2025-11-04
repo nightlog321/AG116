@@ -2,6 +2,6 @@ staticSites:
   - name: ag116-frontend
     env: node
     root: frontend
-    buildCommand: yarn install --frozen-lockfile && yarn build:web
-    publishPath: web-build
     installCommand: yarn install --frozen-lockfile
+    buildCommand: yarn build:web
+    publishPath: web-build
