@@ -54,7 +54,8 @@
     "@types/react": "~18.2.79",
     "eslint": "^8.57.0",
     "eslint-config-expo": "~7.1.2",
-    "typescript": "~5.3.3"
+    "typescript": "~5.3.3",
+    "expo-cli": "6.0.0"
   },
   "resolutions": {
     "@react-navigation/bottom-tabs": "7.3.10",
