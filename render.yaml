@@ -3,5 +3,16 @@ staticSites:
     env: node
     root: frontend
     installCommand: npm install --legacy-peer-deps
-    buildCommand: npx expo export:web --output-dir web-build
+    buildCommand: |
+      set -e
+      echo "=== node & npm versions ==="
+      node -v && npm -v
+      echo "=== attempt npx expo version ==="
+      npx expo --version || true
+      echo "=== run expo export:web (allow failure) ==="
+      npx expo export:web --no-interactive --output-dir web-build 2>&1 | sed -n '1,200p' || true
+      echo "=== list frontend dir ==="
+      ls -la
+      echo "=== find candidates ==="
+      find . -maxdepth 3 -type d \( -iname "web-build" -o -iname "web" -o -iname "build" -o -iname "dist" \) -print -quit
     publishPath: web-build
