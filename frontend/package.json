@@ -44,6 +44,9 @@
     "react-native-web": "~0.19.12",
     "react-native-webview": "13.8.6"
   },
+  "scripts": {
+  "build": "expo export:web --output-dir web-build"
+  },
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@babel/plugin-syntax-export-default-from": "^7.27.1",
