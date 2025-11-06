@@ -1,0 +1,96 @@
+name: Import SQLite to Turso
+
+on:
+  workflow_dispatch: {}          # allow manual runs from Actions UI
+  push:
+    branches:
+      - vercel                   # optional: runs on push to 'vercel' branch
+
+jobs:
+  import-db:
+    runs-on: ubuntu-latest
+    env:
+      # Adjust these if your file lives in a different path in the repo
+      SQLITE_PATH: app/backend/courtchime.db
+      TURSO_DB_NAME: Database
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Ensure sqlite3 is available
+        run: |
+          echo "Checking sqlite3..."
+          if ! command -v sqlite3 >/dev/null 2>&1; then
+            echo "Installing sqlite3..."
+            sudo apt-get update -y
+            sudo apt-get install -y sqlite3
+          else
+            echo "sqlite3 present: $(sqlite3 --version)"
+          fi
+
+      - name: Show file info (debug)
+        run: |
+          echo "PWD: $(pwd)"
+          echo "Listing SQLite path: $SQLITE_PATH"
+          ls -la "$(dirname "$SQLITE_PATH")" || true
+          if [ -f "$SQLITE_PATH" ]; then
+            echo "SQLite file size:"
+            du -h "$SQLITE_PATH" || true
+          else
+            echo "ERROR: SQLite file not found at $SQLITE_PATH"
+            exit 1
+          fi
+
+      - name: Prep SQLite (enable WAL + checkpoint)
+        run: |
+          echo "Setting PRAGMA journal_mode=WAL and checkpointing..."
+          sqlite3 "$SQLITE_PATH" "PRAGMA journal_mode=WAL;"
+          sqlite3 "$SQLITE_PATH" "PRAGMA wal_checkpoint(TRUNCATE);"
+          echo "Done. Show file info post-checkpoint:"
+          ls -la "$SQLITE_PATH"
+        shell: bash
+
+      - name: Install Turso CLI
+        run: |
+          curl -fsSL https://get.turso.tech | sh
+          echo "$HOME/.turso/bin" >> $GITHUB_PATH
+          # sanity check
+          turso --version || true
+
+      - name: Login to Turso (token)
+        env:
+          TURSO_TOKEN: ${{ secrets.TURSO_TOKEN }}
+        run: |
+          if [ -z "$TURSO_TOKEN" ]; then
+            echo "ERROR: TURSO_TOKEN secret not set"
+            exit 1
+          fi
+          # login with token
+          turso login --token "$TURSO_TOKEN" || true
+          echo "Listing Turso DBs for debug:"
+          turso db list || true
+
+      - name: Import SQLite DB into Turso
+        env:
+          TURSO_TOKEN: ${{ secrets.TURSO_TOKEN }}
+        run: |
+          echo "Starting import of $SQLITE_PATH into Turso DB: $TURSO_DB_NAME"
+          turso db import "$SQLITE_PATH" --db "$TURSO_DB_NAME" 2>&1 | tee turso-import.log || true
+          echo "----- tail of turso-import.log -----"
+          tail -n 200 turso-import.log || true
+
+      - name: Verify import (list tables via turso sql)
+        env:
+          TURSO_TOKEN: ${{ secrets.TURSO_TOKEN }}
+        run: |
+          echo "Running a quick verification query (list tables):"
+          # this uses the turso CLI to execute a SQL query against the database.
+          # It may require the db name exactly as created in the Turso console.
+          turso sql "$TURSO_DB_NAME" --execute "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;" 2>&1 | tee turso-tables.log || true
+          echo "----- tail of turso-tables.log -----"
+          tail -n 200 turso-tables.log || true
+
+      - name: Done
+        run: echo "Turso import workflow finished"
