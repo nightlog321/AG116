@@ -65,21 +65,43 @@ jobs:
         env:
           TURSO_TOKEN: ${{ secrets.TURSO_TOKEN }}
         run: |
-          if [ -z "$TURSO_TOKEN" ]; then
+          set -euo pipefail
+          TURSO_BIN="$HOME/.turso/bin/turso"
+
+          # Ensure binary exists
+          if [ ! -x "$TURSO_BIN" ]; then
+            echo "ERROR: turso binary not found at $TURSO_BIN"
+            echo "List ~/.turso contents:"
+            ls -la "$HOME/.turso" || true
+            exit 1
+          fi
+
+          # Make turso available in PATH for the remainder of this step
+          export PATH="$HOME/.turso/bin:$PATH"
+          echo "Using turso at: $(which turso || echo $TURSO_BIN)"
+
+          if [ -z "${TURSO_TOKEN:-}" ]; then
             echo "ERROR: TURSO_TOKEN secret not set"
             exit 1
           fi
-          # login with token
-          turso login --token "$TURSO_TOKEN" || true
+
+          echo "Logging in to Turso using token..."
+          # Use explicit path to avoid PATH race conditions
+          "$TURSO_BIN" auth login --token "$TURSO_TOKEN" || true
+
           echo "Listing Turso DBs for debug:"
-          turso db list || true
+          "$TURSO_BIN" db list || true
+
+          echo "Turso login step finished."
+        shell: bash
+
 
       - name: Import SQLite DB into Turso
         env:
           TURSO_TOKEN: ${{ secrets.TURSO_TOKEN }}
         run: |
           echo "Starting import of $SQLITE_PATH into Turso DB: $TURSO_DB_NAME"
-          turso db import "$SQLITE_PATH" --db "$TURSO_DB_NAME" 2>&1 | tee turso-import.log || true
+          $TURSO_BIN" db import "$SQLITE_PATH" --db "$TURSO_DB_NAME" 2>&1 | tee turso-import.log || true
           echo "----- tail of turso-import.log -----"
           tail -n 200 turso-import.log || true
 
