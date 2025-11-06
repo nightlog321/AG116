@@ -66,7 +66,7 @@ jobs:
           TURSO_TOKEN: ${{ secrets.TURSO_TOKEN }}
         run: |
           set -euo pipefail
-          TURSO_BIN="$HOME/.turso/bin/turso"
+          TURSO_BIN="$HOME/.turso/turso"
 
           # Ensure binary exists
           if [ ! -x "$TURSO_BIN" ]; then
