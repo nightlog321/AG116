@@ -57,8 +57,6 @@ jobs:
           echo "Installing Turso CLI from official installer..."
           curl -sSfL https://get.tur.so/install.sh | bash
           echo "$HOME/.turso/bin" >> $GITHUB_PATH
-          echo "Verifying Turso CLI installation:"
-          turso
         shell: bash
 
       - name: Login to Turso (token)
