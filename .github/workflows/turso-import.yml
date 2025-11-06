@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Adjust these if your file lives in a different path in the repo
-      SQLITE_PATH: app/backend/courtchime.db
+      SQLITE_PATH: backend/courtchime.db
       TURSO_DB_NAME: Database
     steps:
       - name: Checkout repo
