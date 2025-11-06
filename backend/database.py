@@ -7,8 +7,20 @@ from datetime import datetime
 import uuid
 import os
 
-# SQLite database URL
-DATABASE_URL = "sqlite+aiosqlite:///./courtchime.db"
+# prefer a libsql remote connection (Turso) or fallback to local sqlite file
+LIBSQL_URL = os.getenv("LIBSQL_DB_URL")   # put Turso URL here in Vercel
+LIBSQL_AUTH = os.getenv("LIBSQL_DB_AUTH_TOKEN")
+
+if LIBSQL_URL:
+    # Turso/libSQL can be used via SQLAlchemy dialect `sqlite+aiosqlite://` is local,
+    # but for Turso we will use the libsql/sqlite HTTP URL; SQLAlchemy's
+    # create_async_engine with a proper dialect may be used - simplest approach:
+    DATABASE_URL = LIBSQL_URL
+    # If you prefer sqlalchemy-libsql dialect, set DATABASE_URL accordingly,
+    # e.g. "libsql+asyncpg://..." depending on the adapter you choose.
+else:
+    # fallback to local sqlite file (for local dev / quick deploy)
+    DATABASE_URL = "sqlite+aiosqlite:///./courtchime.db"
 
 # Create async engine for SQLite
 engine = create_async_engine(DATABASE_URL, echo=True)
