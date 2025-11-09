@@ -17,7 +17,7 @@
     }
   ],
   "env": {
-    "LIBSQL_DB_URL": "@libsql_db_url",
-    "LIBSQL_DB_AUTH_TOKEN": "@libsql_db_auth_token"
+    "LIBSQL_DB_URL": "@LIBSQL_DB_URL",
+    "LIBSQL_DB_AUTH_TOKEN": "@LIBSQL_DB_AUTH_TOKEN"
   }
 }
