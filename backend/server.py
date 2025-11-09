@@ -1,3 +1,6 @@
+import traceback
+import sys
+import asyncio
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -2700,8 +2703,17 @@ logger = logging.getLogger(__name__)
 # Initialize database on startup
 @app.on_event("startup")
 async def startup_event():
-    await init_database()
-    print("✅ SQLite database initialized")
+    try:
+        print("🔁 startup_event: initializing DB (begin)", flush=True)
+        # If init_database is async, await it
+        await init_database()
+        print("✅ SQLite database initialized", flush=True)
+    except Exception as e:
+        # Print full stack trace to stdout/stderr (Vercel will capture it)
+        print("❌ Exception during startup:", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
+        # Re-raise the exception so Vercel marks the function as crashed
+        raise
 
 @app.on_event("shutdown") 
 async def shutdown_event():
