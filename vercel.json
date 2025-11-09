@@ -2,12 +2,12 @@
   "version": 2,
   "builds": [
     {
-      "src": "AG116/backend/server.py",
+      "src": "api/index.py",
       "use": "@vercel/python",
       "config": { "runtime": "python3.11" }
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "AG116/backend/server.py" }
+    { "src": "/(.*)", "dest": "api/index.py" }
   ]
 }
