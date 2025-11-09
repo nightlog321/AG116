@@ -1,4 +1,5 @@
 # api/index.py — aggressive debug wrapper
+print("HELLO_WRAPPER", flush=True)
 import os
 import sys
 import traceback
