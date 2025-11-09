@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "AG116/backend/server.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "runtime": "python3.11"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "AG116/backend/server.py"
+    }
+  ],
+  "env": {
+    "LIBSQL_DB_URL": "@libsql_db_url",
+    "LIBSQL_DB_AUTH_TOKEN": "@libsql_db_auth_token"
+  }
+}
