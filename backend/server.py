@@ -2,6 +2,7 @@ import traceback
 import sys
 import asyncio
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request
+from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any, Dict
@@ -1303,6 +1304,14 @@ async def club_register(club_data: ClubCreate, db_session: AsyncSession = Depend
     except Exception as e:
         await db_session.rollback()
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+
+@app.get("/checkUp", response_class=PlainTextResponse, tags=["infra"])
+async def health_check():
+    """
+    Lightweight health endpoint used by uptime pings.
+    Returns 200 OK with body "success".
+    """
+    return PlainTextResponse("success", status_code=200)
 
 # Categories
 @api_router.get("/categories", response_model=List[Category])
